@@ -50,6 +50,7 @@ CREATE TABLE producto (
     stock       INT           NOT NULL,
     precio      DECIMAL(10, 2) NOT NULL,
     categoria   VARCHAR(80)   NOT NULL,
+    atributos   JSON          NULL,
     PRIMARY KEY (id_producto)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

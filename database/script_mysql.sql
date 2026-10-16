@@ -113,6 +113,7 @@ CREATE TABLE producto (
     stock       INT           NOT NULL,
     precio      DECIMAL(10, 2) NOT NULL,
     categoria   VARCHAR(80)   NOT NULL,
+    atributos   JSON          NULL,
     PRIMARY KEY (id_producto)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -255,7 +256,7 @@ INSERT INTO usuario (usuario, contrasena, id_persona) VALUES
 
 -- Catalogo de productos. id_producto no es AUTO_INCREMENT: la pantalla de
 -- gestion de productos lo pide explicitamente al agregar.
-INSERT INTO producto VALUES
+INSERT INTO producto (id_producto, nombre, stock, precio, categoria) VALUES
 (1, 'Laptop Lenovo', 20, 2500.00, 'Laptops'),
 (2, 'Mouse Logitech', 50, 45.00, 'Periféricos'),
 (3, 'Teclado Mecánico', 35, 150.00, 'Periféricos'),
