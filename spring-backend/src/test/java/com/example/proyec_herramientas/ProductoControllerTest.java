@@ -12,8 +12,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.HashMap;
 import java.util.Map;
 
+import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -115,6 +117,50 @@ class ProductoControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void crearProductoConAtributosYListarlosDevuelveLosMismosAtributos() throws Exception {
+        Map<String, String> atributos = new HashMap<>();
+        atributos.put("talla", "M");
+        atributos.put("color", "negro");
+
+        mockMvc.perform(post("/productos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                crearProductoConAtributos(20, "Polo Deportivo", 15, 45.0, "Ropa", atributos))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.atributos.talla", is("M")))
+                .andExpect(jsonPath("$.atributos.color", is("negro")));
+
+        mockMvc.perform(get("/productos"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].atributos.talla", is("M")))
+                .andExpect(jsonPath("$[0].atributos.color", is("negro")));
+    }
+
+    @Test
+    void actualizarProductoActualizaAtributos() throws Exception {
+        productoRepository.save(new Producto(1, "Mouse Gamer", 8, 50.0, "Accesorios"));
+
+        Map<String, String> atributos = new HashMap<>();
+        atributos.put("conexion", "inalámbrico");
+
+        mockMvc.perform(put("/productos/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                crearProductoConAtributos(1, "Mouse Pro", 20, 60.0, "Accesorios", atributos))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.atributos.conexion", is("inalámbrico")));
+    }
+
+    @Test
+    void productoSinAtributosDevuelveMapaVacio() throws Exception {
+        productoRepository.save(new Producto(1, "Mouse Gamer", 8, 50.0, "Accesorios"));
+
+        mockMvc.perform(get("/productos"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].atributos", is(anEmptyMap())));
+    }
+
     private Map<String, Object> crearProducto(int id, String nombre, int stock, double precio, String categoria) {
         return Map.of(
                 "idProducto", id,
@@ -122,5 +168,12 @@ class ProductoControllerTest {
                 "stock", stock,
                 "precio", precio,
                 "categoria", categoria);
+    }
+
+    private Map<String, Object> crearProductoConAtributos(int id, String nombre, int stock, double precio,
+            String categoria, Map<String, String> atributos) {
+        Map<String, Object> producto = new HashMap<>(crearProducto(id, nombre, stock, precio, categoria));
+        producto.put("atributos", atributos);
+        return producto;
     }
 }
