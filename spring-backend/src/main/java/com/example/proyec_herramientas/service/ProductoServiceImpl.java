@@ -46,6 +46,7 @@ public class ProductoServiceImpl implements ProductoService {
                 producto.getStock(),
                 producto.getPrecio(),
                 producto.getCategoria());
+        entity.setAtributos(producto.getAtributos());
         return toDTO(repository.save(entity));
     }
 
@@ -60,6 +61,7 @@ public class ProductoServiceImpl implements ProductoService {
         entity.setStock(producto.getStock());
         entity.setPrecio(producto.getPrecio());
         entity.setCategoria(producto.getCategoria());
+        entity.setAtributos(producto.getAtributos());
         return toDTO(repository.save(entity));
     }
 
@@ -95,6 +97,7 @@ public class ProductoServiceImpl implements ProductoService {
         dto.setStock(producto.getStock());
         dto.setPrecio(producto.getPrecio());
         dto.setCategoria(producto.getCategoria());
+        dto.setAtributos(producto.getAtributos());
         return dto;
     }
 }
