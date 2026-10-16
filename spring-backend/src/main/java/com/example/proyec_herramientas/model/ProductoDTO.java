@@ -1,5 +1,8 @@
 package com.example.proyec_herramientas.model;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class ProductoDTO {
 
     private int idProducto;
@@ -7,6 +10,9 @@ public class ProductoDTO {
     private int stock;
     private double precio;
     private String categoria;
+
+    // Atributos libres por rubro (ej. talla, color) que usa el catalogo para filtros dinamicos.
+    private Map<String, String> atributos = new HashMap<>();
 
     public String getCategoria() {
         return categoria;
@@ -56,5 +62,13 @@ public class ProductoDTO {
 
     public void setStock(int stock) {
         this.stock = stock;
+    }
+
+    public Map<String, String> getAtributos() {
+        return atributos;
+    }
+
+    public void setAtributos(Map<String, String> atributos) {
+        this.atributos = atributos != null ? atributos : new HashMap<>();
     }
 }

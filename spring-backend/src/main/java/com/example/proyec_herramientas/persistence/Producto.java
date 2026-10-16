@@ -4,6 +4,11 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Entity
 @Table(name = "producto")
@@ -24,6 +29,11 @@ public class Producto {
 
     @Column(name = "categoria", length = 80, nullable = false)
     private String categoria;
+
+    // Atributos libres por rubro (ej. talla, color) que usa el catalogo para filtros dinamicos.
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "atributos", columnDefinition = "json")
+    private Map<String, String> atributos = new HashMap<>();
 
     public Producto() {
     }
@@ -74,5 +84,13 @@ public class Producto {
 
     public void setCategoria(String categoria) {
         this.categoria = categoria;
+    }
+
+    public Map<String, String> getAtributos() {
+        return atributos;
+    }
+
+    public void setAtributos(Map<String, String> atributos) {
+        this.atributos = atributos != null ? atributos : new HashMap<>();
     }
 }
