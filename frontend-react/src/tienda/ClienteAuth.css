@@ -1,0 +1,67 @@
+/* ===== PANTALLA DE LOGIN Y REGISTRO DEL CLIENTE ===== */
+.auth-page {
+  min-height: calc(100vh - 64px);
+  display: grid;
+  place-items: center;
+  padding: 80px 20px;
+  background: var(--bg-soft, #f5f5f7);
+}
+
+.auth-container {
+  background: #ffffff;
+  width: 100%;
+  max-width: 420px;
+  padding: 44px;
+  border-radius: 24px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--line, #e5e5ea);
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.auth-header h2 {
+  font-size: clamp(24px, 4vw, 28px);
+  font-weight: 800;
+  color: var(--text, #1d1d1f);
+  letter-spacing: -0.03em;
+  margin-bottom: 8px;
+}
+
+.auth-header p {
+  color: var(--text-soft, #6e6e73);
+  font-size: 15px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth-footer {
+  margin-top: 32px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-soft, #6e6e73);
+  border-top: 1px solid var(--line, #e5e5ea);
+  padding-top: 24px;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--color-primario, #0071e3);
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+  transition: opacity 0.2s ease;
+}
+
+.btn-link:hover {
+  opacity: 0.7;
+  text-decoration: underline;
+}

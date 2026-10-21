@@ -1,0 +1,78 @@
+/* ===== HISTORIAL DE MIS COMPRAS ===== */
+.mis-compras-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 80px 20px 40px;
+}
+
+.compras-header {
+  margin-bottom: 32px;
+  border-bottom: 1px solid var(--line, #e5e5ea);
+  padding-bottom: 16px;
+}
+
+.compras-header h2 {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text, #1d1d1f);
+}
+
+.compra-card {
+  background: #ffffff;
+  border: 1px solid var(--line, #e5e5ea);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+.compra-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--bg-soft, #f5f5f7);
+}
+
+.compra-id {
+  font-weight: 700;
+  color: var(--text, #1d1d1f);
+  font-size: 16px;
+}
+
+.compra-fecha {
+  color: var(--text-soft, #6e6e73);
+  font-size: 14px;
+}
+
+.estado-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #e3f2fd;
+  color: #0071e3;
+}
+
+.estado-badge.entregado {
+  background: #e8f5e9;
+  color: #34c759;
+}
+
+.compra-detalle {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.compra-articulos {
+  color: var(--text-soft, #6e6e73);
+  font-size: 14px;
+}
+
+.compra-total {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text, #1d1d1f);
+}

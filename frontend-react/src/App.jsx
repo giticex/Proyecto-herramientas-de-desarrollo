@@ -5,17 +5,40 @@ import MarcaPanel from './admin/MarcaPanel';
 import ProductosPanel from './admin/ProductosPanel';
 import RutaProtegida from './auth/RutaProtegida';
 import Toast from './components/Toast';
+import LandingPlataforma from './tienda/LandingPlataforma';
+import CatalogoTienda from './tienda/CatalogoTienda';
+import ClienteAuth from './tienda/ClienteAuth';
+import CarritoTienda from './tienda/CarritoTienda';
+import CheckoutTienda from './tienda/CheckoutTienda';
+import ConfirmacionCompra from './tienda/ConfirmacionCompra';
+import MisCompras from './tienda/MisCompras';
 
-// Reservada para el catálogo público (la implementa Anelhi en src/tienda).
-function TiendaPendiente() {
-  return <p style={{ padding: 40 }}>Catálogo en construcción.</p>;
+// Componentes temporales o en desarrollo para las siguientes tareas de cliente
+function EnConstruccion({ titulo }) {
+  return (
+    <div style={{ padding: '100px 20px', textAlign: 'center' }}>
+      <h2>{titulo}</h2>
+      <p style={{ color: '#6e6e73', marginTop: 10 }}>Esta pantalla está en proceso de construcción dentro de tu sprint.</p>
+    </div>
+  );
 }
 
 export default function App() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<Navigate to="/admin/login" replace />} />
+        {/* === MÓDULO PÚBLICO / PLATAFORMA (Anelhi) === */}
+        <Route path="/" element={<LandingPlataforma />} />
+        
+        {/* === MÓDULO TIENDA Y COMPRADOR (Anelhi) === */}
+        <Route path="/tienda/:slug" element={<CatalogoTienda />} />
+        <Route path="/tienda/:slug/login" element={<ClienteAuth />} />
+        <Route path="/tienda/:slug/carrito" element={<CarritoTienda />} />
+        <Route path="/tienda/:slug/checkout" element={<CheckoutTienda />} />
+        <Route path="/tienda/:slug/confirmacion" element={<ConfirmacionCompra />} />
+        <Route path="/tienda/:slug/mis-compras" element={<MisCompras />} />
+
+        {/* === MÓDULO ADMINISTRADOR Y ONBOARDING (Kiara) === */}
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/registro-tienda" element={<RegistroTienda />} />
         <Route element={<RutaProtegida />}>
@@ -23,7 +46,6 @@ export default function App() {
           <Route path="/admin/marca" element={<MarcaPanel />} />
           <Route path="/admin/productos" element={<ProductosPanel />} />
         </Route>
-        <Route path="/tienda/:slug" element={<TiendaPendiente />} />
       </Routes>
       <Toast />
     </>
