@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useSesion } from '../auth/sesionStore';
 import { loginApi } from '../auth/authApi';
 import './AdminLogin.css';
@@ -32,7 +32,7 @@ export default function AdminLogin() {
       // redirigir si la respuesta es 200.
       const { token } = await loginApi(u);
       login(u, token);
-      navigate('/admin');
+      navigate('/admin/productos');
     } finally {
       setEnviando(false);
     }
@@ -41,7 +41,8 @@ export default function AdminLogin() {
   return (
     <>
       <nav className="nav">
-        <span className="nav-brand">Tiendas</span>
+        <Link className="nav-brand" to="/admin/login">Tiendas</Link>
+        <div className="nav-links"><Link to="/registro-tienda">Crear tienda</Link></div>
       </nav>
 
       <main className="page narrow">
@@ -75,7 +76,7 @@ export default function AdminLogin() {
             <span className="error" role="alert">{errores.clave}</span>
           </div>
           <button className="btn block" type="submit" disabled={enviando}>Entrar</button>
-          <p className="small muted">¿Sin tienda todavía? Crea una (próximamente)</p>
+          <p className="small muted">¿Sin tienda todavía? <Link to="/registro-tienda">Crea una</Link></p>
         </form>
       </main>
     </>
