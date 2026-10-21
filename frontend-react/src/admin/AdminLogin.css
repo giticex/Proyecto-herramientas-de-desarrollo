@@ -1,0 +1,4 @@
+/* Ajustes propios del login; el resto viene de index.css (portado de base.css) */
+.page.narrow { min-height: 100vh; }
+.form a { color: var(--color-primario); text-decoration: none; }
+.form a:hover { text-decoration: underline; }
