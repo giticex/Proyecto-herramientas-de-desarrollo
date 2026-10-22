@@ -7,7 +7,8 @@ import { textoSobre } from '../store/theme';
 // carrito.js). Lee el store y reacciona al instante si la marca cambia.
 // navLinks es opcional: los paneles de administrador lo usan para Marca /
 // Productos / Salir; el catálogo público de Anelhi no necesita pasarlo.
-export default function PlantillaTienda({ children, navLinks }) {
+// sinNav lo usan las vistas con barra lateral, que no llevan cabecera fija.
+export default function PlantillaTienda({ children, navLinks, sinNav = false }) {
   const tienda = useStore((estado) => estado.tienda);
 
   useEffect(() => {
@@ -19,13 +20,15 @@ export default function PlantillaTienda({ children, navLinks }) {
 
   return (
     <>
-      <nav className="nav scrolled">
-        <span className="nav-brand">
-          {tienda.logoUrl && <img src={tienda.logoUrl} alt="" />}
-          <span>{tienda.nombre}</span>
-        </span>
-        {navLinks && <div className="nav-links">{navLinks}</div>}
-      </nav>
+      {!sinNav && (
+        <nav className="nav scrolled">
+          <span className="nav-brand">
+            {tienda.logoUrl && <img src={tienda.logoUrl} alt="" />}
+            <span>{tienda.nombre}</span>
+          </span>
+          {navLinks && <div className="nav-links">{navLinks}</div>}
+        </nav>
+      )}
       {children}
     </>
   );

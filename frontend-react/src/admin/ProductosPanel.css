@@ -3,6 +3,35 @@
 .actions { display: flex; gap: 12px; flex-wrap: wrap; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
+/* ----- Tarjetas de resumen (KPI) ----- */
+.kpi-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 40px; }
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 2px;
+  padding: 20px 22px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  transition: transform var(--ease), box-shadow var(--ease);
+}
+.kpi-card::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--color-primario); }
+.kpi-card:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.08); }
+.kpi-cabecera { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.kpi-icono {
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: none; width: 36px; height: 36px; border-radius: 10px;
+  background: var(--bg-soft); color: var(--color-primario);
+}
+.kpi-etiqueta { font-size: var(--fs-s); font-weight: 500; color: var(--text-soft); }
+.kpi-valor { font-size: clamp(26px, 3vw, 34px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+.kpi-detalle { font-size: var(--fs-s); color: var(--text-soft); }
+.kpi-card.critico::before { background: var(--warn); }
+.kpi-card.critico .kpi-icono,
+.kpi-card.critico .kpi-valor { color: var(--warn); }
+
 /* ----- Alerta de stock bajo ----- */
 .alerta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 20px 24px; border-radius: var(--radius); background: var(--warn-bg); color: var(--warn); margin-top: 56px; }
 .alerta-txt { display: grid; flex: 1; min-width: 200px; }
@@ -12,17 +41,49 @@
 .umbral.solo { margin-top: 32px; }
 .btn.ghost[aria-pressed="true"] { background: var(--warn); color: #fff; border-color: var(--warn); }
 
+/* ----- Barra de herramientas: buscador y filtro por categoría ----- */
+.toolbar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 32px; }
+.buscador { position: relative; display: flex; align-items: center; flex: 1; min-width: 220px; }
+.buscador svg { position: absolute; left: 14px; color: var(--text-soft); pointer-events: none; }
+.buscador input { width: 100%; font: inherit; font-size: var(--fs-s); padding: 12px 14px 12px 42px; border: 1px solid var(--line); border-radius: var(--radius-s); background: #fff; color: var(--text); }
+.buscador input::-webkit-search-cancel-button { cursor: pointer; }
+.filtro-categoria { display: flex; align-items: center; gap: 10px; }
+.filtro-categoria select { font: inherit; font-size: var(--fs-s); padding: 11px 12px; border: 1px solid var(--line); border-radius: var(--radius-s); background: #fff; color: var(--text); }
+.buscador input:focus-visible, .filtro-categoria select:focus-visible { outline: 2px solid var(--color-primario); outline-offset: 2px; }
+
 /* ----- Tabla (grid) -> tarjetas en móvil ----- */
 .lista .fila { display: grid; grid-template-columns: 2fr 1.2fr 1fr 1fr auto; gap: 16px; align-items: center; padding: 20px 16px; border-bottom: 1px solid var(--line); border-radius: var(--radius-s); transition: background var(--ease); }
-.lista .fila:not(.cab):hover { background: var(--bg-soft); }
+.lista .fila:not(.cab):hover { background: var(--bg-soft); box-shadow: inset 0 0 0 1px var(--line); }
 .lista .cab { font-size: var(--fs-s); color: var(--text-soft); padding-top: 0; border-bottom-color: var(--text); }
 .fila .nombre { font-weight: 500; }
 .fila .acciones { display: flex; gap: 8px; justify-content: flex-end; }
 .fila.bajo { background: var(--warn-bg); box-shadow: inset 3px 0 0 var(--warn); }
-.fila.bajo:hover { background: var(--warn-bg) !important; }
-.chip { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-s); font-weight: 500; padding: 4px 10px; border-radius: 999px; background: var(--bg-soft); }
-.bajo .chip { background: #fff; color: var(--warn); }
-.chip.agotado { color: var(--danger); }
+.fila.bajo:hover { background: var(--warn-bg) !important; box-shadow: inset 3px 0 0 var(--warn); }
+
+/* ----- Badges de stock ----- */
+.badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 64px; padding: 4px 10px; border-radius: 999px;
+  font-size: var(--fs-s); font-weight: 500; line-height: 1.4;
+}
+.badge.agotado { background: var(--danger); color: #fff; }
+.badge.critico { background: var(--warn-bg); color: var(--warn); box-shadow: inset 0 0 0 1px rgba(178, 80, 0, .3); }
+.badge.ok { background: var(--ok-bg); color: var(--ok); }
+
+/* ----- Botones de acción con icono ----- */
+.icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; padding: 0; cursor: pointer;
+  border: 1px solid var(--line); border-radius: var(--radius-s);
+  background: #fff; color: var(--text-soft);
+  transition: background var(--ease), color var(--ease), border-color var(--ease), transform var(--ease);
+}
+.icon-btn:hover { transform: translateY(-1px); }
+.icon-btn:focus-visible { outline: 2px solid var(--color-primario); outline-offset: 2px; }
+.icon-btn.editar { color: var(--color-primario); }
+.icon-btn.editar:hover { background: var(--color-primario); border-color: var(--color-primario); color: var(--on-primario); }
+.icon-btn.eliminar { color: var(--danger); }
+.icon-btn.eliminar:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
 .vacio { text-align: center; color: var(--text-soft); padding: 80px 0; }
 
 /* ----- Modal ----- */
@@ -35,7 +96,12 @@ dialog .form { margin-top: 0; }
 .atributo-fila { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; }
 .atributo-fila input { padding: 10px 12px; }
 
+@media (max-width: 960px) {
+  .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 @media (max-width: 720px) {
+  .kpi-grid { grid-template-columns: 1fr; margin-top: 32px; }
   .lista .cab { display: none; }
   .lista .fila { grid-template-columns: 1fr 1fr; gap: 8px 16px; border: 1px solid var(--line); margin-bottom: 12px; padding: 20px; }
   .fila .nombre { grid-column: 1 / -1; }
@@ -44,3 +110,4 @@ dialog .form { margin-top: 0; }
   .row2 { grid-template-columns: 1fr; }
   dialog { padding: 24px; }
 }
+

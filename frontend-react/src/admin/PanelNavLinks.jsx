@@ -1,22 +1,36 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, LogOut, Package, Palette } from 'lucide-react';
 import { useSesion } from '../auth/sesionStore';
 
-// Porta los nav-links de marca.html/productos.html: Marca, Productos, Salir.
+// Navegación del panel de administrador. Vive dentro de la barra lateral
+// derecha (ver PanelLayout) y no en la cabecera superior.
 export default function PanelNavLinks() {
   const logout = useSesion((estado) => estado.logout);
   const navigate = useNavigate();
 
-  function salir(evento) {
-    evento.preventDefault();
+  function salir() {
     logout();
     navigate('/admin/login');
   }
 
   return (
-    <>
-      <NavLink to="/admin/marca">Marca</NavLink>
-      <NavLink to="/admin/productos">Productos</NavLink>
-      <a href="#" onClick={salir}>Salir</a>
-    </>
+    <nav className="panel-menu">
+      <NavLink to="/admin" end className="panel-menu-link">
+        <LayoutDashboard size={18} aria-hidden="true" />
+        Dashboard
+      </NavLink>
+      <NavLink to="/admin/marca" className="panel-menu-link">
+        <Palette size={18} aria-hidden="true" />
+        Marca
+      </NavLink>
+      <NavLink to="/admin/productos" className="panel-menu-link">
+        <Package size={18} aria-hidden="true" />
+        Productos
+      </NavLink>
+      <button className="panel-menu-link salir" type="button" onClick={salir}>
+        <LogOut size={18} aria-hidden="true" />
+        Salir
+      </button>
+    </nav>
   );
 }
