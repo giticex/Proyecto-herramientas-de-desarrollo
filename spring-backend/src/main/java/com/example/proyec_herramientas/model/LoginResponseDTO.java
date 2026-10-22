@@ -14,6 +14,11 @@ public class LoginResponseDTO {
     private String apellido;
     private String correo;
 
+    // Tienda que administra la cuenta (solo ADMIN). El comprador la tiene en
+    // null; su tienda se resuelve por el slug del catalogo.
+    private com.example.proyec_herramientas.model.TiendaDTO tienda;
+    private Integer idTienda;
+
     public LoginResponseDTO() {
     }
 
@@ -91,5 +96,21 @@ public class LoginResponseDTO {
 
     public void setCorreo(String correo) {
         this.correo = correo;
+    }
+
+    public com.example.proyec_herramientas.model.TiendaDTO getTienda() {
+        return tienda;
+    }
+
+    public void setTienda(com.example.proyec_herramientas.model.TiendaDTO tienda) {
+        this.tienda = tienda;
+    }
+
+    public Integer getIdTienda() {
+        return idTienda;
+    }
+
+    public void setIdTienda(Integer idTienda) {
+        this.idTienda = idTienda;
     }
 }

@@ -3,6 +3,7 @@ package com.example.proyec_herramientas;
 import com.example.proyec_herramientas.repository.ClienteRepository;
 import com.example.proyec_herramientas.repository.PersonaRepository;
 import com.example.proyec_herramientas.repository.ProductoRepository;
+import com.example.proyec_herramientas.repository.TiendaRepository;
 import com.example.proyec_herramientas.repository.UsuarioRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,11 +49,14 @@ class SeguridadRolesTest {
     @Autowired
     private ProductoRepository productoRepository;
 
+    @Autowired
+    private TiendaRepository tiendaRepository;
+
     @BeforeEach
     void prepararCuentas() {
         productoRepository.deleteAll();
-        CuentasTest.crearAdmin(usuarioRepository, personaRepository);
-        CuentasTest.crearCliente(usuarioRepository, personaRepository);
+        CuentasTest.crearAdmin(usuarioRepository, personaRepository, tiendaRepository);
+        CuentasTest.crearCliente(usuarioRepository, personaRepository, tiendaRepository);
         CuentasTest.crearFichaCliente(clienteRepository);
     }
 
@@ -90,9 +94,53 @@ class SeguridadRolesTest {
     }
 
     @Test
-    void listarProductosEsPublico() throws Exception {
+    void listarProductosExigeRolAdmin() throws Exception {
+        // El panel de productos trabaja sobre la tienda del token: es del ADMIN.
         mockMvc.perform(get("/productos"))
+                .andExpect(status().isUnauthorized());
+
+        String tokenCliente = CuentasTest.token(mockMvc, objectMapper, CuentasTest.CORREO_CLIENTE,
+                CuentasTest.CLAVE);
+        mockMvc.perform(get("/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenCliente))
+                .andExpect(status().isForbidden());
+
+        String tokenAdmin = CuentasTest.token(mockMvc, objectMapper, CuentasTest.USUARIO_ADMIN,
+                CuentasTest.CLAVE);
+        mockMvc.perform(get("/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void elCatalogoPublicoPorTiendaNoExigeSesion() throws Exception {
+        // El comprador navega el catalogo por slug sin token.
+        mockMvc.perform(get("/tiendas/" + CuentasTest.SLUG_TIENDA))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/tiendas/" + CuentasTest.SLUG_TIENDA + "/productos"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void ventasMiasExigeSesion() throws Exception {
+        mockMvc.perform(get("/ventas/mias"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void actualizarTiendaExigeRolAdmin() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/tiendas/" + CuentasTest.SLUG_TIENDA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnauthorized());
+
+        String tokenCliente = CuentasTest.token(mockMvc, objectMapper, CuentasTest.CORREO_CLIENTE,
+                CuentasTest.CLAVE);
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/tiendas/" + CuentasTest.SLUG_TIENDA)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenCliente)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden());
     }
 
     @Test

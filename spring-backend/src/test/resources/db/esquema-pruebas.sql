@@ -3,10 +3,12 @@
 DROP VIEW IF EXISTS historial_compras;
 DROP TABLE IF EXISTS detalle_venta;
 DROP TABLE IF EXISTS venta;
+DROP TABLE IF EXISTS usuario;
 DROP TABLE IF EXISTS producto;
 DROP TABLE IF EXISTS cliente;
 DROP TABLE IF EXISTS usuario;
 DROP TABLE IF EXISTS persona;
+DROP TABLE IF EXISTS tienda;
 DROP TABLE IF EXISTS medio_pago;
 DROP TABLE IF EXISTS tipo_documento;
 DROP TABLE IF EXISTS parametro;
@@ -40,6 +42,18 @@ CREATE TABLE rol (
     PRIMARY KEY (id_rol)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE tienda (
+    id_tienda        INT          NOT NULL AUTO_INCREMENT,
+    nombre           VARCHAR(100) NOT NULL,
+    rubro            VARCHAR(80)  NOT NULL,
+    slug             VARCHAR(80)  NOT NULL,
+    color_primario   VARCHAR(7)   NOT NULL DEFAULT '#0071e3',
+    color_secundario VARCHAR(7)   NOT NULL DEFAULT '#1d1d1f',
+    logo_url         VARCHAR(255),
+    PRIMARY KEY (id_tienda),
+    UNIQUE KEY uk_tienda_slug (slug)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE persona (
     id_persona       VARCHAR(25) NOT NULL,
     nombre           VARCHAR(50) NOT NULL,
@@ -58,14 +72,18 @@ CREATE TABLE usuario (
     contrasena VARCHAR(255) NOT NULL,
     id_persona VARCHAR(25)  NOT NULL,
     id_rol     VARCHAR(15)  NOT NULL DEFAULT 'ADMIN',
+    id_tienda  INT          NOT NULL,
     PRIMARY KEY (id_usuario),
     UNIQUE KEY uk_usuario_usuario (usuario),
     KEY idx_usuario_id_persona (id_persona),
     KEY idx_usuario_id_rol (id_rol),
+    KEY idx_usuario_id_tienda (id_tienda),
     CONSTRAINT fk_usuario_persona FOREIGN KEY (id_persona)
         REFERENCES persona (id_persona),
     CONSTRAINT fk_usuario_rol FOREIGN KEY (id_rol)
-        REFERENCES rol (id_rol)
+        REFERENCES rol (id_rol),
+    CONSTRAINT fk_usuario_tienda FOREIGN KEY (id_tienda)
+        REFERENCES tienda (id_tienda)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE cliente (
@@ -93,7 +111,11 @@ CREATE TABLE producto (
     unidad_medida  VARCHAR(5)    NOT NULL DEFAULT 'NIU',
     afectacion_igv VARCHAR(2)    NOT NULL DEFAULT '01',
     atributos      JSON          NULL,
-    PRIMARY KEY (id_producto)
+    id_tienda      INT           NOT NULL,
+    PRIMARY KEY (id_producto),
+    KEY idx_producto_id_tienda (id_tienda),
+    CONSTRAINT fk_producto_tienda FOREIGN KEY (id_tienda)
+        REFERENCES tienda (id_tienda)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Cabecera del comprobante de pago electronico.

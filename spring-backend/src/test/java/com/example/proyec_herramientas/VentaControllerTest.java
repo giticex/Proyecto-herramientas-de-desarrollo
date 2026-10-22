@@ -3,9 +3,11 @@ package com.example.proyec_herramientas;
 import com.example.proyec_herramientas.persistence.Cliente;
 import com.example.proyec_herramientas.persistence.Persona;
 import com.example.proyec_herramientas.persistence.Producto;
+import com.example.proyec_herramientas.persistence.Tienda;
 import com.example.proyec_herramientas.repository.ClienteRepository;
 import com.example.proyec_herramientas.repository.PersonaRepository;
 import com.example.proyec_herramientas.repository.ProductoRepository;
+import com.example.proyec_herramientas.repository.TiendaRepository;
 import com.example.proyec_herramientas.repository.UsuarioRepository;
 import com.example.proyec_herramientas.repository.VentaRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,10 +59,15 @@ class VentaControllerTest {
     private UsuarioRepository usuarioRepository;
 
     @Autowired
+    private TiendaRepository tiendaRepository;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     // Registrar y consultar ventas es del ADMIN: las pruebas entran con su token.
     private String token;
+
+    private Tienda tienda;
 
     @BeforeEach
     void limpiar() throws Exception {
@@ -71,13 +78,20 @@ class VentaControllerTest {
         clienteRepository.deleteAll();
         personaRepository.deleteAll();
 
-        CuentasTest.crearAdmin(usuarioRepository, personaRepository);
+        CuentasTest.crearAdmin(usuarioRepository, personaRepository, tiendaRepository);
+        tienda = tiendaRepository.findBySlug(CuentasTest.SLUG_TIENDA).orElseThrow();
         token = CuentasTest.token(mockMvc, objectMapper, CuentasTest.USUARIO_ADMIN, CuentasTest.CLAVE);
 
-        productoRepository.save(new Producto(1, "Mouse Gamer", 8, new BigDecimal("50.00"), "Accesorios"));
-        productoRepository.save(new Producto(2, "Teclado Mecánico", 5, new BigDecimal("120.00"), "Accesorios"));
+        guardarProducto(1, "Mouse Gamer", 8, "50.00");
+        guardarProducto(2, "Teclado Mecánico", 5, "120.00");
         clienteRepository.save(new Cliente("CLI-0001", "Juan", "Pérez", "987654321", "juan@correo.com"));
         personaRepository.save(persona("PER001", "Juan", "Pérez", "juan@correo.com"));
+    }
+
+    private void guardarProducto(int id, String nombre, int stock, String precio) {
+        Producto producto = new Producto(id, nombre, stock, new BigDecimal(precio), "Accesorios");
+        producto.setIdTienda(tienda.getIdTienda());
+        productoRepository.save(producto);
     }
 
     @Test
@@ -178,7 +192,7 @@ class VentaControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(carrito("CLI-0001", "Boleta", "Yape", List.of(item(1, 2)))));
 
-        mockMvc.perform(get("/productos/1"))
+        mockMvc.perform(get("/productos/1").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.stock", is(6)));
     }
@@ -212,6 +226,45 @@ class VentaControllerTest {
         byte[] bytes = pdf.getResponse().getContentAsByteArray();
         assertTrue(bytes.length > 1000, "El PDF debe tener contenido");
         assertTrue(new String(bytes, 0, 4).startsWith("%PDF"), "Debe ser un PDF válido");
+    }
+
+    @Test
+    void elClienteVeSusPropiasComprasPorVentasMias() throws Exception {
+        CuentasTest.crearCliente(usuarioRepository, personaRepository, tiendaRepository);
+        CuentasTest.crearFichaCliente(clienteRepository);
+
+        // El ADMIN registra una compra a nombre del comprador de las pruebas.
+        mockMvc.perform(post("/ventas")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(carrito(CuentasTest.ID_CLIENTE, "Boleta", "Yape", List.of(item(1, 1)))))
+                .andExpect(status().isCreated());
+
+        String tokenCliente = CuentasTest.token(mockMvc, objectMapper, CuentasTest.CORREO_CLIENTE,
+                CuentasTest.CLAVE);
+
+        mockMvc.perform(get("/ventas/mias")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenCliente))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].detalles[0].producto", is("Mouse Gamer")));
+    }
+
+    @Test
+    void elClienteCompraSiempreANombrePropioIgnorandoElBody() throws Exception {
+        CuentasTest.crearCliente(usuarioRepository, personaRepository, tiendaRepository);
+        CuentasTest.crearFichaCliente(clienteRepository);
+        String tokenCliente = CuentasTest.token(mockMvc, objectMapper, CuentasTest.CORREO_CLIENTE,
+                CuentasTest.CLAVE);
+
+        // El cuerpo intenta comprar a nombre de CLI-0001, pero el CLIENTE solo
+        // puede comprar como el mismo: se registra como CLI-PRUEBA.
+        mockMvc.perform(post("/ventas")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenCliente)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(carrito("CLI-0001", "Boleta", "Yape", List.of(item(1, 1)))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.idCliente", is(CuentasTest.ID_CLIENTE)));
     }
 
     private Persona persona(String idPersona, String nombre, String apellido, String correo) {

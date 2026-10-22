@@ -23,6 +23,9 @@ public class ProductoDTO {
     // Atributos libres por rubro (ej. talla, color) que usa el catalogo para filtros dinamicos.
     private Map<String, String> atributos = new HashMap<>();
 
+    /** Tienda duena del producto. Solo lectura: lo pone el backend desde el token. */
+    private Integer idTienda;
+
     public String getCategoria() {
         return categoria;
     }
@@ -103,5 +106,13 @@ public class ProductoDTO {
 
     public void setAtributos(Map<String, String> atributos) {
         this.atributos = atributos != null ? atributos : new HashMap<>();
+    }
+
+    public Integer getIdTienda() {
+        return idTienda;
+    }
+
+    public void setIdTienda(Integer idTienda) {
+        this.idTienda = idTienda;
     }
 }

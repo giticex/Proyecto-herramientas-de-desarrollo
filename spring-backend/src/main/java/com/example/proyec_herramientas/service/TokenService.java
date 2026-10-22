@@ -11,12 +11,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
 // Token de sesion opaco y firmado. Formato: payload.firma, donde el payload
-// es "usuario|rol|expira" en base64url y la firma es HMAC-SHA256 del payload
-// con el secreto del servidor. No es un JWT: es lo justo para que el backend
-// sepa que rol tiene la cuenta que llama, sin agregar dependencias.
+// es "usuario|rol|idCliente|idTienda|expira" en base64url y la firma es
+// HMAC-SHA256 del payload con el secreto del servidor.
 //
-// El rol viaja dentro del token justamente para no volver a consultarlo en
-// cada peticion; el token esta firmado, asi que no se puede alterar a mano.
+// El rol, el cliente y la tienda viajan dentro del token justamente para no
+// volver a consultarlos en cada peticion; el token esta firmado, asi que no
+// se puede alterar a mano.
 @Service
 public class TokenService {
 
@@ -32,15 +32,18 @@ public class TokenService {
         this.expiracionMinutos = expiracionMinutos;
     }
 
-    public String generar(String usuario, String rol, String idCliente) {
+    public String generar(String usuario, String rol, String idCliente, Integer idTienda) {
         long expira = System.currentTimeMillis() / 1000 + expiracionMinutos * 60;
-        String payload = usuario + "|" + rol + "|" + (idCliente == null ? "" : idCliente) + "|" + expira;
+        String payload = usuario + "|" + rol + "|" + (idCliente == null ? "" : idCliente)
+                + "|" + (idTienda == null ? "" : idTienda) + "|" + expira;
         String codificado = Base64.getUrlEncoder().withoutPadding()
                 .encodeToString(payload.getBytes(StandardCharsets.UTF_8));
         return codificado + SEPARADOR + firmar(codificado);
     }
 
     // Devuelve null si el token no es valido, esta manipulado o ya expiro.
+    // Acepta el payload de 4 campos (sin idTienda) que se emitia antes de
+    // multi-tienda, para no cerrar sesiones de golpe al desplegar.
     public Token validar(String token) {
         if (token == null || token.isBlank()) {
             return null;
@@ -61,19 +64,23 @@ public class TokenService {
             return null;
         }
         String[] campos = payload.split("\\|", -1);
-        if (campos.length != 4) {
+        if (campos.length != 4 && campos.length != 5) {
             return null;
         }
+        String idTiendaTexto = campos.length == 5 ? campos[3] : "";
+        String expiraTexto = campos[campos.length - 1];
         long expira;
+        Integer idTienda;
         try {
-            expira = Long.parseLong(campos[3]);
+            expira = Long.parseLong(expiraTexto);
+            idTienda = idTiendaTexto.isBlank() ? null : Integer.valueOf(idTiendaTexto);
         } catch (NumberFormatException e) {
             return null;
         }
         if (expira < System.currentTimeMillis() / 1000) {
             return null;
         }
-        return new Token(campos[0], campos[1], campos[2], expira);
+        return new Token(campos[0], campos[1], campos[2], idTienda, expira);
     }
 
     private String firmar(String contenido) {
@@ -88,7 +95,7 @@ public class TokenService {
     }
 
     // Datos que viajan dentro del token. idCliente va vacio para las cuentas
-    // del panel: el administrador puede ver y registrar ventas de cualquiera.
-    public record Token(String usuario, String rol, String idCliente, long expira) {
+    // del panel; idTienda va vacio para los compradores.
+    public record Token(String usuario, String rol, String idCliente, Integer idTienda, long expira) {
     }
 }

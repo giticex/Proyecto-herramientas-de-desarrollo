@@ -3,9 +3,11 @@ package com.example.proyec_herramientas;
 import com.example.proyec_herramientas.persistence.Cliente;
 import com.example.proyec_herramientas.persistence.Persona;
 import com.example.proyec_herramientas.persistence.Rol;
+import com.example.proyec_herramientas.persistence.Tienda;
 import com.example.proyec_herramientas.persistence.Usuario;
 import com.example.proyec_herramientas.repository.ClienteRepository;
 import com.example.proyec_herramientas.repository.PersonaRepository;
+import com.example.proyec_herramientas.repository.TiendaRepository;
 import com.example.proyec_herramientas.repository.UsuarioRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,10 +39,25 @@ final class CuentasTest {
     static final String ID_PERSONA_ADMIN = "PER-PRUEBA-ADM";
     static final String ID_PERSONA_CLIENTE = "PER-PRUEBA-CLI";
 
+    // Tienda de la que es dueno el ADMIN de las pruebas.
+    static final String SLUG_TIENDA = "tienda-prueba";
+
     private CuentasTest() {
     }
 
-    static Usuario crearAdmin(UsuarioRepository usuarios, PersonaRepository personas) {
+    static Tienda crearTienda(TiendaRepository tiendas) {
+        return tiendas.findBySlug(SLUG_TIENDA).orElseGet(() -> {
+            Tienda tienda = new Tienda();
+            tienda.setNombre("Tienda Prueba");
+            tienda.setRubro("Tecnologia");
+            tienda.setSlug(SLUG_TIENDA);
+            return tiendas.save(tienda);
+        });
+    }
+
+    static Usuario crearAdmin(UsuarioRepository usuarios, PersonaRepository personas,
+            TiendaRepository tiendas) {
+        Tienda tienda = crearTienda(tiendas);
         Persona persona = persona(personas, ID_PERSONA_ADMIN, "Administrador", "Prueba", CORREO_ADMIN,
                 USUARIO_ADMIN);
         Usuario usuario = usuarios.findByUsuario(USUARIO_ADMIN).orElseGet(() -> new Usuario());
@@ -48,10 +65,13 @@ final class CuentasTest {
         usuario.setContrasena(HASH_123456);
         usuario.setIdPersona(persona.getIdPersona());
         usuario.setIdRol(Rol.ADMIN);
+        usuario.setIdTienda(tienda.getIdTienda());
         return usuarios.save(usuario);
     }
 
-    static Usuario crearCliente(UsuarioRepository usuarios, PersonaRepository personas) {
+    static Usuario crearCliente(UsuarioRepository usuarios, PersonaRepository personas,
+            TiendaRepository tiendas) {
+        Tienda tienda = crearTienda(tiendas);
         Persona persona = persona(personas, ID_PERSONA_CLIENTE, "Comprador", "Prueba", CORREO_CLIENTE,
                 USUARIO_CLIENTE);
         Usuario usuario = usuarios.findByUsuario(USUARIO_CLIENTE).orElseGet(() -> new Usuario());
@@ -59,6 +79,7 @@ final class CuentasTest {
         usuario.setContrasena(HASH_123456);
         usuario.setIdPersona(persona.getIdPersona());
         usuario.setIdRol(Rol.CLIENTE);
+        usuario.setIdTienda(tienda.getIdTienda());
         return usuarios.save(usuario);
     }
 

@@ -22,9 +22,9 @@ import java.util.List;
 // Reglas de acceso por rol. El rol lo trae el token (ver TokenFiltro) y sale
 // de la FK id_rol de la base, no de una constante escrita a mano.
 //
-//   ADMIN   -> panel de administracion (productos, clientes, historial).
-//   CLIENTE -> comprar y ver sus propias compras.
-//   publico -> login, catalogo de roles y lectura del catalogo de productos.
+//   ADMIN   -> panel de administracion de SU tienda (productos, clientes, historial).
+//   CLIENTE -> comprar, ver sus propias compras y el catalogo de su tienda.
+//   publico -> login, registro, catalogo de roles y catalogo publico por tienda.
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -50,12 +50,18 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/auth/**", "/roles", "/error").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/productos", "/productos/**").permitAll()
+                        // Catalogo publico por tienda: el comprador navega sin token.
+                        .requestMatchers(HttpMethod.GET, "/tiendas/*", "/tiendas/*/productos").permitAll()
+                        // El comprador ve sus propias compras; el administrador tambien.
+                        .requestMatchers(HttpMethod.GET, "/ventas/mias").hasAnyRole("CLIENTE", "ADMIN")
                         // El checkout puede hacerlo el comprador; el administrador tambien.
                         .requestMatchers(HttpMethod.POST, "/ventas").hasAnyRole("CLIENTE", "ADMIN")
+                        // El panel de administracion trabaja sobre SU tienda: el
+                        // idTienda sale del token, nunca del body.
+                        .requestMatchers(HttpMethod.GET, "/productos", "/productos/**").hasRole("ADMIN")
                         .requestMatchers("/productos/**", "/clientes/**", "/ventas/**",
                                 "/historial", "/historial/**", "/boletas", "/boletas/**",
-                                "/boleta/**", "/factura/**").hasRole("ADMIN")
+                                "/boleta/**", "/factura/**", "/tiendas/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(excepciones -> excepciones
                         .authenticationEntryPoint((peticion, respuesta, error) ->

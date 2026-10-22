@@ -1,5 +1,6 @@
 package com.example.proyec_herramientas.service;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -8,14 +9,17 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
 // Verificacion de contrasenas. La carga inicial guarda SHA-256 en hexadecimal
-// (ver database/script_mysql.sql), asi que ese es el formato que se acepta.
-// Si la cuenta ya tiene un hash BCrypt (prefijo "$2"), tambien se valida:
-// asi el cambio de algoritmo se puede hacer cuenta por cuenta.
+// (ver database/script_mysql.sql) y las cuentas nuevas guardan BCrypt. El
+// login acepta los dos formatos y, cuando valida con el hash viejo, lo
+// reemplaza por BCrypt (migracion transparente, ver AuthServiceImpl).
 @Service
 public class ContrasenaService {
 
     private static final String PREFIJO_BCRYPT = "$2";
 
+    private final BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
+
+    /** SHA-256 en hexadecimal. Solo se usa para verificar la carga inicial. */
     public String hash(String texto) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -26,13 +30,23 @@ public class ContrasenaService {
         }
     }
 
+    /** Hash definitivo para cuentas nuevas y para la migracion desde SHA-256. */
+    public String hashBcrypt(String texto) {
+        return bcrypt.encode(texto);
+    }
+
+    /** true si el hash guardado es el SHA-256 historico (sin sal). */
+    public boolean esHashLegado(String hashGuardado) {
+        return hashGuardado != null && !hashGuardado.isBlank()
+                && !hashGuardado.startsWith(PREFIJO_BCRYPT);
+    }
+
     public boolean coincide(String texto, String hashGuardado) {
         if (texto == null || hashGuardado == null || hashGuardado.isBlank()) {
             return false;
         }
         if (hashGuardado.startsWith(PREFIJO_BCRYPT)) {
-            return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder()
-                    .matches(texto, hashGuardado);
+            return bcrypt.matches(texto, hashGuardado);
         }
         return comparar(hashGuardado, hash(texto));
     }

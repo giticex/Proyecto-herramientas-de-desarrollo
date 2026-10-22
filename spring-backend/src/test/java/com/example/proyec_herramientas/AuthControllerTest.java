@@ -2,6 +2,7 @@ package com.example.proyec_herramientas;
 
 import com.example.proyec_herramientas.repository.ClienteRepository;
 import com.example.proyec_herramientas.repository.PersonaRepository;
+import com.example.proyec_herramientas.repository.TiendaRepository;
 import com.example.proyec_herramientas.repository.UsuarioRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,10 +45,13 @@ class AuthControllerTest {
     @Autowired
     private ClienteRepository clienteRepository;
 
+    @Autowired
+    private TiendaRepository tiendaRepository;
+
     @BeforeEach
     void prepararCuentas() {
-        CuentasTest.crearAdmin(usuarioRepository, personaRepository);
-        CuentasTest.crearCliente(usuarioRepository, personaRepository);
+        CuentasTest.crearAdmin(usuarioRepository, personaRepository, tiendaRepository);
+        CuentasTest.crearCliente(usuarioRepository, personaRepository, tiendaRepository);
         CuentasTest.crearFichaCliente(clienteRepository);
     }
 
@@ -132,6 +136,75 @@ class AuthControllerTest {
     void authRolSinTokenDevuelve401() throws Exception {
         mockMvc.perform(get("/auth/rol"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void loginDeAdministradorDevuelveSuTienda() throws Exception {
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(credenciales(CuentasTest.USUARIO_ADMIN, CuentasTest.CLAVE)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.idTienda", notNullValue()))
+                .andExpect(jsonPath("$.tienda.slug", is(CuentasTest.SLUG_TIENDA)));
+    }
+
+    @Test
+    void registroDeTiendaCreaLaCuentaAdminConTienda() throws Exception {
+        mockMvc.perform(post("/auth/registro-tienda")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "nombre", "Bodega Nueva",
+                                "rubro", "Abarrotes",
+                                "slug", "bodega-nueva",
+                                "correo", "dueno@bodega.com",
+                                "contrasena", "clave-segura-123"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.rol", is("ADMIN")))
+                .andExpect(jsonPath("$.tienda.slug", is("bodega-nueva")))
+                .andExpect(jsonPath("$.idTienda", notNullValue()))
+                .andExpect(jsonPath("$.token", notNullValue()));
+    }
+
+    @Test
+    void registroDeTiendaConSlugRepetidoDevuelve409() throws Exception {
+        mockMvc.perform(post("/auth/registro-tienda")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "nombre", "Otra Tienda",
+                                "rubro", "Otros",
+                                "slug", CuentasTest.SLUG_TIENDA,
+                                "correo", "otra@bodega.com",
+                                "contrasena", "clave-segura-123"))))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void registroDeClienteDevuelveRolClienteConToken() throws Exception {
+        mockMvc.perform(post("/auth/registro-cliente")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "nombre", "Nuevo",
+                                "apellido", "Comprador",
+                                "telefono", "987654321",
+                                "correo", "nuevo@comprador.com",
+                                "contrasena", "clave-segura-123"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.rol", is("CLIENTE")))
+                .andExpect(jsonPath("$.idCliente", notNullValue()))
+                .andExpect(jsonPath("$.token", notNullValue()));
+    }
+
+    @Test
+    void registroDeClienteConCorreoRepetidoDevuelve409() throws Exception {
+        mockMvc.perform(post("/auth/registro-cliente")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "nombre", "Repetido",
+                                "apellido", "Comprador",
+                                "telefono", "987654321",
+                                "correo", CuentasTest.CORREO_CLIENTE,
+                                "contrasena", "clave-segura-123"))))
+                .andExpect(status().isConflict());
     }
 
     private String credenciales(String usuario, String clave) throws Exception {
