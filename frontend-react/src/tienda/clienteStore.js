@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import { showToast } from '../components/toastBus';
+import { registrarVenta as registrarVentaApi, misVentas as misVentasApi } from '../api/ventasApi';
+import { conAutenticacion } from '../api/conAutenticacion';
 
 const CART_KEY = 'clienteCarrito';
-const CLIENTE_SESION_KEY = 'clienteSesion';
-const COMPRAS_KEY = 'clienteMisCompras';
+const SESION_KEY = 'sesionCliente';
 
 function leerJson(key, fallback) {
   try {
@@ -16,18 +17,29 @@ function leerJson(key, fallback) {
 
 export const useClienteStore = create((set, get) => ({
   carrito: leerJson(CART_KEY, []),
-  cliente: leerJson(CLIENTE_SESION_KEY, null),
-  misCompras: leerJson(COMPRAS_KEY, []),
+  cliente: leerJson(SESION_KEY, null),
+  misCompras: [],
 
   // --- SESIÓN DEL CLIENTE ---
-  loginCliente(datosCliente) {
-    localStorage.setItem(CLIENTE_SESION_KEY, JSON.stringify(datosCliente));
-    set({ cliente: datosCliente });
+  // respuesta: { token, usuario: {id, correo, rol} } (forma real de
+  // POST /auth/login y /auth/registro-cliente). nombre es opcional: solo lo
+  // conocemos cuando lo acabamos de capturar en el formulario de registro,
+  // el backend no lo devuelve en la respuesta.
+  loginCliente(respuesta, nombre) {
+    const sesion = {
+      id: respuesta.usuario.id,
+      correo: respuesta.usuario.correo,
+      rol: respuesta.usuario.rol,
+      token: respuesta.token,
+      nombre,
+    };
+    localStorage.setItem(SESION_KEY, JSON.stringify(sesion));
+    set({ cliente: sesion });
   },
 
   logoutCliente() {
-    localStorage.removeItem(CLIENTE_SESION_KEY);
-    set({ cliente: null });
+    localStorage.removeItem(SESION_KEY);
+    set({ cliente: null, misCompras: [] });
   },
 
   // --- CARRITO CON VALIDACIÓN ESTRICTA DE STOCK CONTRA EL STORE ---
@@ -101,10 +113,21 @@ export const useClienteStore = create((set, get) => ({
     set({ carrito: [] });
   },
 
-  registrarCompra(orden) {
-    const nuevasCompras = [orden, ...get().misCompras];
-    localStorage.setItem(COMPRAS_KEY, JSON.stringify(nuevasCompras));
+  // --- COMPRAS (backend real, reemplaza el registrarCompra local) ---
+  // Deja la excepcion (ApiError, p.ej. 409 sin stock) pasar: el checkout
+  // decide como mostrarla y no vacia el carrito si falla.
+  async registrarVenta(carrito) {
+    const token = get().cliente?.token;
+    const venta = await conAutenticacion(() => registrarVentaApi(carrito, token), get().logoutCliente);
     localStorage.removeItem(CART_KEY);
-    set({ misCompras: nuevasCompras, carrito: [] });
+    set({ carrito: [] });
+    return venta;
+  },
+
+  async cargarMisCompras() {
+    const token = get().cliente?.token;
+    const ventas = await conAutenticacion(() => misVentasApi(token), get().logoutCliente);
+    set({ misCompras: ventas });
+    return ventas;
   },
 }));
