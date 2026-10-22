@@ -3,23 +3,24 @@ import { Link, useParams } from 'react-router-dom';
 import PlantillaTienda from '../components/PlantillaTienda';
 import { useStore } from '../store/store';
 import { useClienteStore } from './clienteStore';
+import { showToast } from '../components/toastBus';
 import './CatalogoTienda.css';
 
 export default function CatalogoTienda() {
   const { slug } = useParams();
-  const { tienda, productos, umbral, getTienda, listProductos } = useStore();
+  const { tienda, productos, umbral, getTienda, listProductosTienda } = useStore();
   const { carrito, cliente, agregarAlCarrito } = useClienteStore();
 
   const [busqueda, setBusqueda] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState('Todas');
   const [atributosActivos, setAtributosActivos] = useState({});
   const { logoutCliente } = useClienteStore();
-  
+
 
   useEffect(() => {
     getTienda(slug);
-    listProductos();
-  }, [slug, getTienda, listProductos]);
+    listProductosTienda(slug);
+  }, [slug, getTienda, listProductosTienda]);
 
   // 1. Extraer categorías únicas desde los productos del store
   const categorias = useMemo(() => {

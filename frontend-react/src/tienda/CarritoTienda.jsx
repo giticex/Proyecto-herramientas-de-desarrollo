@@ -9,14 +9,14 @@ export default function CarritoTienda() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { carrito, quitarDelCarrito, cambiarCantidad, cliente } = useClienteStore();
-  const { productos, getTienda, listProductos } = useStore();
+  const { productos, getTienda, listProductosTienda } = useStore();
 
   // Estado para controlar nuestro nuevo modal animado
   const [modalLogin, setModalLogin] = useState(false);
   useEffect(() => {
     getTienda(slug);
-    if (productos.length === 0) listProductos();
-  }, [slug, getTienda, listProductos, productos.length]);
+    if (productos.length === 0) listProductosTienda(slug);
+  }, [slug, getTienda, listProductosTienda, productos.length]);
 
   const total = carrito.reduce((sum, item) => sum + (Number(item.precio) * item.cantidad), 0);
 
