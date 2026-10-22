@@ -80,7 +80,7 @@ export default function RegistroTienda() {
   return (
     <>
       <nav className="nav">
-        <Link className="nav-brand" to="/admin/login">Tiendas</Link>
+        <Link className="nav-brand" to="/">NovaCommerce</Link>
         <div className="nav-links"><Link to="/admin/login">Iniciar sesión</Link></div>
       </nav>
 

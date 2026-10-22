@@ -13,6 +13,8 @@ export default function CatalogoTienda() {
   const [busqueda, setBusqueda] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState('Todas');
   const [atributosActivos, setAtributosActivos] = useState({});
+  const { logoutCliente } = useClienteStore();
+  
 
   useEffect(() => {
     getTienda(slug);
@@ -90,15 +92,46 @@ export default function CatalogoTienda() {
 
   const navLinks = (
     <>
-      <Link to="/">Inicio Plataforma</Link>
-      <Link to={`/tienda/${slugActual}`} aria-current="page">
+      <Link to="/" style={{ color: '#4a4a4a' }}>Inicio Plataforma</Link>
+      <Link to={`/tienda/${slugActual}`} aria-current="page" style={{ color: '#4a4a4a', fontWeight: 700 }}>
         Catálogo
       </Link>
-      <Link to={`/tienda/${slugActual}/mis-compras`}>Mis Compras</Link>
-      <Link to={`/tienda/${slugActual}/login`}>
-        {cliente ? `Hola, ${cliente.nombre}` : 'Ingresar'}
-      </Link>
-      <Link to={`/tienda/${slugActual}/carrito`} className="btn small">
+      {cliente && (
+        <>
+          <Link to={`/tienda/${slugActual}/mis-compras`} style={{ color: '#4a4a4a' }}>
+            Mis Compras
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              logoutCliente();
+              showToast('Sesión cerrada correctamente');
+            }}
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(255,255,255,0.4)',
+              color: '#4a4a4a',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 500,
+              fontSize: '14px'
+            }}
+          >
+            Cerrar Sesión
+          </button>
+        </>
+      )}
+      {!cliente && (
+        <Link to={`/tienda/${slugActual}/login`} style={{ color: '#4a4a4a' }}>
+          Ingresar
+        </Link>
+      )}
+      <Link
+        to={`/tienda/${slugActual}/carrito`}
+        className="btn small"
+        style={{ background: '#4a4a4a', color: 'var(--color-primario, #0071e3)', fontWeight: 700 }}
+      >
         🛒 Carrito
         <span className="nav-badge-carrito">{totalItemsCarrito}</span>
       </Link>
@@ -173,9 +206,8 @@ export default function CatalogoTienda() {
                   <button
                     key={valor}
                     type="button"
-                    className={`chip-filtro ${
-                      atributosActivos[clave] === valor ? 'activo' : ''
-                    }`}
+                    className={`chip-filtro ${atributosActivos[clave] === valor ? 'activo' : ''
+                      }`}
                     onClick={() => toggleAtributo(clave, valor)}
                   >
                     {valor}
@@ -228,15 +260,14 @@ export default function CatalogoTienda() {
                           {producto.categoria || 'General'}
                         </span>
                         <span
-                          className={`stock-pill ${
-                            agotado ? 'agotado' : stockBajo ? 'bajo' : 'ok'
-                          }`}
+                          className={`stock-pill ${agotado ? 'agotado' : stockBajo ? 'bajo' : 'ok'
+                            }`}
                         >
                           {agotado
                             ? 'Agotado'
                             : stockBajo
-                            ? `¡Solo quedan ${stockRestante}!`
-                            : `Stock: ${stockRestante}`}
+                              ? `¡Solo quedan ${stockRestante}!`
+                              : `Stock: ${stockRestante}`}
                         </span>
                       </div>
 

@@ -12,6 +12,8 @@ import CarritoTienda from './tienda/CarritoTienda';
 import CheckoutTienda from './tienda/CheckoutTienda';
 import ConfirmacionCompra from './tienda/ConfirmacionCompra';
 import MisCompras from './tienda/MisCompras';
+import RutaProtegidaCliente from './tienda/RutaProtegidaCliente';
+
 
 // Componentes temporales o en desarrollo para las siguientes tareas de cliente
 function EnConstruccion({ titulo }) {
@@ -27,18 +29,22 @@ export default function App() {
   return (
     <>
       <Routes>
-        {/* === MÓDULO PÚBLICO / PLATAFORMA (Anelhi) === */}
+        {/* === 1. LANDING SAAS PRINCIPAL (Para captar dueños de tiendas) === */}
         <Route path="/" element={<LandingPlataforma />} />
-        
-        {/* === MÓDULO TIENDA Y COMPRADOR (Anelhi) === */}
+
+        {/* === 2. VITRINA PÚBLICA DE LA TIENDA (Abierta a todo comprador) === */}
         <Route path="/tienda/:slug" element={<CatalogoTienda />} />
         <Route path="/tienda/:slug/login" element={<ClienteAuth />} />
         <Route path="/tienda/:slug/carrito" element={<CarritoTienda />} />
-        <Route path="/tienda/:slug/checkout" element={<CheckoutTienda />} />
-        <Route path="/tienda/:slug/confirmacion" element={<ConfirmacionCompra />} />
-        <Route path="/tienda/:slug/mis-compras" element={<MisCompras />} />
 
-        {/* === MÓDULO ADMINISTRADOR Y ONBOARDING (Kiara) === */}
+        {/* === 3. ZONA PRIVADA DEL COMPRADOR (Requiere Login de Cliente) === */}
+        <Route element={<RutaProtegidaCliente />}>
+          <Route path="/tienda/:slug/checkout" element={<CheckoutTienda />} />
+          <Route path="/tienda/:slug/confirmacion" element={<ConfirmacionCompra />} />
+          <Route path="/tienda/:slug/mis-compras" element={<MisCompras />} />
+        </Route>
+
+        {/* === 4. MÓDULO ADMINISTRADOR Y ONBOARDING (Kiara) === */}
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/registro-tienda" element={<RegistroTienda />} />
         <Route element={<RutaProtegida />}>

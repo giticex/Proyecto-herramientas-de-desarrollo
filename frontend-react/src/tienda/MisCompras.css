@@ -2,7 +2,7 @@
 .mis-compras-page {
   max-width: 800px;
   margin: 0 auto;
-  padding: 80px 20px 40px;
+  padding: 112px 20px 60px;
 }
 
 .compras-header {
@@ -17,12 +17,42 @@
   color: var(--text, #1d1d1f);
 }
 
+.compras-header p {
+  margin-top: 6px;
+  color: var(--text-soft, #6e6e73);
+  font-size: 15px;
+}
+
+/* Estado vacío cuando aún no hay órdenes */
+.compras-vacio {
+  text-align: center;
+  padding: 64px 24px;
+  background: var(--bg-soft, #f5f5f7);
+  border-radius: 18px;
+  border: 1px solid var(--line, #e5e5ea);
+}
+
+.compras-vacio h3 {
+  font-size: 20px;
+  color: var(--text, #1d1d1f);
+}
+
+.compras-vacio p {
+  color: var(--text-soft, #6e6e73);
+  margin: 8px 0 24px;
+  font-size: 15px;
+}
+
+.lista-compras {
+  display: grid;
+  gap: 16px;
+}
+
 .compra-card {
   background: #ffffff;
   border: 1px solid var(--line, #e5e5ea);
   border-radius: 16px;
   padding: 24px;
-  margin-bottom: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
 }
 
@@ -33,6 +63,8 @@
   margin-bottom: 16px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--bg-soft, #f5f5f7);
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .compra-id {
@@ -44,6 +76,7 @@
 .compra-fecha {
   color: var(--text-soft, #6e6e73);
   font-size: 14px;
+  margin-top: 2px;
 }
 
 .estado-badge {
@@ -55,15 +88,35 @@
   color: #0071e3;
 }
 
+.estado-badge.emitido,
 .estado-badge.entregado {
   background: #e8f5e9;
-  color: #34c759;
+  color: #2e7d32;
+}
+
+/* Datos tributarios del comprobante */
+.compra-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-size: 13px;
+  color: var(--text-soft, #6e6e73);
+  background: var(--bg-soft, #f5f5f7);
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.compra-meta strong {
+  color: var(--text, #1d1d1f);
 }
 
 .compra-detalle {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .compra-articulos {
@@ -71,8 +124,45 @@
   font-size: 14px;
 }
 
+.compra-montos {
+  text-align: right;
+}
+
+.compra-igv {
+  display: block;
+  font-size: 12px;
+  color: var(--text-soft, #6e6e73);
+  margin-bottom: 2px;
+}
+
 .compra-total {
   font-size: 20px;
   font-weight: 800;
   color: var(--text, #1d1d1f);
+}
+
+/* Navegación superior en el header azul */
+.nav-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 15px;
+  transition: color 0.3s ease;
+}
+
+.nav-volver:hover {
+  color: #e3f2fd;
+}
+
+.icono-flecha {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-volver:hover .icono-flecha {
+  transform: translateX(-6px);
 }

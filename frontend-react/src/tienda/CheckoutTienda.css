@@ -1,53 +1,184 @@
-/* ===== CHECKOUT DE COMPRA ===== */
-.checkout-page {
-  max-width: 600px;
+.checkout-page-bg {
+  background-color: #f5f5f7;
+  min-height: calc(100vh - 64px);
+  padding: 96px 20px 60px;
+}
+
+.checkout-container {
+  max-width: 1020px;
   margin: 0 auto;
-  padding: 40px 20px;
 }
 
 .checkout-header {
-  margin-bottom: 32px;
-  text-align: center;
+  margin-bottom: 28px;
 }
 
 .checkout-header h2 {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
-  color: var(--text, #1d1d1f);
+  color: #1d1d1f;
 }
 
-.checkout-form {
+.checkout-header p {
+  color: #6e6e73;
+  margin-top: 6px;
+}
+
+.checkout-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.checkout-card,
+.checkout-resumen-card {
   background: #ffffff;
-  padding: 32px;
   border-radius: 24px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.05);
-  border: 1px solid var(--line, #e5e5ea);
+  padding: 32px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+}
+
+.checkout-card h3,
+.checkout-resumen-card h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1d1d1f;
+  margin-bottom: 16px;
+}
+
+/* Selector Boleta / Factura */
+.comprobante-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.comprobante-btn {
+  background: #f5f5f7;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  padding: 14px;
+  text-align: left;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 4px;
+  transition: all 0.2s ease;
 }
 
-.tipo-comprobante {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 8px;
+.comprobante-btn strong {
+  font-size: 15px;
+  color: #1d1d1f;
 }
 
-.radio-label {
+.comprobante-btn span {
+  font-size: 12px;
+  color: #6e6e73;
+}
+
+.comprobante-btn.activo {
+  background: #ffffff;
+  border-color: var(--color-primario, #0071e3);
+  box-shadow: 0 4px 14px rgba(0, 113, 227, 0.12);
+}
+
+.checkout-fields {
+  display: grid;
+  gap: 18px;
+}
+
+/* Opciones de pago */
+.pago-opciones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.pago-chip {
   display: flex;
   align-items: center;
   gap: 8px;
-  cursor: pointer;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e5e5ea;
+  font-size: 14px;
   font-weight: 600;
+  cursor: pointer;
 }
 
-.checkout-resumen {
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid var(--line, #e5e5ea);
+.pago-chip.activo {
+  border-color: var(--color-primario, #0071e3);
+  background: #f0f7ff;
+}
+
+.pago-chip input {
+  width: auto;
+}
+
+/* Resumen Tributario */
+.checkout-items-mini {
+  border-bottom: 1px solid #e5e5ea;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.mini-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  font-size: 14px;
+  color: #1d1d1f;
+}
+
+.desglose-tributario {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.desglose-fila {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  color: #6e6e73;
+}
+
+.desglose-fila.total {
   font-size: 20px;
   font-weight: 800;
+  color: #1d1d1f;
+  border-top: 1px solid #e5e5ea;
+  padding-top: 14px;
+  margin-top: 6px;
+}
+
+.btn-confirmar-pago {
+  width: 100%;
+  background: var(--color-primario, #0071e3);
+  color: #ffffff;
+  border: none;
+  border-radius: 14px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.btn-confirmar-pago:hover {
+  transform: translateY(-2px);
+}
+
+.btn-confirmar-pago:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .checkout-grid {
+    grid-template-columns: 1fr;
+  }
 }

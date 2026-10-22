@@ -8,7 +8,7 @@ import './MisCompras.css';
 export default function MisCompras() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { cliente } = useClienteStore();
+  const { cliente, misCompras } = useClienteStore();
 
   // Protegemos la ruta
   useEffect(() => {
@@ -18,13 +18,15 @@ export default function MisCompras() {
     }
   }, [cliente, navigate, slug]);
 
-  // Historial simulado (Mock Data)
-  const historialMock = [
-    { id: '102938', fecha: '20 Oct 2026', total: 148.70, items: 3, estado: 'En camino' },
-    { id: '102844', fecha: '05 Oct 2026', total: 59.00, items: 1, estado: 'Entregado' }
-  ];
-
-  const navLinks = <Link to={`/tienda/${slug}`}>← Volver a la Tienda</Link>;
+  const navLinks = (
+    <Link to={`/tienda/${slug}`} className="nav-volver">
+      <svg className="icono-flecha" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      Volver a la Tienda
+    </Link>
+  );
 
   if (!cliente) return null;
 
@@ -32,33 +34,68 @@ export default function MisCompras() {
     <PlantillaTienda navLinks={navLinks}>
       <div className="mis-compras-page">
         <div className="compras-header">
-          <h2>Mis Compras</h2>
-          <p>Hola, {cliente.nombre}. Este es tu historial de pedidos.</p>
+          <h2>Mis Compras y Comprobantes</h2>
+          <p>Hola, <strong>{cliente.nombre}</strong>. Este es tu historial de boletas y facturas electrónicas.</p>
         </div>
 
-        <div className="lista-compras">
-          {historialMock.map((compra) => (
-            <div key={compra.id} className="compra-card">
-              <div className="compra-top">
-                <div>
-                  <div className="compra-id">Pedido #{compra.id}</div>
-                  <div className="compra-fecha">{compra.fecha}</div>
-                </div>
-                <div className={`estado-badge ${compra.estado.toLowerCase()}`}>
-                  {compra.estado}
-                </div>
-              </div>
-              <div className="compra-detalle">
-                <div className="compra-articulos">
-                  {compra.items} {compra.items === 1 ? 'artículo' : 'artículos'}
-                </div>
-                <div className="compra-total">
-                  S/ {compra.total.toFixed(2)}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        {misCompras.length === 0 ? (
+          <div className="compras-vacio">
+            <h3>Aún no tienes compras registradas</h3>
+            <p>Explora el catálogo y realiza tu primer pedido para ver tus comprobantes aquí.</p>
+            <Link to={`/tienda/${slug}`} className="btn">
+              Ir al Catálogo
+            </Link>
+          </div>
+        ) : (
+          <div className="lista-compras">
+            {misCompras.map((compra) => {
+              const cantidadArticulos = compra.items.reduce((acc, item) => acc + item.cantidad, 0);
+              const fechaFormateada = new Date(compra.fecha).toLocaleDateString('es-PE', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+              });
+
+              return (
+                <article key={compra.idOrden} className="compra-card">
+                  <div className="compra-top">
+                    <div>
+                      <div className="compra-id">
+                        {compra.tipoComprobante === 'factura' ? 'Factura' : 'Boleta'} {compra.numeroComprobante}
+                      </div>
+                      <div className="compra-fecha">
+                        Emitido el {fechaFormateada} · {compra.tiendaNombre}
+                      </div>
+                    </div>
+                    <span className="estado-badge emitido">
+                      Emitido / Pagado
+                    </span>
+                  </div>
+
+                  <div className="compra-meta">
+                    <span><strong>Cliente / Razón Social:</strong> {compra.razonSocial}</span>
+                    <span><strong>{compra.tipoComprobante === 'factura' ? 'RUC' : 'DNI'}:</strong> {compra.documento}</span>
+                    <span><strong>Envío:</strong> {compra.direccion}</span>
+                  </div>
+
+                  <div className="compra-detalle">
+                    <div className="compra-articulos">
+                      {cantidadArticulos} {cantidadArticulos === 1 ? 'artículo' : 'artículos'} · Pago con {compra.metodoPago.toUpperCase()}
+                    </div>
+                    <div className="compra-montos">
+                      <span className="compra-igv">
+                        Op. Gravada: S/ {Number(compra.opGravada).toFixed(2)} · IGV: S/ {Number(compra.igv).toFixed(2)}
+                      </span>
+                      <div className="compra-total">
+                        S/ {Number(compra.total).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
     </PlantillaTienda>
   );
