@@ -1,19 +1,11 @@
-import { useEffect } from 'react';
-import { useStore } from '../store/store';
 import PlantillaTienda from '../components/PlantillaTienda';
 import PanelNavLinks from './PanelNavLinks';
 
-// Envoltorio común de los paneles protegidos: carga la tienda al montar
-// (equivalente al evento tienda-lista de nav.js) y aplica PlantillaTienda
-// con los nav-links del panel.
+// Envoltorio común de los paneles protegidos. La tienda ya está en el store
+// (vino con el token al hacer login/registro, o se restauró de la caché
+// local al recargar la página): el panel usa solo la tienda del token, no
+// vuelve a pedirla por slug.
 export default function PanelLayout({ children }) {
-  const getTienda = useStore((estado) => estado.getTienda);
-
-  useEffect(() => {
-    getTienda();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return (
     <PlantillaTienda navLinks={<PanelNavLinks />}>
       {children}
