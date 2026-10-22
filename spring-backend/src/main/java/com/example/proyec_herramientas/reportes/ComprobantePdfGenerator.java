@@ -14,17 +14,18 @@ import com.itextpdf.text.Chunk;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.Element;
 import com.itextpdf.text.Font;
-import com.itextpdf.text.FontFactory;
 import com.itextpdf.text.Image;
 import com.itextpdf.text.PageSize;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Base64;
@@ -40,11 +41,18 @@ import java.util.List;
  */
 public class ComprobantePdfGenerator {
 
-    private static final Font FONT_TITLE = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 15);
-    private static final Font FONT_NORMAL = FontFactory.getFont(FontFactory.HELVETICA, 9);
-    private static final Font FONT_SMALL = FontFactory.getFont(FontFactory.HELVETICA, 7);
-    private static final Font FONT_BOLD = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
-    private static final Font FONT_BOLD_SMALL = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7);
+    /**
+     * DejaVu Sans se incrusta con IDENTITY_H para que el PDF conserve tildes,
+     * la 'ñ' y cualquier caracter UTF-8 sin depender de las fuentes del sistema.
+     */
+    private static final BaseFont FUENTE_NORMAL = cargarFuente("/fonts/DejaVuSans.ttf");
+    private static final BaseFont FUENTE_NEGRITA = cargarFuente("/fonts/DejaVuSans-Bold.ttf");
+
+    private static final Font FONT_TITLE = fuente(15, true);
+    private static final Font FONT_NORMAL = fuente(9, false);
+    private static final Font FONT_SMALL = fuente(7, false);
+    private static final Font FONT_BOLD = fuente(9, true);
+    private static final Font FONT_BOLD_SMALL = fuente(7, true);
 
     /** Lado del codigo QR impreso: 4,2 cm (el maximo_normativo es 6 cm). */
     private static final float LADO_QR_PT = 119f;
@@ -85,7 +93,7 @@ public class ComprobantePdfGenerator {
             domicilio.setAlignment(Element.ALIGN_CENTER);
             doc.add(domicilio);
 
-            Paragraph titulo = new Paragraph(comprobante.getTipoComprobanteDescripcion() + " ELECTRÃ“NICA", FONT_TITLE);
+            Paragraph titulo = new Paragraph(comprobante.getTipoComprobanteDescripcion() + " ELECTRÓNICA", FONT_TITLE);
             titulo.setAlignment(Element.ALIGN_CENTER);
             titulo.setSpacingBefore(6);
             doc.add(titulo);
@@ -94,7 +102,7 @@ public class ComprobantePdfGenerator {
             numero.setAlignment(Element.ALIGN_CENTER);
             doc.add(numero);
 
-            Paragraph fecha = new Paragraph("Fecha de emisiÃ³n: " + comprobante.getFechaEmision()
+            Paragraph fecha = new Paragraph("Fecha de emisión: " + comprobante.getFechaEmision()
                     + " " + comprobante.getHoraEmision(), FONT_NORMAL);
             fecha.setAlignment(Element.ALIGN_CENTER);
             doc.add(fecha);
@@ -107,7 +115,7 @@ public class ComprobantePdfGenerator {
             datos.setWidths(new float[]{32, 68});
             datos.getDefaultCell().setBorder(Rectangle.NO_BORDER);
 
-            datos.addCell(PdfUtil.celdaSinBorde("SeÃ±or(es):", FONT_BOLD));
+            datos.addCell(PdfUtil.celdaSinBorde("Señor(es):", FONT_BOLD));
             datos.addCell(PdfUtil.celdaSinBorde(valor(receptor.getRazonSocial()), FONT_NORMAL));
 
             String tipoDocumento = "1".equals(receptor.getTipoDocumento()) ? "RUC" : "DNI";
@@ -116,7 +124,7 @@ public class ComprobantePdfGenerator {
 
             DomicilioDTO domicilioReceptor = receptor.getDomicilioFiscal();
             if (domicilioReceptor != null && !valor(domicilioReceptor.getDireccion()).isBlank()) {
-                datos.addCell(PdfUtil.celdaSinBorde("DirecciÃ³n:", FONT_BOLD));
+                datos.addCell(PdfUtil.celdaSinBorde("Dirección:", FONT_BOLD));
                 datos.addCell(PdfUtil.celdaSinBorde(domicilioReceptor.getDireccion()
                         + " - " + valor(domicilioReceptor.getDistrito()), FONT_NORMAL));
             }
@@ -128,9 +136,9 @@ public class ComprobantePdfGenerator {
             tabla.setWidthPercentage(100);
             tabla.setWidths(new float[]{0.7f, 1.1f, 4.4f, 1.8f, 1.8f, 1.4f, 1.8f});
 
-            PdfUtil.addHeader(tabla, "NÂ°", FONT_BOLD_SMALL);
+            PdfUtil.addHeader(tabla, "N°", FONT_BOLD_SMALL);
             PdfUtil.addHeader(tabla, "CANT", FONT_BOLD_SMALL);
-            PdfUtil.addHeader(tabla, "DESCRIPCIÃ“N", FONT_BOLD_SMALL);
+            PdfUtil.addHeader(tabla, "DESCRIPCIÓN", FONT_BOLD_SMALL);
             PdfUtil.addHeader(tabla, "V. UNIT", FONT_BOLD_SMALL);
             PdfUtil.addHeader(tabla, "P. UNIT", FONT_BOLD_SMALL);
             PdfUtil.addHeader(tabla, "IGV", FONT_BOLD_SMALL);
@@ -220,7 +228,7 @@ public class ComprobantePdfGenerator {
 
                 PdfPCell celdaResumen = new PdfPCell();
                 celdaResumen.setBorder(Rectangle.NO_BORDER);
-                celdaResumen.addElement(new Paragraph("Valor Resumen (cÃ³digo hash):", FONT_BOLD_SMALL));
+                celdaResumen.addElement(new Paragraph("Valor Resumen (código hash):", FONT_BOLD_SMALL));
                 celdaResumen.addElement(new Paragraph(valor(comprobante.getHashComprobante()), FONT_SMALL));
                 if (comprobante.getValorResumen() != null && !comprobante.getValorResumen().isBlank()) {
                     celdaResumen.addElement(new Paragraph("Valor Resumen (base 64):", FONT_BOLD_SMALL));
@@ -235,6 +243,24 @@ public class ComprobantePdfGenerator {
                 doc.close();
             }
         }
+    }
+
+    private static BaseFont cargarFuente(String ruta) {
+        try (InputStream entrada = ComprobantePdfGenerator.class.getResourceAsStream(ruta)) {
+            if (entrada == null) {
+                throw new IllegalStateException("No se encontro la fuente " + ruta + " en el classpath");
+            }
+            return BaseFont.createFont(ruta, BaseFont.IDENTITY_H, BaseFont.EMBEDDED,
+                    true, entrada.readAllBytes(), null);
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("No se pudo cargar la fuente Unicode " + ruta, e);
+        }
+    }
+
+    private static Font fuente(float tamano, boolean negrita) {
+        return new Font(negrita ? FUENTE_NEGRITA : FUENTE_NORMAL, tamano);
     }
 
     private static void fila(PdfPTable tabla, String etiqueta, String valor, Font fuente) {
