@@ -5,11 +5,13 @@ DROP TABLE IF EXISTS detalle_venta;
 DROP TABLE IF EXISTS venta;
 DROP TABLE IF EXISTS producto;
 DROP TABLE IF EXISTS cliente;
+DROP TABLE IF EXISTS usuario;
 DROP TABLE IF EXISTS persona;
 DROP TABLE IF EXISTS medio_pago;
 DROP TABLE IF EXISTS tipo_documento;
 DROP TABLE IF EXISTS parametro;
 DROP TABLE IF EXISTS correlativo;
+DROP TABLE IF EXISTS rol;
 
 CREATE TABLE parametro (
     id_parametro VARCHAR(30)  NOT NULL,
@@ -30,6 +32,14 @@ CREATE TABLE medio_pago (
     PRIMARY KEY (id_medio_pago)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Catalogo de roles: ADMIN para el panel, CLIENTE para el comprador.
+CREATE TABLE rol (
+    id_rol      VARCHAR(15)  NOT NULL,
+    nombre      VARCHAR(50)  NOT NULL,
+    descripcion VARCHAR(100) NOT NULL,
+    PRIMARY KEY (id_rol)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE persona (
     id_persona       VARCHAR(25) NOT NULL,
     nombre           VARCHAR(50) NOT NULL,
@@ -42,6 +52,22 @@ CREATE TABLE persona (
     UNIQUE KEY uk_persona_correo (correo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE usuario (
+    id_usuario INT          NOT NULL AUTO_INCREMENT,
+    usuario    VARCHAR(50)  NOT NULL,
+    contrasena VARCHAR(255) NOT NULL,
+    id_persona VARCHAR(25)  NOT NULL,
+    id_rol     VARCHAR(15)  NOT NULL DEFAULT 'ADMIN',
+    PRIMARY KEY (id_usuario),
+    UNIQUE KEY uk_usuario_usuario (usuario),
+    KEY idx_usuario_id_persona (id_persona),
+    KEY idx_usuario_id_rol (id_rol),
+    CONSTRAINT fk_usuario_persona FOREIGN KEY (id_persona)
+        REFERENCES persona (id_persona),
+    CONSTRAINT fk_usuario_rol FOREIGN KEY (id_rol)
+        REFERENCES rol (id_rol)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE cliente (
     id_cliente VARCHAR(20)  NOT NULL,
     nombre     VARCHAR(50)  NOT NULL,
@@ -49,8 +75,12 @@ CREATE TABLE cliente (
     telefono   VARCHAR(15),
     contrasena VARCHAR(255) NOT NULL,
     correo     VARCHAR(100),
+    id_rol     VARCHAR(15)  NOT NULL DEFAULT 'CLIENTE',
     UNIQUE KEY uk_cliente_correo (correo),
-    PRIMARY KEY (id_cliente)
+    PRIMARY KEY (id_cliente),
+    KEY idx_cliente_id_rol (id_rol),
+    CONSTRAINT fk_cliente_rol FOREIGN KEY (id_rol)
+        REFERENCES rol (id_rol)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE producto (

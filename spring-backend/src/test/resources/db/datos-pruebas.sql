@@ -1,5 +1,5 @@
--- Catalogos que las pruebas no borran. Los clientes, personas y productos los
--- crea cada test en su propio @BeforeEach.
+-- Catalogos que las pruebas no borran. Los clientes, personas, usuarios y
+-- productos los crea cada test en su propio @BeforeEach.
 INSERT INTO tipo_documento VALUES
     ('TD001', 'Boleta'),
     ('TD002', 'Factura');
@@ -29,6 +29,12 @@ INSERT INTO parametro (id_parametro, valor, descripcion) VALUES
     ('URL_REPRESENTACION_IMPRESA', 'https://www.techzone.pe/comprobantes', 'URL de consulta de la representacion impresa'),
     ('CLIENTE_MOSTRADOR', 'CLI001', 'Cliente por defecto de las ventas de mostrador'),
     ('PERSONA_MOSTRADOR', 'PER001', 'Persona por defecto de las ventas de mostrador');
+
+-- Roles del sistema. Las pruebas de seguridad usan estas cuentas para
+-- comprobar que ADMIN entra al panel y CLIENTE no.
+INSERT INTO rol (id_rol, nombre, descripcion) VALUES
+    ('ADMIN', 'Administrador', 'Gestiona productos, historial general, clientes y alertas de stock'),
+    ('CLIENTE', 'Cliente', 'Compra en la tienda, ve su carrito y sus compras');
 
 INSERT INTO medio_pago VALUES
     ('MP001', 'Efectivo'),

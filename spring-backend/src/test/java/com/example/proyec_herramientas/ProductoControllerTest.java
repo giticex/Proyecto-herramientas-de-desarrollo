@@ -1,13 +1,16 @@
 package com.example.proyec_herramientas;
 
 import com.example.proyec_herramientas.persistence.Producto;
+import com.example.proyec_herramientas.repository.PersonaRepository;
 import com.example.proyec_herramientas.repository.ProductoRepository;
+import com.example.proyec_herramientas.repository.UsuarioRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -38,11 +41,22 @@ class ProductoControllerTest {
     private ProductoRepository productoRepository;
 
     @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private PersonaRepository personaRepository;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
+    // Gestionar productos es del ADMIN: las pruebas entran con su token.
+    private String token;
+
     @BeforeEach
-    void limpiar() {
+    void limpiar() throws Exception {
         productoRepository.deleteAll();
+        CuentasTest.crearAdmin(usuarioRepository, personaRepository);
+        token = CuentasTest.token(mockMvc, objectMapper, CuentasTest.USUARIO_ADMIN, CuentasTest.CLAVE);
     }
 
     @Test
@@ -60,6 +74,7 @@ class ProductoControllerTest {
     @Test
     void crearProducto() throws Exception {
         mockMvc.perform(post("/productos")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(crearProducto(10, "Webcam HD", 3, 75.0, "Accesorios"))))
                 .andExpect(status().isCreated())
@@ -73,6 +88,7 @@ class ProductoControllerTest {
         productoRepository.save(new Producto(1, "Mouse Gamer", 8, new BigDecimal("50.00"), "Accesorios"));
 
         mockMvc.perform(post("/productos")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(crearProducto(0, "Audífonos BT", 12, 89.9, "Audio"))))
                 .andExpect(status().isCreated())
@@ -84,6 +100,7 @@ class ProductoControllerTest {
         productoRepository.save(new Producto(1, "Mouse Gamer", 8, new BigDecimal("50.00"), "Accesorios"));
 
         mockMvc.perform(put("/productos/1")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(crearProducto(1, "Mouse Pro", 20, 60.0, "Accesorios"))))
                 .andExpect(status().isOk())
@@ -95,6 +112,7 @@ class ProductoControllerTest {
     @Test
     void actualizarProductoNoExistenteDevuelve404() throws Exception {
         mockMvc.perform(put("/productos/99")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(crearProducto(99, "Inexistente", 1, 1.0, "X"))))
                 .andExpect(status().isNotFound());
@@ -104,7 +122,8 @@ class ProductoControllerTest {
     void eliminarProducto() throws Exception {
         productoRepository.save(new Producto(1, "Mouse Gamer", 8, new BigDecimal("50.00"), "Accesorios"));
 
-        mockMvc.perform(delete("/productos/1"))
+        mockMvc.perform(delete("/productos/1")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/productos"))
@@ -114,7 +133,8 @@ class ProductoControllerTest {
 
     @Test
     void eliminarProductoNoExistenteDevuelve404() throws Exception {
-        mockMvc.perform(delete("/productos/1"))
+        mockMvc.perform(delete("/productos/1")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isNotFound());
     }
 
@@ -125,6 +145,7 @@ class ProductoControllerTest {
         atributos.put("color", "negro");
 
         mockMvc.perform(post("/productos")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 crearProductoConAtributos(20, "Polo Deportivo", 15, 45.0, "Ropa", atributos))))
@@ -146,6 +167,7 @@ class ProductoControllerTest {
         atributos.put("conexion", "inalámbrico");
 
         mockMvc.perform(put("/productos/1")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 crearProductoConAtributos(1, "Mouse Pro", 20, 60.0, "Accesorios", atributos))))

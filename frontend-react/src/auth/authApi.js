@@ -1,8 +1,11 @@
-// TODO: backend aun no tiene POST /auth/login. Cuando exista, reemplazar el
-// cuerpo de esta función por un fetch real { usuario, clave } -> { token } y
-// solo guardar la sesión si responde 200 (igual que indica login.js viejo).
-export async function loginApi(usuario) {
-  await new Promise((resolve) => setTimeout(resolve, 150));
-  const token = `demo-token-${Date.now()}`;
-  return { usuario, token };
+// Login real contra POST /auth/login. El backend decide el rol de la cuenta
+// (ADMIN o CLIENTE) y lo devuelve junto con el token; el frontend solo lo
+// guarda y lo revisa antes de dejar entrar a cada zona.
+import { apiClient } from '../api/client';
+
+// Devuelve { token, usuario, rol, nombreRol, idCliente, nombre, ... }.
+// Si las credenciales no coinciden, apiClient lanza el error con el mensaje
+// que devuelve el backend (401).
+export async function loginApi(usuario, clave) {
+  return apiClient.post('/auth/login', { usuario, clave });
 }

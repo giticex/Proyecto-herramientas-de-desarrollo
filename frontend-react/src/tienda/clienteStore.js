@@ -20,6 +20,8 @@ export const useClienteStore = create((set, get) => ({
   misCompras: leerJson(COMPRAS_KEY, []),
 
   // --- SESIÓN DEL CLIENTE ---
+  // La sesión guarda token y rol: el rol (CLIENTE) lo devuelve el backend y
+  // es lo que Revisa RutaProtegidaCliente antes de abrir el checkout.
   loginCliente(datosCliente) {
     localStorage.setItem(CLIENTE_SESION_KEY, JSON.stringify(datosCliente));
     set({ cliente: datosCliente });
