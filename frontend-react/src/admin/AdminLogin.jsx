@@ -5,17 +5,20 @@ import { loginApi } from '../auth/authApi';
 import './AdminLogin.css';
 
 // Puerto de frontend/login.html + frontend/js/login.js: mismos campos,
-// validación y mensajes en español.
+// validación y mensajes en español. El login es real (POST /auth/login) y
+// solo deja entrar a quien tiene el rol ADMIN.
 export default function AdminLogin() {
   const [usuario, setUsuario] = useState('');
   const [clave, setClave] = useState('');
   const [errores, setErrores] = useState({ usuario: '', clave: '' });
+  const [error, setError] = useState('');
   const [enviando, setEnviando] = useState(false);
   const login = useSesion((estado) => estado.login);
   const navigate = useNavigate();
 
   function limpiarError(campo) {
     setErrores((prev) => ({ ...prev, [campo]: '' }));
+    setError('');
   }
 
   async function manejarSubmit(evento) {
@@ -27,12 +30,17 @@ export default function AdminLogin() {
     if (errorUsuario || errorClave) return;
 
     setEnviando(true);
+    setError('');
     try {
-      // TODO: cuando loginApi haga POST /auth/login de verdad, solo
-      // redirigir si la respuesta es 200.
-      const { token } = await loginApi(u);
-      login(u, token);
+      const respuesta = await loginApi(u, clave);
+      if (respuesta.rol !== 'ADMIN') {
+        setError('Tu cuenta no tiene el rol ADMIN para entrar al panel.');
+        return;
+      }
+      login(respuesta.usuario ?? u, respuesta.token, respuesta.rol);
       navigate('/admin/productos');
+    } catch (problema) {
+      setError(problema.message || 'No se pudo iniciar sesión.');
     } finally {
       setEnviando(false);
     }
@@ -75,6 +83,7 @@ export default function AdminLogin() {
             />
             <span className="error" role="alert">{errores.clave}</span>
           </div>
+          {error && <p className="error" role="alert">{error}</p>}
           <button className="btn block" type="submit" disabled={enviando}>Entrar</button>
           <p className="small muted">¿Sin tienda todavía? <Link to="/registro-tienda">Crea una</Link></p>
         </form>
