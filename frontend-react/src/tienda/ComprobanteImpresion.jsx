@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { apiClient } from '../api/client';
 import { urlComprobanteQr } from '../api/comprobantesApi';
 import { showToast } from '../components/toastBus';
@@ -148,7 +149,9 @@ export default function ComprobanteImpresion({ comprobante, onClose }) {
     }
   };
 
-  return (
+  // Se monta directamente en <body> para que al imprimir se pueda ocultar el
+  // resto de la aplicacion sin que su layout desplace el comprobante.
+  return createPortal(
     <div className="comprobante-overlay" role="dialog" aria-modal="true">
       <div className="comprobante-modal">
         <div className="comprobante-modal-barra">
@@ -397,6 +400,7 @@ export default function ComprobanteImpresion({ comprobante, onClose }) {
           </section>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
