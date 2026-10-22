@@ -11,8 +11,20 @@ public class ProductoDTO {
     private double precio;
     private String categoria;
 
+    /** Codigo del item en el catalogo del emisor (se envia al CDR de SUNAT). */
+    private String codigo = "";
+
+    /** Unidad de medida (catalogo 03 SUNAT): NIU, UN, ZZ, KG... */
+    private String unidadMedida = "NIU";
+
+    /** Afectacion del IGV (catalogo 07 SUNAT): 01 gravada, 02 inafecta, 03 exonerada, 04 gratuita. */
+    private String afectacionIgv = "01";
+
     // Atributos libres por rubro (ej. talla, color) que usa el catalogo para filtros dinamicos.
     private Map<String, String> atributos = new HashMap<>();
+
+    /** Tienda duena del producto. Solo lectura: lo pone el backend desde el token. */
+    private Integer idTienda;
 
     public String getCategoria() {
         return categoria;
@@ -20,6 +32,30 @@ public class ProductoDTO {
 
     public void setCategoria(String categoria) {
         this.categoria = categoria;
+    }
+
+    public String getCodigo() {
+        return codigo;
+    }
+
+    public void setCodigo(String codigo) {
+        this.codigo = codigo;
+    }
+
+    public String getUnidadMedida() {
+        return unidadMedida;
+    }
+
+    public void setUnidadMedida(String unidadMedida) {
+        this.unidadMedida = unidadMedida;
+    }
+
+    public String getAfectacionIgv() {
+        return afectacionIgv;
+    }
+
+    public void setAfectacionIgv(String afectacionIgv) {
+        this.afectacionIgv = afectacionIgv;
     }
 
     public ProductoDTO() {
@@ -70,5 +106,13 @@ public class ProductoDTO {
 
     public void setAtributos(Map<String, String> atributos) {
         this.atributos = atributos != null ? atributos : new HashMap<>();
+    }
+
+    public Integer getIdTienda() {
+        return idTienda;
+    }
+
+    public void setIdTienda(Integer idTienda) {
+        this.idTienda = idTienda;
     }
 }

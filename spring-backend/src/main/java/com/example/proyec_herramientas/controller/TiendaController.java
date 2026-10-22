@@ -1,8 +1,8 @@
 package com.example.proyec_herramientas.controller;
 
-import com.example.proyec_herramientas.config.UsuarioAutenticado;
 import com.example.proyec_herramientas.model.ProductoDTO;
 import com.example.proyec_herramientas.model.TiendaDTO;
+import com.example.proyec_herramientas.security.SesionPrincipal;
 import com.example.proyec_herramientas.service.ProductoService;
 import com.example.proyec_herramientas.service.TiendaService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -43,7 +43,7 @@ public class TiendaController {
     // Solo el ADMIN dueño de esa tienda.
     @PutMapping("/{slug}")
     public TiendaDTO actualizar(@PathVariable String slug, @RequestBody TiendaDTO tienda,
-            @AuthenticationPrincipal UsuarioAutenticado admin) {
-        return tiendaService.actualizar(slug, tienda, admin.getIdTienda());
+            @AuthenticationPrincipal SesionPrincipal admin) {
+        return tiendaService.actualizar(slug, tienda, admin.idTienda());
     }
 }

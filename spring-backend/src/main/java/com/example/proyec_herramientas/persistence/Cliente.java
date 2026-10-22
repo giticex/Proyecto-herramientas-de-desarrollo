@@ -31,6 +31,12 @@ public class Cliente {
     @Column(name = "correo", length = 100)
     private String correo;
 
+    // FK a la tabla rol. El comprador es CLIENTE por defecto: es el rol con
+    // menos permisos, asi que una cuenta creada sin rol explicito no abre
+    // puertas de mas.
+    @Column(name = "id_rol", length = 15, nullable = false)
+    private String idRol = Rol.CLIENTE;
+
     public Cliente() {
     }
 
@@ -88,6 +94,14 @@ public class Cliente {
 
     public void setCorreo(String correo) {
         this.correo = correo;
+    }
+
+    public String getIdRol() {
+        return idRol;
+    }
+
+    public void setIdRol(String idRol) {
+        this.idRol = idRol;
     }
 
     public String getNombreCompleto() {

@@ -1,0 +1,397 @@
+.comprobante-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 50;
+}
+
+.comprobante-modal {
+  background: #ffffff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 760px;
+  max-height: 92vh;
+  overflow: auto;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.25);
+}
+
+.comprobante-modal-barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e5e5ea;
+  position: sticky;
+  top: 0;
+  background: #ffffff;
+  border-radius: 20px 20px 0 0;
+}
+
+.comprobante-modal-acciones {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.comprobante-hoja {
+  padding: 24px 28px 32px;
+  color: #1d1d1f;
+  font-size: 13px;
+}
+
+/* --- Emisor --- */
+.ci-emisor {
+  text-align: center;
+  border-bottom: 1px solid #e5e5ea;
+  padding-bottom: 12px;
+}
+
+.ci-emisor h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.ci-nombre-comercial {
+  margin: 2px 0 0;
+  color: #6e6e73;
+  font-size: 12px;
+}
+
+.ci-ruc {
+  margin: 6px 0 0;
+  font-weight: 700;
+}
+
+.ci-direccion {
+  margin: 2px 0 0;
+  color: #6e6e73;
+  font-size: 12px;
+}
+
+/* --- Cabecera del comprobante --- */
+.ci-titulo {
+  text-align: center;
+  margin: 16px 0 4px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.ci-numero {
+  text-align: center;
+  margin: 0;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.ci-fecha {
+  text-align: center;
+  margin: 4px 0 16px;
+  color: #6e6e73;
+  font-size: 12px;
+}
+
+/* --- Datos del adquirente --- */
+.ci-datos {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.ci-dato {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 8px;
+}
+
+.ci-dato span {
+  font-weight: 700;
+}
+
+/* --- Detalle --- */
+.ci-items {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+  font-size: 12px;
+}
+
+.ci-items th {
+  border-bottom: 1px solid #1d1d1f;
+  padding: 6px 4px;
+  text-align: left;
+  font-size: 11px;
+}
+
+.ci-items td {
+  border-bottom: 1px solid #e5e5ea;
+  padding: 6px 4px;
+  vertical-align: top;
+}
+
+.ci-centro {
+  text-align: center;
+}
+
+.ci-derecha {
+  text-align: right;
+}
+
+.ci-nota-item {
+  font-style: normal;
+  color: #6e6e73;
+  font-size: 11px;
+}
+
+/* --- Totales --- */
+.ci-totales {
+  display: grid;
+  gap: 4px;
+  width: 320px;
+  margin-left: auto;
+  margin-bottom: 10px;
+}
+
+.ci-fila {
+  display: flex;
+  justify-content: space-between;
+}
+
+.ci-fila-total {
+  border-top: 1px solid #1d1d1f;
+  margin-top: 4px;
+  padding-top: 6px;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.ci-letras-vacia {
+  color: #6e6e73;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.ci-letras {
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+.ci-pago {
+  margin: 0 0 4px;
+}
+
+/* --- Leyendas --- */
+.ci-leyendas {
+  margin-top: 14px;
+  display: grid;
+  gap: 2px;
+}
+
+.ci-leyendas p {
+  margin: 0;
+  font-size: 11px;
+  color: #1d1d1f;
+}
+
+/* --- Pie: QR y valor resumen --- */
+.ci-pie {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 16px;
+  align-items: start;
+  margin-top: 18px;
+  border-top: 1px solid #e5e5ea;
+  padding-top: 14px;
+}
+
+.ci-qr img {
+  width: 200px;
+  height: 200px;
+  display: block;
+  image-rendering: pixelated;
+}
+
+.ci-qr-vacio {
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #d1d1d6;
+  border-radius: 12px;
+  color: #6e6e73;
+  font-size: 12px;
+}
+
+.ci-resumen-titulo {
+  margin: 0;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.ci-resumen-valor {
+  margin: 0 0 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  word-break: break-all;
+  color: #6e6e73;
+}
+
+/* --- Marcadores visuales: QR, codigo hash y leyenda legal --- */
+.ci-marcadores {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  grid-template-areas:
+    'qr hash'
+    'qr legal';
+  gap: 14px;
+  margin-top: 18px;
+  border-top: 1px solid #e5e5ea;
+  padding-top: 14px;
+}
+
+.ci-marcador-qr {
+  grid-area: qr;
+}
+
+.ci-marcador-hash {
+  grid-area: hash;
+}
+
+.ci-marcador-legal {
+  grid-area: legal;
+}
+
+.ci-marcador {
+  border: 1px dashed #d1d1d6;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.ci-marcador-titulo {
+  margin: 0 0 6px;
+  font-weight: 800;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #1d1d1f;
+}
+
+.ci-marcador-nota {
+  margin: 4px 0 0;
+  font-size: 10px;
+  color: #6e6e73;
+}
+
+.ci-marcador-vacio {
+  margin: 0;
+  font-size: 11px;
+  color: #6e6e73;
+  font-style: italic;
+}
+
+.ci-marcador-legal p {
+  margin: 0 0 3px;
+  font-size: 11px;
+}
+
+.ci-qr-marcador {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+}
+
+.ci-qr-matriz {
+  display: grid;
+  grid-template-columns: repeat(11, 12px);
+  grid-template-rows: repeat(11, 12px);
+  gap: 1px;
+  padding: 6px;
+  background: #ffffff;
+  border: 1px solid #e5e5ea;
+}
+
+.ci-qr-matriz span.on {
+  background: #1d1d1f;
+}
+
+.ci-qr-matriz span.off {
+  background: #ffffff;
+}
+
+.ci-qr-pie {
+  font-size: 10px;
+  font-weight: 700;
+  color: #6e6e73;
+}
+
+.ci-qr-toggle {
+  margin-top: 4px;
+  font-size: 11px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-primario, #0071e3);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .ci-pie {
+    grid-template-columns: 1fr;
+  }
+
+  .ci-totales {
+    width: 100%;
+  }
+
+  .ci-marcadores {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'qr'
+      'hash'
+      'legal';
+  }
+}
+
+/* Impresion: solo la hoja del comprobante */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .comprobante-hoja,
+  .comprobante-hoja * {
+    visibility: visible;
+  }
+
+  .comprobante-modal-barra {
+    display: none;
+  }
+
+  .comprobante-overlay {
+    position: static;
+    background: none;
+    padding: 0;
+    display: block;
+  }
+
+  .comprobante-modal {
+    box-shadow: none;
+    border-radius: 0;
+    max-height: none;
+    overflow: visible;
+    max-width: none;
+  }
+
+  .comprobante-hoja {
+    padding: 0;
+  }
+}

@@ -6,10 +6,21 @@ DROP TABLE IF EXISTS venta;
 DROP TABLE IF EXISTS usuario;
 DROP TABLE IF EXISTS producto;
 DROP TABLE IF EXISTS cliente;
+DROP TABLE IF EXISTS usuario;
 DROP TABLE IF EXISTS persona;
 DROP TABLE IF EXISTS tienda;
 DROP TABLE IF EXISTS medio_pago;
 DROP TABLE IF EXISTS tipo_documento;
+DROP TABLE IF EXISTS parametro;
+DROP TABLE IF EXISTS correlativo;
+DROP TABLE IF EXISTS rol;
+
+CREATE TABLE parametro (
+    id_parametro VARCHAR(30)  NOT NULL,
+    valor        VARCHAR(50)  NOT NULL,
+    descripcion  VARCHAR(100) NOT NULL,
+    PRIMARY KEY (id_parametro)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE tipo_documento (
     id_documento VARCHAR(25)  NOT NULL,
@@ -21,6 +32,14 @@ CREATE TABLE medio_pago (
     id_medio_pago VARCHAR(10)  NOT NULL,
     descripcion   VARCHAR(100) NOT NULL,
     PRIMARY KEY (id_medio_pago)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Catalogo de roles: ADMIN para el panel, CLIENTE para el comprador.
+CREATE TABLE rol (
+    id_rol      VARCHAR(15)  NOT NULL,
+    nombre      VARCHAR(50)  NOT NULL,
+    descripcion VARCHAR(100) NOT NULL,
+    PRIMARY KEY (id_rol)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE tienda (
@@ -52,13 +71,17 @@ CREATE TABLE usuario (
     usuario    VARCHAR(50)  NOT NULL,
     contrasena VARCHAR(255) NOT NULL,
     id_persona VARCHAR(25)  NOT NULL,
+    id_rol     VARCHAR(15)  NOT NULL DEFAULT 'ADMIN',
     id_tienda  INT          NOT NULL,
     PRIMARY KEY (id_usuario),
     UNIQUE KEY uk_usuario_usuario (usuario),
     KEY idx_usuario_id_persona (id_persona),
+    KEY idx_usuario_id_rol (id_rol),
     KEY idx_usuario_id_tienda (id_tienda),
     CONSTRAINT fk_usuario_persona FOREIGN KEY (id_persona)
         REFERENCES persona (id_persona),
+    CONSTRAINT fk_usuario_rol FOREIGN KEY (id_rol)
+        REFERENCES rol (id_rol),
     CONSTRAINT fk_usuario_tienda FOREIGN KEY (id_tienda)
         REFERENCES tienda (id_tienda)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -70,24 +93,32 @@ CREATE TABLE cliente (
     telefono   VARCHAR(15),
     contrasena VARCHAR(255) NOT NULL,
     correo     VARCHAR(100),
+    id_rol     VARCHAR(15)  NOT NULL DEFAULT 'CLIENTE',
     UNIQUE KEY uk_cliente_correo (correo),
-    PRIMARY KEY (id_cliente)
+    PRIMARY KEY (id_cliente),
+    KEY idx_cliente_id_rol (id_rol),
+    CONSTRAINT fk_cliente_rol FOREIGN KEY (id_rol)
+        REFERENCES rol (id_rol)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE producto (
-    id_producto INT           NOT NULL,
-    nombre      VARCHAR(100)  NOT NULL,
-    stock       INT           NOT NULL,
-    precio      DECIMAL(10, 2) NOT NULL,
-    categoria   VARCHAR(80)   NOT NULL,
-    atributos   JSON          NULL,
-    id_tienda   INT           NOT NULL,
+    id_producto    INT           NOT NULL,
+    nombre         VARCHAR(100)  NOT NULL,
+    stock          INT           NOT NULL,
+    precio         DECIMAL(10, 2) NOT NULL,
+    categoria      VARCHAR(80)   NOT NULL,
+    codigo         VARCHAR(50)   NOT NULL DEFAULT '',
+    unidad_medida  VARCHAR(5)    NOT NULL DEFAULT 'NIU',
+    afectacion_igv VARCHAR(2)    NOT NULL DEFAULT '01',
+    atributos      JSON          NULL,
+    id_tienda      INT           NOT NULL,
     PRIMARY KEY (id_producto),
     KEY idx_producto_id_tienda (id_tienda),
     CONSTRAINT fk_producto_tienda FOREIGN KEY (id_tienda)
         REFERENCES tienda (id_tienda)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Cabecera del comprobante de pago electronico.
 CREATE TABLE venta (
     id_venta          VARCHAR(36) NOT NULL,
     id_cliente        VARCHAR(20) NOT NULL,
@@ -96,7 +127,41 @@ CREATE TABLE venta (
     numero_documento  VARCHAR(36) NOT NULL,
     id_medio_pago     VARCHAR(10) NOT NULL,
     fecha_emision     TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    serie             VARCHAR(4)   NOT NULL DEFAULT '',
+    correlativo       INT          NOT NULL DEFAULT 0,
+    moneda            VARCHAR(3)   NOT NULL DEFAULT 'PEN',
+    condicion_operacion VARCHAR(2) NOT NULL DEFAULT '01',
+    forma_pago        VARCHAR(2)   NOT NULL DEFAULT '01',
+    total_venta            DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    total_gravada          DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    total_inafecta         DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    total_exonerada        DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    total_gratuita         DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    total_igv              DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    total_descuentos       DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    monto_total_credito    DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    receptor_tipo_documento VARCHAR(1)   NOT NULL DEFAULT '',
+    receptor_num_documento  VARCHAR(15)  NOT NULL DEFAULT '',
+    receptor_razon_social   VARCHAR(200) NOT NULL DEFAULT '',
+    receptor_direccion      VARCHAR(200) NOT NULL DEFAULT '',
+    receptor_ubigeo         VARCHAR(6)   NOT NULL DEFAULT '',
+    receptor_distrito       VARCHAR(80)  NOT NULL DEFAULT '',
+    receptor_provincia      VARCHAR(80)  NOT NULL DEFAULT '',
+    receptor_departamento   VARCHAR(80)  NOT NULL DEFAULT '',
+    receptor_pais           VARCHAR(2)   NOT NULL DEFAULT 'PE',
+    entrega_direccion       VARCHAR(200) NOT NULL DEFAULT '',
+    entrega_ubigeo          VARCHAR(6)   NOT NULL DEFAULT '',
+    email_contacto          VARCHAR(100) NOT NULL DEFAULT '',
+    hash_comprobante        VARCHAR(64)  NULL,
+    codigo_qr               VARCHAR(500) NULL,
+    xml_name                VARCHAR(120) NULL,
+    estado                  VARCHAR(20)  NOT NULL DEFAULT 'EMITIDO',
+    estado_sunat            VARCHAR(20)  NULL,
+    cdR_summary             VARCHAR(500) NULL,
+    leyendas                TEXT         NULL,
+    observacion             VARCHAR(500) NOT NULL DEFAULT '',
     PRIMARY KEY (id_venta),
+    UNIQUE KEY uk_venta_serie_correlativo (serie, correlativo),
     KEY idx_venta_id_cliente (id_cliente),
     KEY idx_venta_id_persona (id_persona),
     KEY idx_venta_id_tipo_documento (id_tipo_documento),
@@ -112,13 +177,24 @@ CREATE TABLE venta (
         REFERENCES medio_pago (id_medio_pago)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Items del comprobante.
+--   precio_unitario : precio de venta unitario CON IGV
+--   valor_unitario  : valor unitario SIN IGV (base imponible del item)
+--   subtotal        : monto total del item (base + IGV del item)
 CREATE TABLE detalle_venta (
     id_detalle      INT           NOT NULL AUTO_INCREMENT,
     id_venta        VARCHAR(36)   NOT NULL,
     id_producto     INT           NOT NULL,
     cantidad        INT           NOT NULL,
-    precio_unitario DECIMAL(10, 2) NOT NULL,
-    subtotal        DECIMAL(10, 2) NOT NULL,
+    precio_unitario DECIMAL(12, 2) NOT NULL,
+    subtotal        DECIMAL(12, 2) NOT NULL,
+    valor_unitario  DECIMAL(12, 6) NOT NULL DEFAULT 0.000000,
+    igv_item        DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    descuento       DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    codigo_item     VARCHAR(50)   NOT NULL DEFAULT '',
+    descripcion     VARCHAR(500)  NOT NULL DEFAULT '',
+    unidad_medida   VARCHAR(5)    NOT NULL DEFAULT 'NIU',
+    afectacion_igv  VARCHAR(2)    NOT NULL DEFAULT '01',
     PRIMARY KEY (id_detalle),
     KEY idx_detalle_id_venta (id_venta),
     KEY idx_detalle_id_producto (id_producto),
@@ -126,4 +202,14 @@ CREATE TABLE detalle_venta (
         REFERENCES venta (id_venta),
     CONSTRAINT fk_detalle_producto FOREIGN KEY (id_producto)
         REFERENCES producto (id_producto)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Numeracion correlativa por serie. El correlativo no puede calcularse con
+-- COUNT(): dos ventas simultaneas lo repetirian. Se bloquea la fila con
+-- SELECT ... FOR UPDATE.
+CREATE TABLE correlativo (
+    serie             VARCHAR(4)  NOT NULL,
+    id_tipo_documento VARCHAR(25) NOT NULL,
+    ultimo_numero     INT         NOT NULL DEFAULT 0,
+    PRIMARY KEY (serie)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

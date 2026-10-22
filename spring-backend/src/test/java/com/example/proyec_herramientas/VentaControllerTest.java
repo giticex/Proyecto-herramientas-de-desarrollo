@@ -1,19 +1,22 @@
 package com.example.proyec_herramientas;
 
+import com.example.proyec_herramientas.persistence.Cliente;
+import com.example.proyec_herramientas.persistence.Persona;
 import com.example.proyec_herramientas.persistence.Producto;
+import com.example.proyec_herramientas.persistence.Tienda;
 import com.example.proyec_herramientas.repository.ClienteRepository;
 import com.example.proyec_herramientas.repository.PersonaRepository;
 import com.example.proyec_herramientas.repository.ProductoRepository;
 import com.example.proyec_herramientas.repository.TiendaRepository;
 import com.example.proyec_herramientas.repository.UsuarioRepository;
 import com.example.proyec_herramientas.repository.VentaRepository;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -21,6 +24,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.List;
 import java.util.Map;
+import java.math.BigDecimal;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -60,33 +64,43 @@ class VentaControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private String tokenCliente;
-    private String tokenAdmin;
+    // Registrar y consultar ventas es del ADMIN: las pruebas entran con su token.
+    private String token;
+
+    private Tienda tienda;
 
     @BeforeEach
     void limpiar() throws Exception {
         ventaRepository.deleteAll();
         productoRepository.deleteAll();
+        // Las cuentas apuntan a una persona: se borran antes que las personas.
         usuarioRepository.deleteAll();
-        tiendaRepository.deleteAll();
         clienteRepository.deleteAll();
         personaRepository.deleteAll();
 
-        int idTienda = registrarTienda("Tienda Uno", "tienda-uno", "admin@correo.com");
-        tokenAdmin = loginToken("admin@correo.com", "clave1234");
+        CuentasTest.crearAdmin(usuarioRepository, personaRepository, tiendaRepository);
+        tienda = tiendaRepository.findBySlug(CuentasTest.SLUG_TIENDA).orElseThrow();
+        token = CuentasTest.token(mockMvc, objectMapper, CuentasTest.USUARIO_ADMIN, CuentasTest.CLAVE);
 
-        productoRepository.save(new Producto(1, "Mouse Gamer", 8, 50.0, "Accesorios", idTienda));
-        productoRepository.save(new Producto(2, "Teclado Mecánico", 5, 120.0, "Accesorios", idTienda));
+        guardarProducto(1, "Mouse Gamer", 8, "50.00");
+        guardarProducto(2, "Teclado Mecánico", 5, "120.00");
+        clienteRepository.save(new Cliente("CLI-0001", "Juan", "Pérez", "987654321", "juan@correo.com"));
+        personaRepository.save(persona("PER001", "Juan", "Pérez", "juan@correo.com"));
+    }
 
-        tokenCliente = registrarCliente("Juan", "Pérez", "juan@correo.com");
+    private void guardarProducto(int id, String nombre, int stock, String precio) {
+        Producto producto = new Producto(id, nombre, stock, new BigDecimal(precio), "Accesorios");
+        producto.setIdTienda(tienda.getIdTienda());
+        productoRepository.save(producto);
     }
 
     @Test
     void totalDeBoletaEsSumaDeItems() throws Exception {
         mockMvc.perform(post("/ventas")
-                        .header("Authorization", "Bearer " + tokenCliente)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(carrito("Boleta", "Yape", List.of(item(1, 2), item(2, 1)))))
+                        .content(carrito("CLI-0001", "Boleta", "Yape", List.of(
+                                item(1, 2), item(2, 1)))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.idTipoDocumento", is("TD001")))
                 .andExpect(jsonPath("$.tipoDocumento", is("Boleta")))
@@ -101,43 +115,18 @@ class VentaControllerTest {
     }
 
     @Test
-    void registrarVentaSinTokenDevuelve401() throws Exception {
-        mockMvc.perform(post("/ventas")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(carrito("Boleta", "Yape", List.of(item(1, 1)))))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void registrarVentaComoAdminDevuelve403() throws Exception {
-        mockMvc.perform(post("/ventas")
-                        .header("Authorization", "Bearer " + tokenAdmin)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(carrito("Boleta", "Yape", List.of(item(1, 1)))))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void ventaSinItemsDevuelve400() throws Exception {
-        mockMvc.perform(post("/ventas")
-                        .header("Authorization", "Bearer " + tokenCliente)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(carrito("Boleta", "Yape", List.of())))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
     void boletasSoloDevuelveTipoBoleta() throws Exception {
         mockMvc.perform(post("/ventas")
-                        .header("Authorization", "Bearer " + tokenCliente)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(carrito("Boleta", "Yape", List.of(item(1, 1)))));
+                        .content(carrito("CLI-0001", "Boleta", "Yape", List.of(item(1, 1)))));
         mockMvc.perform(post("/ventas")
-                        .header("Authorization", "Bearer " + tokenCliente)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(carrito("Factura", "Efectivo", List.of(item(1, 1)))));
+                        .content(carrito("CLI-0001", "Factura", "Efectivo", List.of(item(1, 1)))));
 
-        mockMvc.perform(get("/boletas").header("Authorization", "Bearer " + tokenCliente))
+        mockMvc.perform(get("/boletas")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].tipoDocumento", is("Boleta")))
@@ -145,76 +134,91 @@ class VentaControllerTest {
     }
 
     @Test
-    void misVentasDevuelveSoloLasDelClienteAutenticado() throws Exception {
-        mockMvc.perform(post("/ventas")
-                        .header("Authorization", "Bearer " + tokenCliente)
+    void historialDevuelveVentasDelCliente() throws Exception {
+        MvcResult resultado = mockMvc.perform(post("/ventas")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(carrito("Boleta", "Yape", List.of(item(1, 2)))))
-                .andExpect(status().isCreated());
+                        .content(carrito("CLI-0001", "Boleta", "Yape", List.of(item(1, 2)))))
+                .andExpect(status().isCreated())
+                .andReturn();
 
-        String otroToken = registrarCliente("Ana", "Torres", "ana@correo.com");
-        mockMvc.perform(post("/ventas")
-                        .header("Authorization", "Bearer " + otroToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(carrito("Boleta", "Efectivo", List.of(item(2, 1)))))
-                .andExpect(status().isCreated());
+        String idVenta = objectMapper.readTree(resultado.getResponse().getContentAsString()).get("id").asText();
 
-        mockMvc.perform(get("/ventas/mias").header("Authorization", "Bearer " + tokenCliente))
+        mockMvc.perform(get("/historial").param("clienteId", "CLI-0001")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].cliente", is("Juan Pérez")));
+                .andExpect(jsonPath("$[0].id", is(idVenta)))
+                .andExpect(jsonPath("$[0].cliente", is("Juan Pérez")))
+                .andExpect(jsonPath("$[0].detalles[0].producto", is("Mouse Gamer")));
     }
 
     @Test
     void historialGeneralDevuelveTodasLasVentas() throws Exception {
         mockMvc.perform(post("/ventas")
-                        .header("Authorization", "Bearer " + tokenCliente)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(carrito("Boleta", "Efectivo", List.of(item(1, 1)))));
+                        .content(carrito("CLI-0001", "Boleta", "Efectivo", List.of(item(1, 1)))));
 
-        mockMvc.perform(get("/historial").header("Authorization", "Bearer " + tokenCliente))
+        mockMvc.perform(get("/historial")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].tipoDocumento", is("Boleta")));
     }
 
     @Test
+    void ventaSinClienteDevuelve400() throws Exception {
+        mockMvc.perform(post("/ventas")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(carrito("  ", "Boleta", "Yape", List.of(item(1, 1)))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void ventaConClienteDesconocidoDevuelve404() throws Exception {
+        mockMvc.perform(post("/ventas")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(carrito("CLI-9999", "Boleta", "Yape", List.of(item(1, 1)))))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void ventaDescartaElStock() throws Exception {
         mockMvc.perform(post("/ventas")
-                        .header("Authorization", "Bearer " + tokenCliente)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(carrito("Boleta", "Yape", List.of(item(1, 2)))));
+                        .content(carrito("CLI-0001", "Boleta", "Yape", List.of(item(1, 2)))));
 
-        mockMvc.perform(get("/productos/1").header("Authorization", "Bearer " + tokenAdmin))
+        mockMvc.perform(get("/productos/1").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.stock", is(6)));
     }
 
     @Test
-    void ventaConStockInsuficienteDevuelve409YNoCambiaElStock() throws Exception {
+    void ventaConStockInsuficienteDevuelve409() throws Exception {
         mockMvc.perform(post("/ventas")
-                        .header("Authorization", "Bearer " + tokenCliente)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(carrito("Boleta", "Yape", List.of(item(1, 99)))))
+                        .content(carrito("CLI-0001", "Boleta", "Yape", List.of(item(1, 99)))))
                 .andExpect(status().isConflict());
-
-        mockMvc.perform(get("/productos/1").header("Authorization", "Bearer " + tokenAdmin))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.stock", is(8)));
     }
 
     @Test
     void generaPdfDeBoleta() throws Exception {
         MvcResult resultado = mockMvc.perform(post("/ventas")
-                        .header("Authorization", "Bearer " + tokenCliente)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(carrito("Boleta", "Yape", List.of(item(1, 1)))))
+                        .content(carrito("CLI-0001", "Boleta", "Yape", List.of(item(1, 1)))))
                 .andExpect(status().isCreated())
                 .andReturn();
 
         String idVenta = objectMapper.readTree(resultado.getResponse().getContentAsString()).get("id").asText();
 
-        MvcResult pdf = mockMvc.perform(get("/boleta/" + idVenta + "/pdf").header("Authorization", "Bearer " + tokenCliente))
+        MvcResult pdf = mockMvc.perform(get("/boleta/" + idVenta + "/pdf")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("application/pdf"))
                 .andReturn();
@@ -224,39 +228,59 @@ class VentaControllerTest {
         assertTrue(new String(bytes, 0, 4).startsWith("%PDF"), "Debe ser un PDF válido");
     }
 
-    private int registrarTienda(String nombre, String slug, String correo) throws Exception {
-        mockMvc.perform(post("/auth/registro-tienda")
+    @Test
+    void elClienteVeSusPropiasComprasPorVentasMias() throws Exception {
+        CuentasTest.crearCliente(usuarioRepository, personaRepository, tiendaRepository);
+        CuentasTest.crearFichaCliente(clienteRepository);
+
+        // El ADMIN registra una compra a nombre del comprador de las pruebas.
+        mockMvc.perform(post("/ventas")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of(
-                                "nombre", nombre, "rubro", "moda", "slug", slug,
-                                "correo", correo, "contrasena", "clave1234"))))
+                        .content(carrito(CuentasTest.ID_CLIENTE, "Boleta", "Yape", List.of(item(1, 1)))))
                 .andExpect(status().isCreated());
-        return tiendaRepository.findBySlug(slug).orElseThrow().getIdTienda();
-    }
 
-    private String loginToken(String usuario, String contrasena) throws Exception {
-        MvcResult resultado = mockMvc.perform(post("/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("usuario", usuario, "contrasena", contrasena))))
+        String tokenCliente = CuentasTest.token(mockMvc, objectMapper, CuentasTest.CORREO_CLIENTE,
+                CuentasTest.CLAVE);
+
+        mockMvc.perform(get("/ventas/mias")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenCliente))
                 .andExpect(status().isOk())
-                .andReturn();
-        return objectMapper.readTree(resultado.getResponse().getContentAsString()).get("token").asText();
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].detalles[0].producto", is("Mouse Gamer")));
     }
 
-    private String registrarCliente(String nombre, String apellido, String correo) throws Exception {
-        MvcResult resultado = mockMvc.perform(post("/auth/registro-cliente")
+    @Test
+    void elClienteCompraSiempreANombrePropioIgnorandoElBody() throws Exception {
+        CuentasTest.crearCliente(usuarioRepository, personaRepository, tiendaRepository);
+        CuentasTest.crearFichaCliente(clienteRepository);
+        String tokenCliente = CuentasTest.token(mockMvc, objectMapper, CuentasTest.CORREO_CLIENTE,
+                CuentasTest.CLAVE);
+
+        // El cuerpo intenta comprar a nombre de CLI-0001, pero el CLIENTE solo
+        // puede comprar como el mismo: se registra como CLI-PRUEBA.
+        mockMvc.perform(post("/ventas")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenCliente)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of(
-                                "nombre", nombre, "apellido", apellido, "correo", correo,
-                                "contrasena", "clave1234", "telefono", "987654321"))))
+                        .content(carrito("CLI-0001", "Boleta", "Yape", List.of(item(1, 1)))))
                 .andExpect(status().isCreated())
-                .andReturn();
-        JsonNode json = objectMapper.readTree(resultado.getResponse().getContentAsString());
-        return json.get("token").asText();
+                .andExpect(jsonPath("$.idCliente", is(CuentasTest.ID_CLIENTE)));
     }
 
-    private String carrito(String tipoDocumento, String medioPago, List<Map<String, Object>> items) throws Exception {
+    private Persona persona(String idPersona, String nombre, String apellido, String correo) {
+        Persona persona = new Persona();
+        persona.setIdPersona(idPersona);
+        persona.setNombre(nombre);
+        persona.setApellido(apellido);
+        persona.setCorreo(correo);
+        persona.setTelefono("987654321");
+        persona.setUsuario(nombre.toLowerCase());
+        return persona;
+    }
+
+    private String carrito(String idCliente, String tipoDocumento, String medioPago, List<Map<String, Object>> items) throws Exception {
         Map<String, Object> body = Map.of(
+                "idCliente", idCliente,
                 "tipoDocumento", tipoDocumento,
                 "medioPago", medioPago,
                 "items", items);

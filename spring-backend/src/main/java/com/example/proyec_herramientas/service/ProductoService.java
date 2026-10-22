@@ -15,7 +15,8 @@ public interface ProductoService {
 
     ProductoDTO actualizar(int idProducto, ProductoDTO producto, int idTienda);
 
-    void eliminar(int idProducto);
+    void eliminar(int idProducto, int idTienda);
 
+    // Uso interno del checkout: no esta acotado a una tienda.
     boolean actualizarStock(int idProducto, int cantidad);
 }

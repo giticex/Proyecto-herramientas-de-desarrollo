@@ -18,6 +18,10 @@ public class CarritoRequestDTO {
 
     private String medioPago;
 
+    // Solo lo usa el ADMIN para vender a nombre de un cliente. Para un CLIENTE
+    // se ignora: su idCliente sale del token.
+    private String idCliente;
+
     @NotNull
     @NotEmpty
     private List<Item> items;
@@ -36,6 +40,14 @@ public class CarritoRequestDTO {
 
     public void setMedioPago(String medioPago) {
         this.medioPago = medioPago;
+    }
+
+    public String getIdCliente() {
+        return idCliente;
+    }
+
+    public void setIdCliente(String idCliente) {
+        this.idCliente = idCliente;
     }
 
     public List<Item> getItems() {

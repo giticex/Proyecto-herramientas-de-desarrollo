@@ -82,12 +82,12 @@ public class ReportePdfServiceImpl implements ReportePdfService {
         ProductoDTO producto = new ProductoDTO();
         producto.setIdProducto(detalle.getIdProducto());
         producto.setNombre(detalle.getProducto());
-        producto.setPrecio(detalle.getPrecioUnitario());
+        producto.setPrecio(detalle.getPrecioUnitario().doubleValue());
 
         VentaDTO ventaDTO = new VentaDTO();
         ventaDTO.setProductoId(detalle.getIdProducto());
         ventaDTO.setCantidad(detalle.getCantidad());
-        ventaDTO.setPrecioUnitario(detalle.getPrecioUnitario());
+        ventaDTO.setPrecioUnitario(detalle.getPrecioUnitario().doubleValue());
         ventaDTO.setProducto(producto);
         return ventaDTO;
     }

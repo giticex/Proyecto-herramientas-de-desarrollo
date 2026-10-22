@@ -2,6 +2,7 @@ package com.example.proyec_herramientas.service;
 
 import com.example.proyec_herramientas.exception.RecursoNoEncontradoException;
 import com.example.proyec_herramientas.exception.StockInsuficienteException;
+import com.example.proyec_herramientas.facturacion.service.EmisorService;
 import com.example.proyec_herramientas.model.CarritoRequestDTO;
 import com.example.proyec_herramientas.model.ClienteDTO;
 import com.example.proyec_herramientas.persistence.DetalleVenta;
@@ -17,6 +18,8 @@ import com.example.proyec_herramientas.repository.VentaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +35,14 @@ public class VentaServiceImpl implements VentaService {
     private static final String TIPO_FACTURA_ID = "TD002";
     private static final String MEDIO_PAGO_EFECTIVO = "Efectivo";
     private static final String MEDIO_PAGO_EFECTIVO_ID = "MP001";
+    private static final String PREFIJO_BOLETA = "BOL";
+    private static final String PREFIJO_FACTURA = "FAC";
+    private static final String CONDICION_OPERACION = "01";
+    private static final String FORMA_PAGO = "01";
+    private static final String TIPO_DOCUMENTO_SIN_DOCUMENTO = "0";
+    private static final String ESTADO_LEGACY = "LEGACY";
+    private static final int ESCALA_VALOR_UNITARIO = 6;
+    private static final int ESCALA_IMPORTE = 2;
 
     private static final Map<String, String> ALIAS_MEDIO_PAGO = Map.of(
             "tarjeta", "Tarjeta de crédito",
@@ -43,19 +54,22 @@ public class VentaServiceImpl implements VentaService {
     private final PersonaRepository personaRepository;
     private final TipoDocumentoRepository tipoDocumentoRepository;
     private final MedioPagoRepository medioPagoRepository;
+    private final EmisorService emisorService;
 
     public VentaServiceImpl(VentaRepository ventaRepository,
                             ProductoRepository productoRepository,
                             ClienteService clienteService,
                             PersonaRepository personaRepository,
                             TipoDocumentoRepository tipoDocumentoRepository,
-                            MedioPagoRepository medioPagoRepository) {
+                            MedioPagoRepository medioPagoRepository,
+                            EmisorService emisorService) {
         this.ventaRepository = ventaRepository;
         this.productoRepository = productoRepository;
         this.clienteService = clienteService;
         this.personaRepository = personaRepository;
         this.tipoDocumentoRepository = tipoDocumentoRepository;
         this.medioPagoRepository = medioPagoRepository;
+        this.emisorService = emisorService;
     }
 
     @Override
@@ -74,13 +88,22 @@ public class VentaServiceImpl implements VentaService {
                         "El cliente " + idCliente + " no tiene una persona asociada"));
 
         Venta venta = new Venta();
+        int correlativo = siguienteCorrelativo();
+        String prefijo = prefijo(tipoDocumento);
         venta.setId(UUID.randomUUID().toString());
         venta.setIdCliente(idCliente);
         venta.setIdPersona(idPersona);
         venta.setIdTipoDocumento(resolverTipoDocumento(tipoDocumento));
-        venta.setNumeroDocumento(siguienteNumero(tipoDocumento));
+        venta.setNumeroDocumento(prefijo + "-" + String.format("%06d", correlativo));
         venta.setIdMedioPago(resolverMedioPago(medioPago));
         venta.setFechaEmision(new Date());
+        venta.setSerie(prefijo);
+        venta.setCorrelativo(correlativo);
+        venta.setMoneda(emisorService.obtenerMoneda());
+        venta.setCondicionOperacion(CONDICION_OPERACION);
+        venta.setFormaPago(FORMA_PAGO);
+        venta.setEstado(ESTADO_LEGACY);
+        venta.setObservacion("");
 
         for (CarritoRequestDTO.Item item : carrito.getItems()) {
             Producto producto = productoRepository.findById(item.getIdProducto())
@@ -96,12 +119,10 @@ public class VentaServiceImpl implements VentaService {
             producto.setStock(producto.getStock() - item.getCantidad());
             productoRepository.save(producto);
 
-            venta.agregarDetalle(new DetalleVenta(
-                    producto.getIdProducto(),
-                    producto.getNombre(),
-                    item.getCantidad(),
-                    producto.getPrecio()));
+            venta.agregarDetalle(detalle(producto, item.getCantidad()));
         }
+
+        aplicarDatosFiscales(venta, cliente);
 
         return enriquecer(ventaRepository.save(venta));
     }
@@ -145,10 +166,90 @@ public class VentaServiceImpl implements VentaService {
                 .orElse(MEDIO_PAGO_EFECTIVO_ID);
     }
 
-    private String siguienteNumero(String tipoDocumento) {
-        long contador = ventaRepository.count();
-        String prefijo = TIPO_BOLETA.equalsIgnoreCase(tipoDocumento) ? "BOL" : "FAC";
-        return prefijo + "-" + String.format("%06d", contador + 1);
+    private String prefijo(String tipoDocumento) {
+        return TIPO_BOLETA.equalsIgnoreCase(tipoDocumento) ? PREFIJO_BOLETA : PREFIJO_FACTURA;
+    }
+
+    private int siguienteCorrelativo() {
+        return (int) ventaRepository.count() + 1;
+    }
+
+    private DetalleVenta detalle(Producto producto, int cantidad) {
+        DetalleVenta detalle = new DetalleVenta(
+                producto.getIdProducto(),
+                producto.getNombre(),
+                cantidad,
+                producto.getPrecio());
+        detalle.setCodigoItem(producto.getCodigo());
+        detalle.setDescripcion(producto.getNombre());
+        detalle.setUnidadMedida(producto.getUnidadMedida());
+        detalle.setAfectacionIgv(producto.getAfectacionIgv());
+        return detalle;
+    }
+
+    /**
+     * Calcula los datos fiscales del comprobante: valor unitario sin IGV, IGV
+     * por item y los totales por afectacion del IGV.
+     */
+    private void aplicarDatosFiscales(Venta venta, ClienteDTO cliente) {
+        BigDecimal igvPorcentaje = emisorService.obtenerIgvPorcentaje();
+        BigDecimal factor = BigDecimal.ONE.add(igvPorcentaje.movePointRight(2));
+
+        BigDecimal totalVenta = BigDecimal.ZERO;
+        BigDecimal totalGravada = BigDecimal.ZERO;
+        BigDecimal totalInafecta = BigDecimal.ZERO;
+        BigDecimal totalExonerada = BigDecimal.ZERO;
+        BigDecimal totalGratuita = BigDecimal.ZERO;
+        BigDecimal totalIgv = BigDecimal.ZERO;
+
+        for (DetalleVenta detalle : venta.getDetalles()) {
+            BigDecimal precio = detalle.getPrecioUnitario();
+            BigDecimal subtotal = detalle.getSubtotal();
+            totalVenta = totalVenta.add(subtotal);
+
+            if (detalle.esGravado()) {
+                BigDecimal valorUnitario = precio.divide(factor, ESCALA_VALOR_UNITARIO, RoundingMode.HALF_UP);
+                BigDecimal base = valorUnitario.multiply(BigDecimal.valueOf(detalle.getCantidad()))
+                        .setScale(ESCALA_IMPORTE, RoundingMode.HALF_UP);
+                BigDecimal igv = subtotal.subtract(base);
+                detalle.setValorUnitario(valorUnitario);
+                detalle.setIgvItem(igv);
+                totalGravada = totalGravada.add(base);
+                totalIgv = totalIgv.add(igv);
+            } else {
+                detalle.setValorUnitario(precio.setScale(ESCALA_VALOR_UNITARIO, RoundingMode.HALF_UP));
+                detalle.setIgvItem(BigDecimal.ZERO);
+                if (DetalleVenta.AFECTACION_INAFECTA.equals(detalle.getAfectacionIgv())) {
+                    totalInafecta = totalInafecta.add(subtotal);
+                } else if (DetalleVenta.AFECTACION_EXONERADA.equals(detalle.getAfectacionIgv())) {
+                    totalExonerada = totalExonerada.add(subtotal);
+                } else {
+                    totalGratuita = totalGratuita.add(subtotal);
+                }
+            }
+        }
+
+        venta.setTotalVenta(totalVenta);
+        venta.setTotalGravada(totalGravada);
+        venta.setTotalInafecta(totalInafecta);
+        venta.setTotalExonerada(totalExonerada);
+        venta.setTotalGratuita(totalGratuita);
+        venta.setTotalIgv(totalIgv);
+        venta.setTotalDescuentos(BigDecimal.ZERO);
+        venta.setMontoTotalCredito(BigDecimal.ZERO);
+
+        venta.setReceptorTipoDocumento(TIPO_DOCUMENTO_SIN_DOCUMENTO);
+        venta.setReceptorNumDocumento("");
+        venta.setReceptorRazonSocial(cliente.getNombre() + " " + cliente.getApellido());
+        venta.setReceptorDireccion("");
+        venta.setReceptorUbigeo("");
+        venta.setReceptorDistrito("");
+        venta.setReceptorProvincia("");
+        venta.setReceptorDepartamento("");
+        venta.setReceptorPais("PE");
+        venta.setEntregaDireccion("");
+        venta.setEntregaUbigeo("");
+        venta.setEmailContacto(cliente.getCorreo() == null ? "" : cliente.getCorreo());
     }
 
     private String conValor(String valor, String porDefecto) {
