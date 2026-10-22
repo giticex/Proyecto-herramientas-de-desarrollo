@@ -38,7 +38,7 @@ export default function AdminLogin() {
         return;
       }
       login(respuesta.usuario ?? u, respuesta.token, respuesta.rol);
-      navigate('/admin/productos');
+      navigate('/admin');
     } catch (problema) {
       setError(problema.message || 'No se pudo iniciar sesión.');
     } finally {

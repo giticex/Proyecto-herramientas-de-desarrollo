@@ -1,0 +1,120 @@
+/* Layout del panel: contenido a la izquierda y navegación en una barra
+   lateral derecha que queda fija mientras se hace scroll. */
+.panel-shell {
+  display: flex;
+  align-items: flex-start;
+  min-height: 100vh;
+  background: var(--bg-soft);
+}
+.panel-contenido {
+  flex: 1;
+  min-width: 0;
+}
+/* Las vistas usan .page, que asume la cabecera fija de la tienda. Aquí no
+   hay cabecera: se recupera el aire superior para el título de cada vista. */
+.panel-contenido .page {
+  max-width: 1100px;
+  padding: 48px clamp(20px, 4vw, 48px) 80px;
+}
+.panel-contenido .section { margin-top: 56px; }
+
+.panel-sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  width: 256px;
+  height: 100vh;
+  padding: 24px;
+  background: #fff;
+  border-left: 1px solid var(--line);
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.04);
+}
+.panel-sidebar-marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.panel-sidebar-logo {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+.panel-sidebar-logo.inicial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primario);
+  color: var(--on-primario);
+  font-weight: 600;
+}
+.panel-sidebar-nombre {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.panel-menu {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 32px;
+}
+.panel-menu-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-s);
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--ease), color var(--ease);
+}
+.panel-menu-link:hover { background: var(--bg-soft); }
+.panel-menu-link:focus-visible { outline: 2px solid var(--color-primario); outline-offset: 2px; }
+.panel-menu-link.active { background: var(--bg-soft); color: var(--color-primario); }
+.panel-menu-link.salir {
+  margin-top: auto;
+  color: var(--danger);
+}
+.panel-menu-link.salir:hover { background: #fdecec; }
+
+@media (max-width: 900px) {
+  .panel-shell { flex-direction: column; }
+  .panel-sidebar {
+    order: -1;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: auto;
+    padding: 12px 20px;
+    border-left: 0;
+    border-bottom: 1px solid var(--line);
+    z-index: 40;
+  }
+  .panel-menu {
+    flex: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin: 0 0 0 auto;
+  }
+  .panel-menu-link { width: auto; padding: 8px 12px; }
+  .panel-menu-link.salir { margin-top: 0; }
+  .panel-contenido .page { padding: 32px 20px 64px; }
+}

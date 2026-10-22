@@ -1,6 +1,7 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import AdminLogin from './admin/AdminLogin';
 import RegistroTienda from './admin/RegistroTienda';
+import DashboardAdmin from './admin/DashboardAdmin';
 import MarcaPanel from './admin/MarcaPanel';
 import ProductosPanel from './admin/ProductosPanel';
 import RutaProtegida from './auth/RutaProtegida';
@@ -48,7 +49,7 @@ export default function App() {
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/registro-tienda" element={<RegistroTienda />} />
         <Route element={<RutaProtegida />}>
-          <Route path="/admin" element={<Navigate to="/admin/productos" replace />} />
+          <Route path="/admin" element={<DashboardAdmin />} />
           <Route path="/admin/marca" element={<MarcaPanel />} />
           <Route path="/admin/productos" element={<ProductosPanel />} />
         </Route>

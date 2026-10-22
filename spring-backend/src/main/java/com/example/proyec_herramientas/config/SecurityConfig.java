@@ -58,6 +58,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/ventas").hasAnyRole("CLIENTE", "ADMIN")
                         // El panel de administracion trabaja sobre SU tienda: el
                         // idTienda sale del token, nunca del body.
+                        .requestMatchers("/api/dashboard/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/productos", "/productos/**").hasRole("ADMIN")
                         .requestMatchers("/productos/**", "/clientes/**", "/ventas/**",
                                 "/historial", "/historial/**", "/boletas", "/boletas/**",
