@@ -384,9 +384,10 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================================
 --  VERIFICACION (opcional)
---  Debe devolver 3, 2, 1, 15, 16, 16, 15, 15, 15, 17, 17
+--  Debe devolver 3, 2, 15, 1, 16, 16, 15, 15, 15, 17, 17
 --  SELECT 'parametro' AS tabla, COUNT(*) AS filas FROM parametro
 --  UNION ALL SELECT 'tipo_documento', COUNT(*) FROM tipo_documento
+--  UNION ALL SELECT 'medio_pago', COUNT(*) FROM medio_pago
 --  UNION ALL SELECT 'tienda', COUNT(*) FROM tienda
 --  UNION ALL SELECT 'persona', COUNT(*) FROM persona
 --  UNION ALL SELECT 'usuario', COUNT(*) FROM usuario
