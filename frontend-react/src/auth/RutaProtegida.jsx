@@ -1,10 +1,15 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useSesion } from './sesionStore';
 
-// Redirige a /admin/login si no hay sesión, igual que la guarda de nav.js.
-export default function RutaProtegida() {
+// rol: el rol requerido para esta rama de rutas (hoy solo "ADMIN"; las
+// rutas de CLIENTE usan RutaProtegidaCliente, que es consciente del slug
+// de la tienda para redirigir al login correcto).
+export default function RutaProtegida({ rol = 'ADMIN' }) {
   const token = useSesion((estado) => estado.token);
-  if (!token) {
+  const usuario = useSesion((estado) => estado.usuario);
+  const autorizado = Boolean(token) && usuario?.rol === rol;
+
+  if (!autorizado) {
     return <Navigate to="/admin/login" replace />;
   }
   return <Outlet />;
