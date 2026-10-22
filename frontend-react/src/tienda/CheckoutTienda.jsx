@@ -1,28 +1,78 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import PlantillaTienda from '../components/PlantillaTienda';
 import { useClienteStore } from './clienteStore';
 import { useStore } from '../store/store';
 import { showToast } from '../components/toastBus';
+import {
+  emitirComprobante,
+  construirPayloadComprobante,
+  validarDatosFacturacion,
+  MEDIO_PAGO,
+  TIPO_COMPROBANTE,
+  LIMITE_BOLETA_SIN_RUC,
+} from '../api/comprobantesApi';
 import './CheckoutTienda.css';
+
+const IGV_PORCENTAJE = 0.18;
+
+/**
+ * Vista previa del desglose tributario. Es solo informacion para el cliente:
+ * el backend recalcula los importes con el catalogo y es el que manda.
+ */
+function calcularResumen(carrito, productos) {
+  let opGravada = 0;
+  let opInafecta = 0;
+  let opExonerada = 0;
+  let opGratuita = 0;
+  let igv = 0;
+  let total = 0;
+
+  const lineas = carrito.map((item) => {
+    const producto = productos.find((p) => p.idProducto === item.idProducto);
+    const afectacion = producto?.afectacionIgv || item.afectacionIgv || '01';
+    const precio = Number(item.precio) || 0;
+    const importe = precio * item.cantidad;
+    total += importe;
+
+    if (afectacion === '01') {
+      const base = importe / (1 + IGV_PORCENTAJE);
+      igv += importe - base;
+      opGravada += base;
+    } else if (afectacion === '02') {
+      opInafecta += importe;
+    } else if (afectacion === '03') {
+      opExonerada += importe;
+    } else {
+      opGratuita += importe;
+    }
+
+    return { ...item, afectacion, importe };
+  });
+
+  return { lineas, opGravada, opInafecta, opExonerada, opGratuita, igv, total };
+}
+
+const centavos = (valor) => Number(valor).toFixed(2);
 
 export default function CheckoutTienda() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { carrito, cliente, registrarCompra } = useClienteStore();
-  const { tienda, productos, getTienda, listProductos, updateProducto } = useStore();
+  const { tienda, productos, getTienda, listProductos } = useStore();
 
   const [tipoComprobante, setTipoComprobante] = useState('boleta');
   const [documento, setDocumento] = useState('');
-  const [razonSocial, setRazonSocial] = useState('');
-  const [direccion, setDireccion] = useState('');
+  const [nombreAdquirente, setNombreAdquirente] = useState('');
+  const [domicilioFiscal, setDomicilioFiscal] = useState('');
+  const [direccionEntrega, setDireccionEntrega] = useState('');
   const [metodoPago, setMetodoPago] = useState('tarjeta');
   const [procesando, setProcesando] = useState(false);
 
   // Proteger la ruta: si no hay carrito o cliente, regresar
   useEffect(() => {
     getTienda(slug);
-   if (productos.length === 0) listProductos();
+    if (productos.length === 0) listProductos();
   }, [slug, getTienda, listProductos, productos.length]);
 
   // Si el carrito está vacío y NO estamos procesando una compra, volver al catálogo
@@ -32,15 +82,22 @@ export default function CheckoutTienda() {
     }
   }, [carrito.length, procesando, navigate, slug]);
 
-  // Cálculos de Facturación Electrónica (IGV 18% incluido en el precio)
-  const total = carrito.reduce((sum, item) => sum + (Number(item.precio) * item.cantidad), 0);
-  const opGravada = total / 1.18;
-  const igv = total - opGravada;
+  const resumen = useMemo(() => calcularResumen(carrito, productos), [carrito, productos]);
+
+  const correoCliente = cliente?.correo || cliente?.email || '';
+  const nombreCliente = cliente?.nombre || 'Consumidor Final';
 
   const manejarCambioComprobante = (tipo) => {
     setTipoComprobante(tipo);
     setDocumento('');
-    if (tipo === 'boleta') setRazonSocial('');
+    if (tipo === 'boleta') {
+      // La boleta se emite a personas: se completa con los datos del cliente
+      // que inicio sesion.
+      setNombreAdquirente(nombreCliente === 'Consumidor Final' ? '' : nombreCliente);
+      setDomicilioFiscal('');
+    } else {
+      setNombreAdquirente('');
+    }
   };
 
   const manejarDocumento = (valor) => {
@@ -51,72 +108,82 @@ export default function CheckoutTienda() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (tipoComprobante === 'boleta' && documento.length !== 8) {
-      showToast('Para Boleta Electrónica, el DNI debe tener 8 dígitos.');
-      return;
-    }
+    const esFactura = tipoComprobante === 'factura';
+    const { valido, errores } = validarDatosFacturacion({
+      tipoComprobante: esFactura ? TIPO_COMPROBANTE.FACTURA : TIPO_COMPROBANTE.BOLETA,
+      numeroDocumento: documento,
+      nombreAdquirente,
+      domicilioFiscal: esFactura ? domicilioFiscal : direccionEntrega,
+      direccionEntrega,
+      total: resumen.total,
+    });
 
-    if (tipoComprobante === 'factura') {
-      if (documento.length !== 11 || (!documento.startsWith('10') && !documento.startsWith('20'))) {
-        showToast('Ingresa un RUC válido de 11 dígitos (inicia con 10 o 20).');
-        return;
-      }
-      if (razonSocial.trim().length < 3) {
-        showToast('Ingresa la Razón Social de la empresa.');
-        return;
-      }
-    }
-
-    if (direccion.trim().length < 5) {
-      showToast('Ingresa una dirección de entrega válida.');
+    if (!valido) {
+      showToast(errores[0]);
       return;
     }
 
     setProcesando(true);
 
     try {
-      // 1. Descontar el stock en el Store de Kiara / Backend
-      for (const item of carrito) {
-        const prodOriginal = productos.find((p) => p.idProducto === item.idProducto);
-        if (prodOriginal) {
-          const nuevoStock = Math.max(0, Number(prodOriginal.stock) - item.cantidad);
-          await updateProducto(item.idProducto, {
-            ...prodOriginal,
-            stock: nuevoStock,
-          });
-        }
-      }
+      const medio = MEDIO_PAGO[metodoPago] || MEDIO_PAGO.efectivo;
 
-      // 2. Construir el Comprobante Electrónico para el historial y backend
-      const serie = tipoComprobante === 'boleta' ? 'B001' : 'F001';
-      const correlativo = String(Math.floor(100000 + Math.random() * 900000));
-      
+      // El backend es la fuente de verdad: se envian solo los identificadores
+      // de los productos, los datos del adquirente y el medio de pago.
+      const payload = construirPayloadComprobante({
+        tipoComprobante: esFactura ? TIPO_COMPROBANTE.FACTURA : TIPO_COMPROBANTE.BOLETA,
+        idCliente: cliente?.idCliente,
+        numeroDocumento: documento,
+        nombreAdquirente,
+        correo: correoCliente,
+        domicilioFiscal: esFactura ? domicilioFiscal : direccionEntrega,
+        direccionEntrega,
+        medioPago: medio,
+        items: carrito.map((item) => ({
+          idProducto: item.idProducto,
+          cantidad: item.cantidad,
+        })),
+      });
+
+      const comprobante = await emitirComprobante(payload);
+      const totales = comprobante.totales || {};
+
       const nuevaOrden = {
-        idOrden: `ORD-${Date.now()}`,
-        numeroComprobante: `${serie}-${correlativo}`,
-        fecha: new Date().toISOString(),
+        idOrden: comprobante.idVenta,
+        numeroComprobante: comprobante.numeroDocumento,
+        fecha: `${comprobante.fechaEmision}T${comprobante.horaEmision}`,
         tiendaSlug: slug || tienda.slug,
         tiendaNombre: tienda.nombre,
-        clienteNombre: cliente?.nombre || 'Cliente',
-        clienteCorreo: cliente?.correo || '',
+        clienteNombre: comprobante.receptor?.razonSocial || nombreCliente,
+        clienteCorreo: correoCliente,
         tipoComprobante,
-        documento,
-        razonSocial: tipoComprobante === 'factura' ? razonSocial.trim() : cliente?.nombre || 'Cliente',
-        direccion: direccion.trim(),
-        metodoPago,
-        items: carrito,
-        opGravada: Number(opGravada.toFixed(2)),
-        igv: Number(igv.toFixed(2)),
-        total: Number(total.toFixed(2)),
+        documento: comprobante.receptor?.numeroDocumento || documento,
+        razonSocial: comprobante.receptor?.razonSocial || nombreCliente,
+        direccion: comprobante.entrega?.direccion || direccionEntrega.trim(),
+        metodoPago: comprobante.mediosPago?.[0]?.descripcion || medio.descripcion,
+        items: (comprobante.detalles || []).map((detalle) => ({
+          idProducto: detalle.idProducto,
+          nombre: detalle.descripcion,
+          cantidad: Number(detalle.cantidad),
+          precio: Number(detalle.precioUnitario),
+          afectacionIgv: detalle.afectacionIgv,
+        })),
+        opGravada: Number(totales.opGravada || 0),
+        igv: Number(totales.igv || 0),
+        total: Number(totales.montoTotalPagar || 0),
+        comprobante,
       };
 
-      // 3. Guardar en clienteStore y limpiar carrito
       registrarCompra(nuevaOrden);
-      showToast(`¡${tipoComprobante === 'boleta' ? 'Boleta' : 'Factura'} ${nuevaOrden.numeroComprobante} emitida!`);
+      // El backend descuenta el stock al emitir: se refresca el catalogo.
+      listProductos();
+      showToast(
+        `¡${tipoComprobante === 'boleta' ? 'Boleta' : 'Factura'} ${nuevaOrden.numeroComprobante} emitida!`
+      );
       navigate(`/tienda/${slug}/confirmacion`);
-    } catch {
+    } catch (error) {
       setProcesando(false);
-      showToast('Ocurrió un error al procesar tu compra.');
+      showToast(error?.message || 'Ocurrió un error al procesar tu compra.');
     }
   };
 
@@ -175,16 +242,45 @@ export default function CheckoutTienda() {
                   />
                 </div>
 
+                <div className="field">
+                  <label>
+                    {tipoComprobante === 'boleta' ? 'Nombres y Apellidos' : 'Razón Social'}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={
+                      tipoComprobante === 'boleta'
+                        ? 'Ej. Juan Carlos Pérez'
+                        : 'Ej. Inversiones Tecnológicas S.A.C.'
+                    }
+                    value={nombreAdquirente}
+                    onChange={(e) => setNombreAdquirente(e.target.value)}
+                  />
+                </div>
+
                 {tipoComprobante === 'factura' && (
                   <div className="field">
-                    <label>Razón Social</label>
+                    <label>Domicilio Fiscal (obligatorio)</label>
                     <input
                       type="text"
-                      placeholder="Ej. Inversiones Tecnológicas S.A.C."
-                      value={razonSocial}
-                      onChange={(e) => setRazonSocial(e.target.value)}
+                      placeholder="Ej. Av. Javier Prado Este 4200, Lima"
+                      value={domicilioFiscal}
+                      onChange={(e) => setDomicilioFiscal(e.target.value)}
                     />
                   </div>
+                )}
+
+                {tipoComprobante === 'boleta' && (
+                  <p className="checkout-nota">
+                    Las boletas sin RUC admiten hasta S/ {LIMITE_BOLETA_SIN_RUC}.00 de importe total.
+                  </p>
+                )}
+
+                {tipoComprobante === 'boleta' && resumen.total > LIMITE_BOLETA_SIN_RUC && (
+                  <p className="checkout-alerta">
+                    El importe supera S/ {LIMITE_BOLETA_SIN_RUC}.00: elige Factura para emitir el
+                    comprobante con RUC, razón social y domicilio fiscal.
+                  </p>
                 )}
 
                 <h3 style={{ marginTop: '16px' }}>2. Dirección y Método de Pago</h3>
@@ -194,8 +290,8 @@ export default function CheckoutTienda() {
                   <input
                     type="text"
                     placeholder="Ej. Av. Arequipa 1234, Dpto 302, Lima"
-                    value={direccion}
-                    onChange={(e) => setDireccion(e.target.value)}
+                    value={direccionEntrega}
+                    onChange={(e) => setDireccionEntrega(e.target.value)}
                   />
                 </div>
 
@@ -229,31 +325,56 @@ export default function CheckoutTienda() {
             <div className="checkout-resumen-card">
               <h3>Resumen Tributario</h3>
               <div className="checkout-items-mini">
-                {carrito.map((item) => (
+                {resumen.lineas.map((item) => (
                   <div key={item.idProducto} className="mini-item">
-                    <span>{item.cantidad}x {item.nombre}</span>
-                    <strong>S/ {(item.precio * item.cantidad).toFixed(2)}</strong>
+                    <span>
+                      {item.cantidad}x {item.nombre}
+                      {item.afectacion !== '01' && (
+                        <em className="mini-item-nota"> ({afectacionTexto(item.afectacion)})</em>
+                      )}
+                    </span>
+                    <strong>S/ {centavos(item.importe)}</strong>
                   </div>
                 ))}
               </div>
 
               <div className="desglose-tributario">
-                <div className="desglose-fila">
-                  <span>Op. Gravada (Subtotal)</span>
-                  <span>S/ {opGravada.toFixed(2)}</span>
-                </div>
+                {resumen.opGravada > 0 && (
+                  <div className="desglose-fila">
+                    <span>Op. Gravada (Subtotal)</span>
+                    <span>S/ {centavos(resumen.opGravada)}</span>
+                  </div>
+                )}
+                {resumen.opInafecta > 0 && (
+                  <div className="desglose-fila">
+                    <span>Op. Inafecta</span>
+                    <span>S/ {centavos(resumen.opInafecta)}</span>
+                  </div>
+                )}
+                {resumen.opExonerada > 0 && (
+                  <div className="desglose-fila">
+                    <span>Op. Exonerada</span>
+                    <span>S/ {centavos(resumen.opExonerada)}</span>
+                  </div>
+                )}
+                {resumen.opGratuita > 0 && (
+                  <div className="desglose-fila">
+                    <span>Op. Gratuitas</span>
+                    <span>S/ {centavos(resumen.opGratuita)}</span>
+                  </div>
+                )}
                 <div className="desglose-fila">
                   <span>I.G.V. (18%)</span>
-                  <span>S/ {igv.toFixed(2)}</span>
+                  <span>S/ {centavos(resumen.igv)}</span>
                 </div>
                 <div className="desglose-fila total">
                   <span>Total a Pagar</span>
-                  <span>S/ {total.toFixed(2)}</span>
+                  <span>S/ {centavos(resumen.total)}</span>
                 </div>
               </div>
 
               <button type="submit" className="btn-confirmar-pago" disabled={procesando}>
-                {procesando ? 'Emitiendo comprobante...' : `Confirmar y Pagar S/ ${total.toFixed(2)}`}
+                {procesando ? 'Emitiendo comprobante...' : `Confirmar y Pagar S/ ${centavos(resumen.total)}`}
               </button>
             </div>
           </form>
@@ -263,4 +384,9 @@ export default function CheckoutTienda() {
   );
 }
 
-  
+function afectacionTexto(afectacion) {
+  if (afectacion === '02') return 'Inafecta';
+  if (afectacion === '03') return 'Exonerada';
+  if (afectacion === '04') return 'Gratuita';
+  return 'Gravada';
+}

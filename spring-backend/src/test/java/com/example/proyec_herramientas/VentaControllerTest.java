@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.List;
 import java.util.Map;
+import java.math.BigDecimal;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -60,8 +61,8 @@ class VentaControllerTest {
         clienteRepository.deleteAll();
         personaRepository.deleteAll();
 
-        productoRepository.save(new Producto(1, "Mouse Gamer", 8, 50.0, "Accesorios"));
-        productoRepository.save(new Producto(2, "Teclado Mecánico", 5, 120.0, "Accesorios"));
+        productoRepository.save(new Producto(1, "Mouse Gamer", 8, new BigDecimal("50.00"), "Accesorios"));
+        productoRepository.save(new Producto(2, "Teclado Mecánico", 5, new BigDecimal("120.00"), "Accesorios"));
         clienteRepository.save(new Cliente("CLI-0001", "Juan", "Pérez", "987654321", "juan@correo.com"));
         personaRepository.save(persona("PER001", "Juan", "Pérez", "juan@correo.com"));
     }

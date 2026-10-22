@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.math.BigDecimal;
 
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.hasSize;
@@ -46,8 +47,8 @@ class ProductoControllerTest {
 
     @Test
     void listarProductosCatalogo() throws Exception {
-        productoRepository.save(new Producto(1, "Mouse Gamer", 8, 50.0, "Accesorios"));
-        productoRepository.save(new Producto(2, "Teclado Mecánico", 5, 120.0, "Accesorios"));
+        productoRepository.save(new Producto(1, "Mouse Gamer", 8, new BigDecimal("50.00"), "Accesorios"));
+        productoRepository.save(new Producto(2, "Teclado Mecánico", 5, new BigDecimal("120.00"), "Accesorios"));
 
         mockMvc.perform(get("/productos"))
                 .andExpect(status().isOk())
@@ -69,7 +70,7 @@ class ProductoControllerTest {
 
     @Test
     void crearProductoSinIdAsignaSiguiente() throws Exception {
-        productoRepository.save(new Producto(1, "Mouse Gamer", 8, 50.0, "Accesorios"));
+        productoRepository.save(new Producto(1, "Mouse Gamer", 8, new BigDecimal("50.00"), "Accesorios"));
 
         mockMvc.perform(post("/productos")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -80,7 +81,7 @@ class ProductoControllerTest {
 
     @Test
     void actualizarProducto() throws Exception {
-        productoRepository.save(new Producto(1, "Mouse Gamer", 8, 50.0, "Accesorios"));
+        productoRepository.save(new Producto(1, "Mouse Gamer", 8, new BigDecimal("50.00"), "Accesorios"));
 
         mockMvc.perform(put("/productos/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -101,7 +102,7 @@ class ProductoControllerTest {
 
     @Test
     void eliminarProducto() throws Exception {
-        productoRepository.save(new Producto(1, "Mouse Gamer", 8, 50.0, "Accesorios"));
+        productoRepository.save(new Producto(1, "Mouse Gamer", 8, new BigDecimal("50.00"), "Accesorios"));
 
         mockMvc.perform(delete("/productos/1"))
                 .andExpect(status().isNoContent());
@@ -139,7 +140,7 @@ class ProductoControllerTest {
 
     @Test
     void actualizarProductoActualizaAtributos() throws Exception {
-        productoRepository.save(new Producto(1, "Mouse Gamer", 8, 50.0, "Accesorios"));
+        productoRepository.save(new Producto(1, "Mouse Gamer", 8, new BigDecimal("50.00"), "Accesorios"));
 
         Map<String, String> atributos = new HashMap<>();
         atributos.put("conexion", "inalámbrico");
@@ -154,7 +155,7 @@ class ProductoControllerTest {
 
     @Test
     void productoSinAtributosDevuelveMapaVacio() throws Exception {
-        productoRepository.save(new Producto(1, "Mouse Gamer", 8, 50.0, "Accesorios"));
+        productoRepository.save(new Producto(1, "Mouse Gamer", 8, new BigDecimal("50.00"), "Accesorios"));
 
         mockMvc.perform(get("/productos"))
                 .andExpect(status().isOk())

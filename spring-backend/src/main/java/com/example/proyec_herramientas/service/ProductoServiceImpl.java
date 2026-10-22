@@ -6,6 +6,7 @@ import com.example.proyec_herramientas.repository.ProductoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -44,9 +45,12 @@ public class ProductoServiceImpl implements ProductoService {
                 id,
                 producto.getNombre(),
                 producto.getStock(),
-                producto.getPrecio(),
+                BigDecimal.valueOf(producto.getPrecio()),
                 producto.getCategoria());
         entity.setAtributos(producto.getAtributos());
+        entity.setCodigo(producto.getCodigo());
+        entity.setUnidadMedida(producto.getUnidadMedida());
+        entity.setAfectacionIgv(producto.getAfectacionIgv());
         return toDTO(repository.save(entity));
     }
 
@@ -59,9 +63,12 @@ public class ProductoServiceImpl implements ProductoService {
         }
         entity.setNombre(producto.getNombre());
         entity.setStock(producto.getStock());
-        entity.setPrecio(producto.getPrecio());
+        entity.setPrecio(BigDecimal.valueOf(producto.getPrecio()));
         entity.setCategoria(producto.getCategoria());
         entity.setAtributos(producto.getAtributos());
+        entity.setCodigo(producto.getCodigo());
+        entity.setUnidadMedida(producto.getUnidadMedida());
+        entity.setAfectacionIgv(producto.getAfectacionIgv());
         return toDTO(repository.save(entity));
     }
 
@@ -95,8 +102,11 @@ public class ProductoServiceImpl implements ProductoService {
         dto.setIdProducto(producto.getIdProducto());
         dto.setNombre(producto.getNombre());
         dto.setStock(producto.getStock());
-        dto.setPrecio(producto.getPrecio());
+        dto.setPrecio(producto.getPrecio().doubleValue());
         dto.setCategoria(producto.getCategoria());
+        dto.setCodigo(producto.getCodigo());
+        dto.setUnidadMedida(producto.getUnidadMedida());
+        dto.setAfectacionIgv(producto.getAfectacionIgv());
         dto.setAtributos(producto.getAtributos());
         return dto;
     }

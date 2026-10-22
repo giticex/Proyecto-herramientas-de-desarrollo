@@ -64,6 +64,10 @@ export const useClienteStore = create((set, get) => ({
           categoria: producto.categoria,
           atributos: producto.atributos || {},
           cantidad,
+          // Datos fiscales del catalogo: solo se usan para la vista previa del
+          // checkout, el backend vuelve a leerlos del catalogo al emitir.
+          afectacionIgv: producto.afectacionIgv || '01',
+          unidadMedida: producto.unidadMedida || 'NIU',
         },
       ];
     }
