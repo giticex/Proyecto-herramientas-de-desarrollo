@@ -5,6 +5,8 @@ import com.example.proyec_herramientas.exception.StockInsuficienteException;
 import com.example.proyec_herramientas.facturacion.service.EmisorService;
 import com.example.proyec_herramientas.model.CarritoRequestDTO;
 import com.example.proyec_herramientas.model.ClienteDTO;
+import com.example.proyec_herramientas.model.PaginaVentasDTO;
+import com.example.proyec_herramientas.model.VentaResumenDTO;
 import com.example.proyec_herramientas.persistence.DetalleVenta;
 import com.example.proyec_herramientas.persistence.MedioPago;
 import com.example.proyec_herramientas.persistence.Producto;
@@ -20,12 +22,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 @Service
 public class VentaServiceImpl implements VentaService {
@@ -43,6 +51,8 @@ public class VentaServiceImpl implements VentaService {
     private static final String ESTADO_LEGACY = "LEGACY";
     private static final int ESCALA_VALOR_UNITARIO = 6;
     private static final int ESCALA_IMPORTE = 2;
+    private static final int TAMANIO_MAXIMO_PAGINA = 100;
+    private static final DateTimeFormatter FECHA_HORA = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     private static final Map<String, String> ALIAS_MEDIO_PAGO = Map.of(
             "tarjeta", "Tarjeta de crédito",
@@ -151,6 +161,43 @@ public class VentaServiceImpl implements VentaService {
             return enriquecer(ventaRepository.findAllByOrderByFechaEmisionDesc());
         }
         return enriquecer(ventaRepository.findByIdClienteOrderByFechaEmisionDesc(idCliente));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PaginaVentasDTO listarVentas(int idTienda, String busqueda, int pagina, int tamanio) {
+        int paginaSegura = Math.max(0, pagina);
+        int tamanioSeguro = Math.min(Math.max(1, tamanio), TAMANIO_MAXIMO_PAGINA);
+        String filtro = busqueda == null ? "" : busqueda.trim();
+
+        Page<Venta> resultado = ventaRepository.buscarPorTienda(idTienda, filtro,
+                PageRequest.of(paginaSegura, tamanioSeguro));
+
+        List<VentaResumenDTO> contenido = resultado.getContent().stream()
+                .map(this::aResumen)
+                .toList();
+        return new PaginaVentasDTO(contenido, resultado.getNumber(), resultado.getSize(),
+                resultado.getTotalElements(), resultado.getTotalPages());
+    }
+
+    private VentaResumenDTO aResumen(Venta venta) {
+        String fecha = venta.getFechaEmision() == null
+                ? ""
+                : LocalDateTime.ofInstant(venta.getFechaEmision().toInstant(), ZoneId.systemDefault())
+                        .format(FECHA_HORA);
+        String estado = venta.getEstado() == null || venta.getEstado().isBlank()
+                ? "EMITIDO"
+                : venta.getEstado();
+        return new VentaResumenDTO(
+                venta.getId(),
+                venta.getNumeroDocumento(),
+                venta.getSerie(),
+                venta.getCorrelativo(),
+                fecha,
+                venta.getReceptorRazonSocial(),
+                venta.getReceptorNumDocumento(),
+                venta.getTotalVenta(),
+                estado);
     }
 
     private String resolverTipoDocumento(String nombre) {

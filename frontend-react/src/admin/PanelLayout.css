@@ -28,7 +28,7 @@
   height: 100vh;
   padding: 24px;
   background: #fff;
-  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
   box-shadow: 0 0 24px rgba(0, 0, 0, 0.04);
 }
 .panel-sidebar-marca {
@@ -96,13 +96,12 @@
 @media (max-width: 900px) {
   .panel-shell { flex-direction: column; }
   .panel-sidebar {
-    order: -1;
     flex-direction: row;
     align-items: center;
     width: 100%;
     height: auto;
     padding: 12px 20px;
-    border-left: 0;
+    border-right: 0;
     border-bottom: 1px solid var(--line);
     z-index: 40;
   }

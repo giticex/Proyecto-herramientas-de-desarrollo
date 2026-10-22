@@ -1,6 +1,7 @@
 package com.example.proyec_herramientas.controller;
 
 import com.example.proyec_herramientas.model.CarritoRequestDTO;
+import com.example.proyec_herramientas.model.PaginaVentasDTO;
 import com.example.proyec_herramientas.persistence.Venta;
 import com.example.proyec_herramientas.persistence.Rol;
 import com.example.proyec_herramientas.security.SesionPrincipal;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -44,6 +46,17 @@ public class VentaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ventaService.registrarVenta(idCliente, carrito));
     }
 
+    // GET /ventas -> historial paginado de la tienda del ADMIN autenticado.
+    // El idTienda sale del token; el filtro busca por comprobante o documento.
+    @GetMapping
+    public PaginaVentasDTO historial(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "") String q,
+            Authentication authentication) {
+        return ventaService.listarVentas(idTienda(authentication), q, page, size);
+    }
+
     // GET /ventas/mias -> historial de compras del CLIENTE que llamo.
     @GetMapping("/mias")
     public List<Venta> mias(Authentication authentication) {
@@ -53,6 +66,15 @@ public class VentaController {
                     "La cuenta no tiene un cliente asociado");
         }
         return ventaService.obtenerHistorial(principal.idCliente());
+    }
+
+    private int idTienda(Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof SesionPrincipal principal
+                && principal.idTienda() != null) {
+            return principal.idTienda();
+        }
+        throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "La cuenta no tiene una tienda asignada");
     }
 
     private SesionPrincipal principal(Authentication authentication) {

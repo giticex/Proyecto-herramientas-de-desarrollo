@@ -21,8 +21,6 @@ export default function PanelLayout({ children }) {
   return (
     <PlantillaTienda sinNav>
       <div className="panel-shell">
-        <div className="panel-contenido">{children}</div>
-
         <aside className="panel-sidebar" aria-label="Navegación del panel">
           <div className="panel-sidebar-marca">
             {tienda.logoUrl
@@ -32,6 +30,8 @@ export default function PanelLayout({ children }) {
           </div>
           <PanelNavLinks />
         </aside>
+
+        <div className="panel-contenido">{children}</div>
       </div>
     </PlantillaTienda>
   );

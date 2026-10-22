@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { apiClient } from '../api/client';
 import { urlComprobanteQr } from '../api/comprobantesApi';
 import { showToast } from '../components/toastBus';
+import { descargarArchivoSeguro } from '../utils/descargas';
 import './ComprobanteImpresion.css';
 
 const money = (valor) => `S/ ${Number(valor || 0).toFixed(2)}`;
@@ -129,19 +129,10 @@ export default function ComprobanteImpresion({ comprobante, onClose }) {
 
   // Los endpoints de PDF/XML exigen el token: se descarga el archivo con el
   // cliente HTTP (que inyecta el Bearer) y se abre el blob en una pestaña.
-  const descargarArchivoSeguro = async (ruta, tipo) => {
+  const abrirArchivoSeguro = async (ruta, tipo) => {
     setDescargando(tipo);
     try {
-      const blob = await apiClient.getBlob(ruta);
-      const url = window.URL.createObjectURL(blob);
-      const ventana = window.open(url, '_blank');
-      if (!ventana) {
-        const enlace = document.createElement('a');
-        enlace.href = url;
-        enlace.download = `${comprobante.numeroDocumento || 'comprobante'}.${tipo.toLowerCase()}`;
-        enlace.click();
-      }
-      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+      await descargarArchivoSeguro(ruta, tipo, comprobante.numeroDocumento, { abrir: true });
     } catch (error) {
       showToast(error?.message || `No se pudo abrir el ${tipo}.`);
     } finally {
@@ -164,7 +155,7 @@ export default function ComprobanteImpresion({ comprobante, onClose }) {
                   className="btn-link"
                   disabled={descargando === 'PDF'}
                   onClick={() =>
-                    descargarArchivoSeguro(`/comprobantes/${comprobante.idVenta}/pdf`, 'PDF')
+                    abrirArchivoSeguro(`/comprobantes/${comprobante.idVenta}/pdf`, 'PDF')
                   }
                 >
                   {descargando === 'PDF' ? 'Abriendo…' : 'Ver PDF'}
@@ -174,7 +165,7 @@ export default function ComprobanteImpresion({ comprobante, onClose }) {
                   className="btn-link"
                   disabled={descargando === 'XML'}
                   onClick={() =>
-                    descargarArchivoSeguro(`/comprobantes/${comprobante.idVenta}/xml`, 'XML')
+                    abrirArchivoSeguro(`/comprobantes/${comprobante.idVenta}/xml`, 'XML')
                   }
                 >
                   {descargando === 'XML' ? 'Abriendo…' : 'Ver XML'}
