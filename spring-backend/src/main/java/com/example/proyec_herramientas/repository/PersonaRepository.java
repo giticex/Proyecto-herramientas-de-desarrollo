@@ -11,4 +11,6 @@ public interface PersonaRepository extends JpaRepository<Persona, String> {
 
     @Query("select p.idPersona from Persona p, Cliente c where c.idCliente = :idCliente and c.correo = p.correo")
     Optional<String> findIdPersonaByClienteId(@Param("idCliente") String idCliente);
+
+    Optional<Persona> findByCorreo(String correo);
 }

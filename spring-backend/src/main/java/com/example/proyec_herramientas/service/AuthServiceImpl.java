@@ -122,6 +122,18 @@ public class AuthServiceImpl implements AuthService {
         cliente.setContrasena(passwordEncoder.encode(request.getContrasena()));
         cliente = clienteRepository.save(cliente);
 
+        // VentaServiceImpl resuelve el id_persona de la venta buscando una
+        // Persona con el mismo correo del cliente (PersonaRepository); sin
+        // esta fila, registrar una venta fallaria con 404.
+        if (personaRepository.findByCorreo(correo).isEmpty()) {
+            Persona persona = new Persona();
+            persona.setIdPersona(generarId("PER"));
+            persona.setNombre(request.getNombre().trim());
+            persona.setApellido(request.getApellido().trim());
+            persona.setCorreo(correo);
+            personaRepository.save(persona);
+        }
+
         String token = jwtService.generar(cliente.getIdCliente(), ROL_CLIENTE, null);
         UsuarioAuthDTO usuarioDTO = new UsuarioAuthDTO(cliente.getIdCliente(), correo, ROL_CLIENTE);
         return new AuthResponse(token, usuarioDTO, null);
