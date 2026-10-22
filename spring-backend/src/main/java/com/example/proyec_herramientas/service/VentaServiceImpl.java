@@ -60,10 +60,9 @@ public class VentaServiceImpl implements VentaService {
 
     @Override
     @Transactional
-    public Venta registrarVenta(CarritoRequestDTO carrito) {
+    public Venta registrarVenta(String idCliente, CarritoRequestDTO carrito) {
         String tipoDocumento = conValor(carrito.getTipoDocumento(), TIPO_BOLETA);
         String medioPago = conValor(carrito.getMedioPago(), MEDIO_PAGO_EFECTIVO);
-        String idCliente = carrito.getIdCliente();
 
         ClienteDTO cliente = clienteService.obtenerPorId(idCliente);
         if (cliente == null) {
