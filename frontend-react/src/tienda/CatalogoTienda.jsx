@@ -18,7 +18,7 @@ export default function CatalogoTienda() {
 
   useEffect(() => {
     getTienda(slug);
-    listProductos();
+    listProductos(slug);
   }, [slug, getTienda, listProductos]);
 
   // 1. Extraer categorías únicas desde los productos del store

@@ -8,8 +8,8 @@ export default function LandingPlataforma() {
 
   useEffect(() => {
     getTienda();
-    listProductos();
-  }, [getTienda, listProductos]);
+    listProductos(tienda.slug);
+  }, [getTienda, listProductos, tienda.slug]);
 
   const slugTienda = tienda?.slug || 'mi-tienda';
   const muestraProductos = productos.slice(0, 4);

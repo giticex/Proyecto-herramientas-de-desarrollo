@@ -15,7 +15,7 @@ export default function CarritoTienda() {
   const [modalLogin, setModalLogin] = useState(false);
   useEffect(() => {
     getTienda(slug);
-    if (productos.length === 0) listProductos();
+    if (productos.length === 0) listProductos(slug);
   }, [slug, getTienda, listProductos, productos.length]);
 
   const total = carrito.reduce((sum, item) => sum + (Number(item.precio) * item.cantidad), 0);
