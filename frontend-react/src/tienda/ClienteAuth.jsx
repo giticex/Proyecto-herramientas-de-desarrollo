@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import PlantillaTienda from '../components/PlantillaTienda';
 import { useStore } from '../store/store';
 import { useClienteStore } from './clienteStore';
+import { loginApi } from '../auth/authApi';
 import { showToast } from '../components/toastBus';
 import './ClienteAuth.css';
 
@@ -13,6 +14,7 @@ export default function ClienteAuth() {
   const { loginCliente, cliente } = useClienteStore();
 
   const [isLogin, setIsLogin] = useState(true);
+  const [enviando, setEnviando] = useState(false);
   const [formData, setFormData] = useState({
     nombre: '',
     email: '',
@@ -22,7 +24,7 @@ export default function ClienteAuth() {
   // Si el cliente ya está logueado, lo redirigimos automáticamente al catálogo
   useEffect(() => {
     getTienda(slug);
-    if (cliente) {
+    if (cliente?.rol === 'CLIENTE') {
       navigate(`/tienda/${slug}`);
     }
   }, [slug, getTienda, cliente, navigate]);
@@ -31,26 +33,47 @@ export default function ClienteAuth() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validación básica
     if (!formData.email || !formData.password || (!isLogin && !formData.nombre)) {
       showToast('Por favor, completa todos los campos requeridos.');
       return;
     }
 
-    // Simulamos la autenticación exitosa (Luego lo conectaremos al backend)
-    const nombreUsuario = isLogin ? (formData.email.split('@')[0]) : formData.nombre;
-    const mockUser = {
-      idCliente: Date.now(),
-      nombre: nombreUsuario,
-      email: formData.email,
-    };
+    // El alta de compradores todavía no tiene endpoint en el backend.
+    if (!isLogin) {
+      showToast('El registro de compradores todavía no está disponible.');
+      return;
+    }
 
-    loginCliente(mockUser);
-    showToast(`¡Bienvenida/o a ${tienda.nombre}, ${nombreUsuario}!`);
-    navigate(`/tienda/${slug}`);
+    setEnviando(true);
+    try {
+      // El backend valida la clave y devuelve el rol de la cuenta.
+      const respuesta = await loginApi(formData.email.trim(), formData.password);
+      if (respuesta.rol !== 'CLIENTE') {
+        showToast('Tu cuenta no tiene el rol CLIENTE para comprar en esta tienda.');
+        return;
+      }
+
+      const sesion = {
+        idCliente: respuesta.idCliente,
+        nombre: respuesta.nombre || formData.email.split('@')[0],
+        correo: respuesta.correo || formData.email,
+        email: respuesta.correo || formData.email,
+        token: respuesta.token,
+        rol: respuesta.rol,
+      };
+
+      loginCliente(sesion);
+      showToast(`¡Bienvenida/o a ${tienda.nombre}, ${sesion.nombre}!`);
+      navigate(`/tienda/${slug}`);
+    } catch (problema) {
+      showToast(problema.message || 'No se pudo iniciar sesión.');
+    } finally {
+      setEnviando(false);
+    }
   };
 
   const navLinks = (
@@ -102,7 +125,7 @@ export default function ClienteAuth() {
               />
             </div>
 
-            <button type="submit" className="btn block" style={{ marginTop: 12 }}>
+            <button type="submit" className="btn block" style={{ marginTop: 12 }} disabled={enviando}>
               {isLogin ? 'Ingresar a mi cuenta' : 'Registrarme ahora'}
             </button>
           </form>
