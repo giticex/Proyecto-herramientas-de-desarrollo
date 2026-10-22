@@ -47,7 +47,7 @@ export default function App() {
         {/* === 4. MÓDULO ADMINISTRADOR Y ONBOARDING (Kiara) === */}
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/registro-tienda" element={<RegistroTienda />} />
-        <Route element={<RutaProtegida />}>
+        <Route element={<RutaProtegida rol="ADMIN" />}>
           <Route path="/admin" element={<Navigate to="/admin/productos" replace />} />
           <Route path="/admin/marca" element={<MarcaPanel />} />
           <Route path="/admin/productos" element={<ProductosPanel />} />
