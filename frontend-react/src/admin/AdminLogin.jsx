@@ -1,21 +1,26 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSesion } from '../auth/sesionStore';
-import { loginApi } from '../auth/authApi';
+import { login as loginApi } from '../auth/authApi';
+import { useStore } from '../store/store';
+import { ApiError } from '../api/ApiError';
 import './AdminLogin.css';
 
 // Puerto de frontend/login.html + frontend/js/login.js: mismos campos,
-// validación y mensajes en español.
+// validación y mensajes en español, ahora contra POST /auth/login real.
 export default function AdminLogin() {
   const [usuario, setUsuario] = useState('');
   const [clave, setClave] = useState('');
   const [errores, setErrores] = useState({ usuario: '', clave: '' });
+  const [errorGeneral, setErrorGeneral] = useState('');
   const [enviando, setEnviando] = useState(false);
   const login = useSesion((estado) => estado.login);
+  const setTienda = useStore((estado) => estado.setTienda);
   const navigate = useNavigate();
 
   function limpiarError(campo) {
     setErrores((prev) => ({ ...prev, [campo]: '' }));
+    setErrorGeneral('');
   }
 
   async function manejarSubmit(evento) {
@@ -24,15 +29,23 @@ export default function AdminLogin() {
     const errorUsuario = u ? '' : 'Ingresa tu usuario o correo.';
     const errorClave = clave.length >= 1 ? '' : 'Ingresa tu contraseña.';
     setErrores({ usuario: errorUsuario, clave: errorClave });
+    setErrorGeneral('');
     if (errorUsuario || errorClave) return;
 
     setEnviando(true);
     try {
-      // TODO: cuando loginApi haga POST /auth/login de verdad, solo
-      // redirigir si la respuesta es 200.
-      const { token } = await loginApi(u);
-      login(u, token);
+      const respuesta = await loginApi(u, clave, 'ADMIN');
+      if (respuesta.usuario.rol !== 'ADMIN') {
+        setErrorGeneral('Esta cuenta no es de administrador.');
+        return;
+      }
+      login(respuesta.usuario, respuesta.token);
+      if (respuesta.tienda) setTienda(respuesta.tienda);
       navigate('/admin/productos');
+    } catch (error) {
+      setErrorGeneral(
+        error instanceof ApiError ? error.message : 'Usuario o contraseña incorrectos.',
+      );
     } finally {
       setEnviando(false);
     }
@@ -75,6 +88,7 @@ export default function AdminLogin() {
             />
             <span className="error" role="alert">{errores.clave}</span>
           </div>
+          {errorGeneral && <p className="error" role="alert">{errorGeneral}</p>}
           <button className="btn block" type="submit" disabled={enviando}>Entrar</button>
           <p className="small muted">¿Sin tienda todavía? <Link to="/registro-tienda">Crea una</Link></p>
         </form>

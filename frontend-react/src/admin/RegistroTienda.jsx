@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useStore } from '../store/store';
-import { TIENDA_DEFAULT } from '../api/tiendaApi';
 import { slugify } from '../store/slugify';
 import { useSesion } from '../auth/sesionStore';
-import { loginApi } from '../auth/authApi';
+import { useStore } from '../store/store';
+import { registroTienda as registroTiendaApi } from '../auth/authApi';
+import { ApiError } from '../api/ApiError';
 import './RegistroTienda.css';
 
 const RUBROS = [
@@ -20,20 +20,27 @@ const RUBROS = [
   { value: 'otro', label: 'Otro' },
 ];
 
+const ERRORES_VACIOS = { nombre: '', rubro: '', slug: '', correo: '', contrasena: '', confirmar: '' };
+
 // Porta frontend/registro.html + frontend/js/registro.js. No requiere sesión.
 export default function RegistroTienda() {
   const [nombre, setNombre] = useState('');
   const [rubro, setRubro] = useState('');
   const [slug, setSlug] = useState('');
   const [slugEditado, setSlugEditado] = useState(false);
-  const [errores, setErrores] = useState({ nombre: '', rubro: '', slug: '' });
+  const [correo, setCorreo] = useState('');
+  const [contrasena, setContrasena] = useState('');
+  const [confirmar, setConfirmar] = useState('');
+  const [errores, setErrores] = useState(ERRORES_VACIOS);
+  const [errorGeneral, setErrorGeneral] = useState('');
   const [enviando, setEnviando] = useState(false);
-  const saveTienda = useStore((estado) => estado.saveTienda);
   const login = useSesion((estado) => estado.login);
+  const setTienda = useStore((estado) => estado.setTienda);
   const navigate = useNavigate();
 
   function limpiarError(campo) {
     setErrores((prev) => ({ ...prev, [campo]: '' }));
+    setErrorGeneral('');
   }
 
   function manejarNombre(valor) {
@@ -54,24 +61,38 @@ export default function RegistroTienda() {
     const errorNombre = nombre.trim().length >= 2 ? '' : 'Escribe el nombre de tu tienda.';
     const errorRubro = rubro ? '' : 'Elige un rubro.';
     const errorSlug = s ? '' : 'La dirección no puede estar vacía.';
-    setErrores({ nombre: errorNombre, rubro: errorRubro, slug: errorSlug });
-    if (errorNombre || errorRubro || errorSlug) return;
+    const errorCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo) ? '' : 'Ingresa un correo válido.';
+    const errorContrasena = contrasena.length >= 8 ? '' : 'Debe tener al menos 8 caracteres.';
+    const errorConfirmar = confirmar === contrasena ? '' : 'Las contraseñas no coinciden.';
+    setErrores({
+      nombre: errorNombre,
+      rubro: errorRubro,
+      slug: errorSlug,
+      correo: errorCorreo,
+      contrasena: errorContrasena,
+      confirmar: errorConfirmar,
+    });
+    setErrorGeneral('');
+    if (errorNombre || errorRubro || errorSlug || errorCorreo || errorContrasena || errorConfirmar) return;
 
     setEnviando(true);
     try {
-      // TODO: cuando exista POST /tiendas, manejar 409 si el slug ya existe.
-      await saveTienda({
+      const respuesta = await registroTiendaApi({
         nombre: nombre.trim(),
         rubro,
         slug: s,
-        colorPrimario: TIENDA_DEFAULT.colorPrimario,
-        colorSecundario: TIENDA_DEFAULT.colorSecundario,
-        logoUrl: '',
+        correo: correo.trim(),
+        contrasena,
       });
-      localStorage.removeItem('productos'); // tienda nueva = catálogo nuevo (mock)
-      const { token } = await loginApi('admin');
-      login('admin', token);
-      navigate('/admin/marca');
+      login(respuesta.usuario, respuesta.token);
+      if (respuesta.tienda) setTienda(respuesta.tienda);
+      navigate('/admin');
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        setErrorGeneral('Ese correo o dirección ya está en uso.');
+      } else {
+        setErrorGeneral(error instanceof ApiError ? error.message : 'No se pudo crear la tienda.');
+      }
     } finally {
       setEnviando(false);
     }
@@ -87,7 +108,7 @@ export default function RegistroTienda() {
       <main className="page narrow">
         <header className="head">
           <h1>Abre tu tienda.</h1>
-          <p>Tres datos y estás dentro. Podrás cambiarlos después.</p>
+          <p>Unos datos y estás dentro. Podrás cambiarlos después.</p>
         </header>
 
         <form className="form" onSubmit={manejarSubmit} noValidate>
@@ -134,6 +155,45 @@ export default function RegistroTienda() {
             <span className="error" role="alert">{errores.slug}</span>
           </div>
 
+          <div className={`field ${errores.correo ? 'invalid' : ''}`}>
+            <label htmlFor="correo">Correo</label>
+            <input
+              id="correo"
+              type="email"
+              placeholder="tu@correo.com"
+              autoComplete="email"
+              value={correo}
+              onChange={(e) => { setCorreo(e.target.value); limpiarError('correo'); }}
+            />
+            <span className="error" role="alert">{errores.correo}</span>
+          </div>
+
+          <div className={`field ${errores.contrasena ? 'invalid' : ''}`}>
+            <label htmlFor="contrasena">Contraseña</label>
+            <input
+              id="contrasena"
+              type="password"
+              autoComplete="new-password"
+              value={contrasena}
+              onChange={(e) => { setContrasena(e.target.value); limpiarError('contrasena'); }}
+            />
+            <span className="hint">Mínimo 8 caracteres.</span>
+            <span className="error" role="alert">{errores.contrasena}</span>
+          </div>
+
+          <div className={`field ${errores.confirmar ? 'invalid' : ''}`}>
+            <label htmlFor="confirmar">Confirmar contraseña</label>
+            <input
+              id="confirmar"
+              type="password"
+              autoComplete="new-password"
+              value={confirmar}
+              onChange={(e) => { setConfirmar(e.target.value); limpiarError('confirmar'); }}
+            />
+            <span className="error" role="alert">{errores.confirmar}</span>
+          </div>
+
+          {errorGeneral && <p className="error" role="alert">{errorGeneral}</p>}
           <button className="btn block" type="submit" disabled={enviando}>Crear tienda</button>
         </form>
       </main>
