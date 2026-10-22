@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { urlComprobantePdf, urlComprobanteQr, urlComprobanteXml } from '../api/comprobantesApi';
+import { apiClient } from '../api/client';
+import { urlComprobanteQr } from '../api/comprobantesApi';
+import { showToast } from '../components/toastBus';
 import './ComprobanteImpresion.css';
 
 const money = (valor) => `S/ ${Number(valor || 0).toFixed(2)}`;
@@ -100,6 +102,7 @@ function QrPlaceholder({ semilla }) {
  */
 export default function ComprobanteImpresion({ comprobante, onClose }) {
   const [verQr, setVerQr] = useState(false);
+  const [descargando, setDescargando] = useState(null);
 
   if (!comprobante) return null;
 
@@ -123,6 +126,28 @@ export default function ComprobanteImpresion({ comprobante, onClose }) {
   const totalPagar = Number(totales.montoTotalPagar || totalVenta);
   const semillaQr = comprobante.hashComprobante || comprobante.numeroDocumento || 'TECHZONE';
 
+  // Los endpoints de PDF/XML exigen el token: se descarga el archivo con el
+  // cliente HTTP (que inyecta el Bearer) y se abre el blob en una pestaña.
+  const descargarArchivoSeguro = async (ruta, tipo) => {
+    setDescargando(tipo);
+    try {
+      const blob = await apiClient.getBlob(ruta);
+      const url = window.URL.createObjectURL(blob);
+      const ventana = window.open(url, '_blank');
+      if (!ventana) {
+        const enlace = document.createElement('a');
+        enlace.href = url;
+        enlace.download = `${comprobante.numeroDocumento || 'comprobante'}.${tipo.toLowerCase()}`;
+        enlace.click();
+      }
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+    } catch (error) {
+      showToast(error?.message || `No se pudo abrir el ${tipo}.`);
+    } finally {
+      setDescargando(null);
+    }
+  };
+
   return (
     <div className="comprobante-overlay" role="dialog" aria-modal="true">
       <div className="comprobante-modal">
@@ -131,22 +156,26 @@ export default function ComprobanteImpresion({ comprobante, onClose }) {
           <div className="comprobante-modal-acciones">
             {tieneArchivoBackend(comprobante.idVenta) && (
               <>
-                <a
+                <button
+                  type="button"
                   className="btn-link"
-                  href={urlComprobantePdf(comprobante.idVenta)}
-                  target="_blank"
-                  rel="noreferrer"
+                  disabled={descargando === 'PDF'}
+                  onClick={() =>
+                    descargarArchivoSeguro(`/comprobantes/${comprobante.idVenta}/pdf`, 'PDF')
+                  }
                 >
-                  Ver PDF
-                </a>
-                <a
+                  {descargando === 'PDF' ? 'Abriendo…' : 'Ver PDF'}
+                </button>
+                <button
+                  type="button"
                   className="btn-link"
-                  href={urlComprobanteXml(comprobante.idVenta)}
-                  target="_blank"
-                  rel="noreferrer"
+                  disabled={descargando === 'XML'}
+                  onClick={() =>
+                    descargarArchivoSeguro(`/comprobantes/${comprobante.idVenta}/xml`, 'XML')
+                  }
                 >
-                  Ver XML
-                </a>
+                  {descargando === 'XML' ? 'Abriendo…' : 'Ver XML'}
+                </button>
               </>
             )}
             <button type="button" className="btn-link" onClick={() => window.print()}>

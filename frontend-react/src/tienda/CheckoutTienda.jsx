@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import PlantillaTienda from '../components/PlantillaTienda';
 import { useClienteStore } from './clienteStore';
 import { useStore } from '../store/store';
@@ -58,6 +58,7 @@ const centavos = (valor) => Number(valor).toFixed(2);
 export default function CheckoutTienda() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { carrito, cliente, registrarCompra } = useClienteStore();
   const { tienda, productos, getTienda, listProductos } = useStore();
 
@@ -87,6 +88,13 @@ export default function CheckoutTienda() {
   const correoCliente = cliente?.correo || cliente?.email || '';
   const nombreCliente = cliente?.nombre || 'Consumidor Final';
 
+  // Sin sesión (o con el token vencido) no se puede emitir: se manda al login
+  // guardando la ruta actual para volver aquí al terminar.
+  const irAlLogin = (mensaje) => {
+    showToast(mensaje);
+    navigate(`/tienda/${slug}/login`, { state: { from: location.pathname } });
+  };
+
   const manejarCambioComprobante = (tipo) => {
     setTipoComprobante(tipo);
     setDocumento('');
@@ -107,6 +115,11 @@ export default function CheckoutTienda() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!cliente?.token) {
+      irAlLogin('Inicia sesión para completar tu compra.');
+      return;
+    }
 
     const esFactura = tipoComprobante === 'factura';
     const { valido, errores } = validarDatosFacturacion({
@@ -183,6 +196,10 @@ export default function CheckoutTienda() {
       navigate(`/tienda/${slug}/confirmacion`);
     } catch (error) {
       setProcesando(false);
+      if (error?.status === 401 || error?.status === 403) {
+        irAlLogin('Tu sesión venció. Inicia sesión para completar tu compra.');
+        return;
+      }
       showToast(error?.message || 'Ocurrió un error al procesar tu compra.');
     }
   };

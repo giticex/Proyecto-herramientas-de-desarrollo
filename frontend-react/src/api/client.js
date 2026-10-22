@@ -43,15 +43,37 @@ async function request(path, { method = 'GET', body, token } = {}) {
 
   if (!respuesta.ok) {
     const detalle = await mensajeDeError(respuesta);
-    throw new Error(detalle || `Error ${respuesta.status} al llamar ${method} ${path}`);
+    const error = new Error(detalle || `Error ${respuesta.status} al llamar ${method} ${path}`);
+    // El status permite a las vistas reaccionar a 401/403 (sesión vencida).
+    error.status = respuesta.status;
+    throw error;
   }
 
   if (respuesta.status === 204) return null;
   return respuesta.json();
 }
 
+async function requestBlob(path, { token } = {}) {
+  const cabecera = token ?? tokenActivo();
+  const headers = {};
+  if (cabecera) headers.Authorization = `Bearer ${cabecera}`;
+
+  const respuesta = await fetch(`${BASE_URL}${path}`, { headers });
+
+  if (!respuesta.ok) {
+    const detalle = await mensajeDeError(respuesta);
+    const error = new Error(detalle || `Error ${respuesta.status} al descargar ${path}`);
+    error.status = respuesta.status;
+    throw error;
+  }
+
+  // Equivalente a responseType: 'blob' de axios, con fetch nativo.
+  return respuesta.blob();
+}
+
 export const apiClient = {
   get: (path, options) => request(path, options),
+  getBlob: (path, options) => requestBlob(path, options),
   post: (path, body, options) => request(path, { ...options, method: 'POST', body }),
   put: (path, body, options) => request(path, { ...options, method: 'PUT', body }),
   delete: (path, options) => request(path, { ...options, method: 'DELETE' }),

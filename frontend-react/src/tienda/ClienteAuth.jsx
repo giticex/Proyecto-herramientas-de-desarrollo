@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useNavigate, useParams, useLocation, Link } from 'react-router-dom';
 import PlantillaTienda from '../components/PlantillaTienda';
 import { useStore } from '../store/store';
 import { useClienteStore } from './clienteStore';
@@ -10,8 +10,12 @@ import './ClienteAuth.css';
 export default function ClienteAuth() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { tienda, getTienda } = useStore();
   const { loginCliente, cliente } = useClienteStore();
+
+  // Si el checkout manda al login, vuelve a esa ruta al terminar.
+  const destino = location.state?.from || `/tienda/${slug}`;
 
   const [isLogin, setIsLogin] = useState(true);
   const [enviando, setEnviando] = useState(false);
@@ -21,13 +25,13 @@ export default function ClienteAuth() {
     password: '',
   });
 
-  // Si el cliente ya está logueado, lo redirigimos automáticamente al catálogo
+  // Si el cliente ya está logueado, lo redirigimos a donde intentaba ir.
   useEffect(() => {
     getTienda(slug);
     if (cliente?.rol === 'CLIENTE') {
-      navigate(`/tienda/${slug}`);
+      navigate(destino, { replace: true });
     }
-  }, [slug, getTienda, cliente, navigate]);
+  }, [slug, getTienda, cliente, navigate, destino]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -68,7 +72,7 @@ export default function ClienteAuth() {
 
       loginCliente(sesion);
       showToast(`¡Bienvenida/o a ${tienda.nombre}, ${sesion.nombre}!`);
-      navigate(`/tienda/${slug}`);
+      navigate(destino, { replace: true });
     } catch (problema) {
       showToast(problema.message || 'No se pudo iniciar sesión.');
     } finally {
