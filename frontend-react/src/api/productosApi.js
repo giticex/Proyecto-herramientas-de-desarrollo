@@ -1,7 +1,10 @@
-// Productos: el backend SI tiene GET/POST/PUT/DELETE /productos, así que se
-// usa primero y solo se cae al mock de localStorage si la llamada falla
-// (backend apagado, sin red, etc.), igual que hacía frontend/js/store.js.
+// Productos del panel de administrador: GET/POST/PUT/DELETE /productos son
+// solo-ADMIN y requieren el token (ver store.js). Si el backend no responde
+// (falla de conexión, status 0) cae al mock de localStorage; un 401/403/404
+// real del backend NO se tapa con el mock: se deja pasar para que
+// conAutenticacion y la UI lo manejen.
 import { apiClient } from './client';
+import { ApiError } from './ApiError';
 
 const KEY = 'productos';
 
@@ -34,18 +37,26 @@ function obtenerMock() {
   return productos;
 }
 
-export async function listProductos() {
+// Solo cae al mock si el backend es inalcanzable; cualquier otra respuesta
+// (401, 403, 404...) se re-lanza tal cual.
+function esFalloDeConexion(error) {
+  return error instanceof ApiError && error.status === 0;
+}
+
+export async function listProductos(token) {
   try {
-    return await apiClient.get('/productos');
-  } catch {
+    return await apiClient.get('/productos', token);
+  } catch (error) {
+    if (!esFalloDeConexion(error)) throw error;
     return obtenerMock();
   }
 }
 
-export async function createProducto(producto) {
+export async function createProducto(producto, token) {
   try {
-    return await apiClient.post('/productos', producto);
-  } catch {
+    return await apiClient.post('/productos', producto, token);
+  } catch (error) {
+    if (!esFalloDeConexion(error)) throw error;
     const productos = obtenerMock();
     const siguienteId = productos.reduce((max, p) => Math.max(max, p.idProducto), 0) + 1;
     const nuevo = { ...producto, idProducto: producto.idProducto || siguienteId, atributos: producto.atributos || {} };
@@ -54,20 +65,22 @@ export async function createProducto(producto) {
   }
 }
 
-export async function updateProducto(idProducto, producto) {
+export async function updateProducto(idProducto, producto, token) {
   try {
-    return await apiClient.put(`/productos/${idProducto}`, producto);
-  } catch {
+    return await apiClient.put(`/productos/${idProducto}`, producto, token);
+  } catch (error) {
+    if (!esFalloDeConexion(error)) throw error;
     const productos = obtenerMock().map((p) => (p.idProducto === idProducto ? { ...p, ...producto, idProducto } : p));
     escribirMock(productos);
     return productos.find((p) => p.idProducto === idProducto);
   }
 }
 
-export async function deleteProducto(idProducto) {
+export async function deleteProducto(idProducto, token) {
   try {
-    await apiClient.delete(`/productos/${idProducto}`);
-  } catch {
+    await apiClient.delete(`/productos/${idProducto}`, token);
+  } catch (error) {
+    if (!esFalloDeConexion(error)) throw error;
     escribirMock(obtenerMock().filter((p) => p.idProducto !== idProducto));
   }
 }

@@ -1,7 +1,10 @@
-// Tienda (marca): el backend TODAVIA no tiene /tiendas, así que estas llamadas
-// siempre caen al mock de localStorage por ahora. El try/catch ya queda listo
-// para cuando el endpoint exista: solo hay que quitar el TODO.
+// Tienda (marca) y su catálogo público. GET /tiendas/{slug} y
+// GET /tiendas/{slug}/productos son públicos (sin token). PUT /tiendas/{slug}
+// es solo-ADMIN y requiere el token de quien es dueño de esa tienda.
+// Solo cae al mock si el backend es inalcanzable (status 0); cualquier otra
+// respuesta real (404, 401, 403...) se re-lanza tal cual.
 import { apiClient } from './client';
+import { ApiError } from './ApiError';
 
 const KEY = 'tienda';
 
@@ -27,21 +30,33 @@ function escribirMock(tienda) {
   localStorage.setItem(KEY, JSON.stringify(tienda));
 }
 
-// TODO: backend aun no tiene GET /tiendas/{slug}. Cuando exista, este fetch
-// dejará de fallar siempre y se podrá quitar el fallback a TIENDA_DEFAULT.
+function esFalloDeConexion(error) {
+  return error instanceof ApiError && error.status === 0;
+}
+
 export async function getTienda(slug) {
   try {
     return await apiClient.get(`/tiendas/${slug}`);
-  } catch {
+  } catch (error) {
+    if (!esFalloDeConexion(error)) throw error;
     return leerMock() || { ...TIENDA_DEFAULT };
   }
 }
 
-// TODO: backend aun no tiene POST /tiendas (registro) ni PUT /tiendas/{slug} (marca).
-export async function saveTienda(tienda) {
+export async function getProductosDeTienda(slug) {
   try {
-    return await apiClient.put(`/tiendas/${tienda.slug}`, tienda);
-  } catch {
+    return await apiClient.get(`/tiendas/${slug}/productos`);
+  } catch (error) {
+    if (!esFalloDeConexion(error)) throw error;
+    return [];
+  }
+}
+
+export async function saveTienda(tienda, token) {
+  try {
+    return await apiClient.put(`/tiendas/${tienda.slug}`, tienda, token);
+  } catch (error) {
+    if (!esFalloDeConexion(error)) throw error;
     escribirMock(tienda);
     return tienda;
   }
