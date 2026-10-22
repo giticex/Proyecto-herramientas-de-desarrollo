@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { getTienda as getTiendaApi, saveTienda as saveTiendaApi, TIENDA_DEFAULT } from '../api/tiendaApi';
 import {
   listProductos as listProductosApi,
+  listProductosTienda as listProductosTiendaApi,
   createProducto as createProductoApi,
   updateProducto as updateProductoApi,
   deleteProducto as deleteProductoApi,
@@ -25,6 +26,10 @@ export const useStore = create((set, get) => ({
   productos: [],
   umbral: leerUmbral(),
 
+  setTienda(tienda) {
+    set({ tienda });
+  },
+
   async getTienda(slug = get().tienda.slug) {
     const tienda = await getTiendaApi(slug);
     set({ tienda });
@@ -37,8 +42,10 @@ export const useStore = create((set, get) => ({
     return guardada;
   },
 
-  async listProductos() {
-    const productos = await listProductosApi();
+  async listProductos(slug) {
+    const productos = slug
+      ? await listProductosTiendaApi(slug)
+      : await listProductosApi();
     set({ productos });
     return productos;
   },

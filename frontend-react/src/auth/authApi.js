@@ -9,3 +9,7 @@ import { apiClient } from '../api/client';
 export async function loginApi(usuario, clave) {
   return apiClient.post('/auth/login', { usuario, clave });
 }
+
+export async function registrarTienda(datos) {
+  return apiClient.post('/auth/registro-tienda', datos);
+}

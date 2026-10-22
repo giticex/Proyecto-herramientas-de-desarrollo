@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/store';
-import { TIENDA_DEFAULT } from '../api/tiendaApi';
 import { slugify } from '../store/slugify';
 import { useSesion } from '../auth/sesionStore';
-import { loginApi } from '../auth/authApi';
+import { registrarTienda } from '../auth/authApi';
 import './RegistroTienda.css';
 
 const RUBROS = [
@@ -25,10 +24,13 @@ export default function RegistroTienda() {
   const [nombre, setNombre] = useState('');
   const [rubro, setRubro] = useState('');
   const [slug, setSlug] = useState('');
+  const [correo, setCorreo] = useState('');
+  const [contrasena, setContrasena] = useState('');
   const [slugEditado, setSlugEditado] = useState(false);
-  const [errores, setErrores] = useState({ nombre: '', rubro: '', slug: '' });
+  const [errores, setErrores] = useState({ nombre: '', rubro: '', slug: '', correo: '', contrasena: '' });
+  const [error, setError] = useState('');
   const [enviando, setEnviando] = useState(false);
-  const saveTienda = useStore((estado) => estado.saveTienda);
+  const setTienda = useStore((estado) => estado.setTienda);
   const login = useSesion((estado) => estado.login);
   const navigate = useNavigate();
 
@@ -54,24 +56,27 @@ export default function RegistroTienda() {
     const errorNombre = nombre.trim().length >= 2 ? '' : 'Escribe el nombre de tu tienda.';
     const errorRubro = rubro ? '' : 'Elige un rubro.';
     const errorSlug = s ? '' : 'La dirección no puede estar vacía.';
-    setErrores({ nombre: errorNombre, rubro: errorRubro, slug: errorSlug });
-    if (errorNombre || errorRubro || errorSlug) return;
+    const errorCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim()) ? '' : 'Escribe un correo válido.';
+    const errorContrasena = contrasena.length >= 8 ? '' : 'Usa al menos 8 caracteres.';
+    setErrores({ nombre: errorNombre, rubro: errorRubro, slug: errorSlug, correo: errorCorreo, contrasena: errorContrasena });
+    if (errorNombre || errorRubro || errorSlug || errorCorreo || errorContrasena) return;
 
     setEnviando(true);
+    setError('');
     try {
-      // TODO: cuando exista POST /tiendas, manejar 409 si el slug ya existe.
-      await saveTienda({
+      const respuesta = await registrarTienda({
         nombre: nombre.trim(),
         rubro,
         slug: s,
-        colorPrimario: TIENDA_DEFAULT.colorPrimario,
-        colorSecundario: TIENDA_DEFAULT.colorSecundario,
-        logoUrl: '',
+        correo: correo.trim(),
+        contrasena,
       });
+      setTienda(respuesta.tienda);
       localStorage.removeItem('productos'); // tienda nueva = catálogo nuevo (mock)
-      const { token } = await loginApi('admin');
-      login('admin', token);
+      login(respuesta.usuario ?? correo.trim(), respuesta.token, respuesta.rol);
       navigate('/admin/marca');
+    } catch (problema) {
+      setError(problema.message || 'No se pudo crear la tienda.');
     } finally {
       setEnviando(false);
     }
@@ -133,6 +138,33 @@ export default function RegistroTienda() {
             <span className="hint">Se genera desde el nombre. Puedes editarla.</span>
             <span className="error" role="alert">{errores.slug}</span>
           </div>
+
+          <div className={`field ${errores.correo ? 'invalid' : ''}`}>
+            <label htmlFor="correo">Correo de administrador</label>
+            <input
+              id="correo"
+              type="email"
+              autoComplete="email"
+              placeholder="tu@correo.com"
+              value={correo}
+              onChange={(e) => { setCorreo(e.target.value); limpiarError('correo'); setError(''); }}
+            />
+            <span className="error" role="alert">{errores.correo}</span>
+          </div>
+
+          <div className={`field ${errores.contrasena ? 'invalid' : ''}`}>
+            <label htmlFor="contrasena">Contraseña</label>
+            <input
+              id="contrasena"
+              type="password"
+              autoComplete="new-password"
+              value={contrasena}
+              onChange={(e) => { setContrasena(e.target.value); limpiarError('contrasena'); setError(''); }}
+            />
+            <span className="error" role="alert">{errores.contrasena}</span>
+          </div>
+
+          {error && <p className="error" role="alert">{error}</p>}
 
           <button className="btn block" type="submit" disabled={enviando}>Crear tienda</button>
         </form>

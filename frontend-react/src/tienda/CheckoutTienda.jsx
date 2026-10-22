@@ -73,7 +73,7 @@ export default function CheckoutTienda() {
   // Proteger la ruta: si no hay carrito o cliente, regresar
   useEffect(() => {
     getTienda(slug);
-    if (productos.length === 0) listProductos();
+    if (productos.length === 0) listProductos(slug);
   }, [slug, getTienda, listProductos, productos.length]);
 
   // Si el carrito está vacío y NO estamos procesando una compra, volver al catálogo
@@ -189,7 +189,7 @@ export default function CheckoutTienda() {
 
       registrarCompra(nuevaOrden);
       // El backend descuenta el stock al emitir: se refresca el catalogo.
-      listProductos();
+      listProductos(slug);
       showToast(
         `¡${tipoComprobante === 'boleta' ? 'Boleta' : 'Factura'} ${nuevaOrden.numeroComprobante} emitida!`
       );

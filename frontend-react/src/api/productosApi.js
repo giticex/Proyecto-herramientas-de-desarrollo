@@ -42,6 +42,14 @@ export async function listProductos() {
   }
 }
 
+export async function listProductosTienda(slug) {
+  try {
+    return await apiClient.get(`/tiendas/${encodeURIComponent(slug)}/productos`);
+  } catch {
+    return obtenerMock();
+  }
+}
+
 export async function createProducto(producto) {
   try {
     return await apiClient.post('/productos', producto);
