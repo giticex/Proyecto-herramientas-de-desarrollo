@@ -41,7 +41,7 @@ export default function AdminLogin() {
   return (
     <>
       <nav className="nav">
-        <Link className="nav-brand" to="/admin/login">Tiendas</Link>
+        <Link className="nav-brand" to="/">NovaCommerce</Link>
         <div className="nav-links"><Link to="/registro-tienda">Crear tienda</Link></div>
       </nav>
 
