@@ -54,6 +54,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/tiendas/*", "/tiendas/*/productos").permitAll()
                         // El comprador ve sus propias compras; el administrador tambien.
                         .requestMatchers(HttpMethod.GET, "/ventas/mias").hasAnyRole("CLIENTE", "ADMIN")
+                        // El historial completo (paginado) es solo del panel admin.
+                        .requestMatchers(HttpMethod.GET, "/ventas").hasRole("ADMIN")
                         // El checkout puede hacerlo el comprador; el administrador tambien.
                         .requestMatchers(HttpMethod.POST, "/ventas").hasAnyRole("CLIENTE", "ADMIN")
                         // El panel de administracion trabaja sobre SU tienda: el

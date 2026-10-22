@@ -1,6 +1,7 @@
 package com.example.proyec_herramientas.service;
 
 import com.example.proyec_herramientas.model.CarritoRequestDTO;
+import com.example.proyec_herramientas.model.PaginaVentasDTO;
 import com.example.proyec_herramientas.persistence.Venta;
 
 import java.util.List;
@@ -15,4 +16,7 @@ public interface VentaService {
     List<Venta> obtenerBoletas();
 
     List<Venta> obtenerHistorial(String idCliente);
+
+    // Historial de la tienda para el panel: paginado y filtrable.
+    PaginaVentasDTO listarVentas(int idTienda, String busqueda, int pagina, int tamanio);
 }

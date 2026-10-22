@@ -1,0 +1,240 @@
+/* Historial de ventas del panel de administrador. */
+.hist-cabecera {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.hist-cabecera h1 { margin-bottom: 4px; }
+.hist-cabecera p { color: var(--text-soft); }
+
+.hist-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 32px;
+}
+.hist-buscador {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 240px;
+}
+.hist-buscador svg {
+  position: absolute;
+  left: 14px;
+  color: var(--text-soft);
+  pointer-events: none;
+}
+.hist-buscador input {
+  width: 100%;
+  font: inherit;
+  font-size: var(--fs-s);
+  padding: 12px 14px 12px 42px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: #fff;
+  color: var(--text);
+  transition: border-color var(--ease), box-shadow var(--ease);
+}
+.hist-buscador input:focus-visible {
+  outline: 2px solid var(--color-primario);
+  outline-offset: 2px;
+}
+.hist-contador {
+  font-size: var(--fs-s);
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+.hist-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: var(--fs-s);
+  font-weight: 500;
+  padding: 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  transition: background var(--ease), border-color var(--ease), color var(--ease);
+}
+.hist-btn:hover:not(:disabled) { background: var(--bg-soft); }
+.hist-btn:focus-visible { outline: 2px solid var(--color-primario); outline-offset: 2px; }
+.hist-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.hist-btn.actualizar:hover:not(:disabled) {
+  border-color: var(--color-primario);
+  color: var(--color-primario);
+}
+
+.hist-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+  padding: 16px 20px;
+  border-radius: var(--radius);
+  background: #fdecea;
+  color: var(--danger);
+}
+.hist-error p { font-size: var(--fs-s); }
+
+.hist-panel {
+  margin-top: 24px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.hist-tabla-envoltura {
+  overflow-x: auto;
+  transition: opacity var(--ease);
+}
+.hist-tabla-envoltura.cargando { opacity: 0.55; }
+
+.hist-tabla {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  text-align: left;
+}
+.hist-tabla th,
+.hist-tabla td {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.hist-tabla thead th {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  background: var(--bg-soft);
+  border-bottom-color: var(--line);
+  white-space: nowrap;
+}
+.hist-tabla tbody tr:last-child td { border-bottom: 0; }
+.hist-tabla tbody tr { transition: background var(--ease); }
+.hist-tabla tbody tr:hover { background: var(--bg-soft); }
+.hist-tabla th.numero,
+.hist-tabla td.numero { text-align: right; }
+.hist-tabla th.acciones,
+.hist-tabla td.acciones { text-align: right; }
+
+.hist-comprobante {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+}
+.hist-comprobante strong {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.hist-estado {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.hist-estado.ok { background: var(--ok-bg); color: var(--ok); }
+.hist-estado.error { background: #fdecea; color: var(--danger); }
+.hist-estado.neutro { background: var(--bg-soft); color: var(--text-soft); }
+
+.hist-fecha {
+  color: var(--text-soft);
+  white-space: nowrap;
+  font-size: var(--fs-s);
+}
+.hist-cliente {
+  display: grid;
+  gap: 2px;
+  min-width: 160px;
+}
+.hist-cliente span { font-weight: 500; }
+.hist-cliente small { color: var(--text-soft); font-size: 12px; }
+.hist-total {
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.hist-acciones {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.hist-btn-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: #fff;
+  color: var(--color-primario);
+  cursor: pointer;
+  transition: transform var(--ease), background var(--ease), border-color var(--ease), color var(--ease);
+}
+.hist-btn-icono:hover:not(:disabled) {
+  background: var(--color-primario);
+  border-color: var(--color-primario);
+  color: var(--on-primario);
+  transform: translateY(-1px);
+}
+.hist-btn-icono:focus-visible { outline: 2px solid var(--color-primario); outline-offset: 2px; }
+.hist-btn-icono:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.hist-vacio {
+  padding: 72px 24px;
+  text-align: center;
+  color: var(--text-soft);
+}
+
+.hist-paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+.hist-rango {
+  font-size: var(--fs-s);
+  color: var(--text-soft);
+}
+.hist-pagina-botones {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hist-pagina-actual {
+  font-size: var(--fs-s);
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+.girando { animation: hist-giro 0.9s linear infinite; }
+@keyframes hist-giro {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 720px) {
+  .hist-cabecera { align-items: stretch; }
+  .hist-paginacion { justify-content: center; }
+  .hist-tabla th,
+  .hist-tabla td { padding: 14px 16px; }
+}
