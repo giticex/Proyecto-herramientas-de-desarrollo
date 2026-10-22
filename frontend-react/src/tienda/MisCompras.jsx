@@ -3,20 +3,30 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import PlantillaTienda from '../components/PlantillaTienda';
 import { useClienteStore } from './clienteStore';
 import { showToast } from '../components/toastBus';
+import { ApiError } from '../api/ApiError';
 import './MisCompras.css';
 
 export default function MisCompras() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { cliente, misCompras } = useClienteStore();
+  const { cliente, misCompras, cargarMisCompras } = useClienteStore();
 
-  // Protegemos la ruta
+  // Protegemos la ruta y cargamos el historial real del backend.
   useEffect(() => {
-    if (!cliente) {
+    if (!cliente?.token) {
       showToast('Debes iniciar sesión para ver tus compras.');
       navigate(`/tienda/${slug}/login`);
+      return;
     }
-  }, [cliente, navigate, slug]);
+    cargarMisCompras().catch((error) => {
+      // Si fue un 401, conAutenticacion ya mostró "tu sesión expiró"; no lo
+      // pisamos con un mensaje genérico.
+      if (!(error instanceof ApiError && error.status === 401)) {
+        showToast('No se pudieron cargar tus compras.');
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cliente, slug]);
 
   const navLinks = (
     <Link to={`/tienda/${slug}`} className="nav-volver">
@@ -28,14 +38,14 @@ export default function MisCompras() {
     </Link>
   );
 
-  if (!cliente) return null;
+  if (!cliente?.token) return null;
 
   return (
     <PlantillaTienda navLinks={navLinks}>
       <div className="mis-compras-page">
         <div className="compras-header">
           <h2>Mis Compras y Comprobantes</h2>
-          <p>Hola, <strong>{cliente.nombre}</strong>. Este es tu historial de boletas y facturas electrónicas.</p>
+          <p>Hola, <strong>{cliente.nombre || cliente.correo}</strong>. Este es tu historial de boletas y facturas electrónicas.</p>
         </div>
 
         {misCompras.length === 0 ? (
@@ -48,23 +58,23 @@ export default function MisCompras() {
           </div>
         ) : (
           <div className="lista-compras">
-            {misCompras.map((compra) => {
-              const cantidadArticulos = compra.items.reduce((acc, item) => acc + item.cantidad, 0);
-              const fechaFormateada = new Date(compra.fecha).toLocaleDateString('es-PE', {
+            {misCompras.map((venta) => {
+              const cantidadArticulos = (venta.detalles || []).reduce((acc, item) => acc + item.cantidad, 0);
+              const fechaFormateada = new Date(venta.fechaEmision).toLocaleDateString('es-PE', {
                 day: '2-digit',
                 month: 'short',
                 year: 'numeric',
               });
 
               return (
-                <article key={compra.idOrden} className="compra-card">
+                <article key={venta.id} className="compra-card">
                   <div className="compra-top">
                     <div>
                       <div className="compra-id">
-                        {compra.tipoComprobante === 'factura' ? 'Factura' : 'Boleta'} {compra.numeroComprobante}
+                        {venta.tipoDocumento} {venta.numeroDocumento}
                       </div>
                       <div className="compra-fecha">
-                        Emitido el {fechaFormateada} · {compra.tiendaNombre}
+                        Emitido el {fechaFormateada}
                       </div>
                     </div>
                     <span className="estado-badge emitido">
@@ -72,22 +82,13 @@ export default function MisCompras() {
                     </span>
                   </div>
 
-                  <div className="compra-meta">
-                    <span><strong>Cliente / Razón Social:</strong> {compra.razonSocial}</span>
-                    <span><strong>{compra.tipoComprobante === 'factura' ? 'RUC' : 'DNI'}:</strong> {compra.documento}</span>
-                    <span><strong>Envío:</strong> {compra.direccion}</span>
-                  </div>
-
                   <div className="compra-detalle">
                     <div className="compra-articulos">
-                      {cantidadArticulos} {cantidadArticulos === 1 ? 'artículo' : 'artículos'} · Pago con {compra.metodoPago.toUpperCase()}
+                      {cantidadArticulos} {cantidadArticulos === 1 ? 'artículo' : 'artículos'} · Pago con {venta.medioPago}
                     </div>
                     <div className="compra-montos">
-                      <span className="compra-igv">
-                        Op. Gravada: S/ {Number(compra.opGravada).toFixed(2)} · IGV: S/ {Number(compra.igv).toFixed(2)}
-                      </span>
                       <div className="compra-total">
-                        S/ {Number(compra.total).toFixed(2)}
+                        S/ {Number(venta.total).toFixed(2)}
                       </div>
                     </div>
                   </div>

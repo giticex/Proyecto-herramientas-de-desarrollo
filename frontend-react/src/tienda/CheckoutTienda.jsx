@@ -4,13 +4,14 @@ import PlantillaTienda from '../components/PlantillaTienda';
 import { useClienteStore } from './clienteStore';
 import { useStore } from '../store/store';
 import { showToast } from '../components/toastBus';
+import { ApiError } from '../api/ApiError';
 import './CheckoutTienda.css';
 
 export default function CheckoutTienda() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { carrito, cliente, registrarCompra } = useClienteStore();
-  const { tienda, productos, getTienda, listProductos, updateProducto } = useStore();
+  const { carrito, cliente, registrarVenta } = useClienteStore();
+  const { tienda, productos, getTienda, listProductosTienda } = useStore();
 
   const [tipoComprobante, setTipoComprobante] = useState('boleta');
   const [documento, setDocumento] = useState('');
@@ -22,8 +23,8 @@ export default function CheckoutTienda() {
   // Proteger la ruta: si no hay carrito o cliente, regresar
   useEffect(() => {
     getTienda(slug);
-   if (productos.length === 0) listProductos();
-  }, [slug, getTienda, listProductos, productos.length]);
+   if (productos.length === 0) listProductosTienda(slug);
+  }, [slug, getTienda, listProductosTienda, productos.length]);
 
   // Si el carrito está vacío y NO estamos procesando una compra, volver al catálogo
   useEffect(() => {
@@ -75,48 +76,41 @@ export default function CheckoutTienda() {
     setProcesando(true);
 
     try {
-      // 1. Descontar el stock en el Store de Kiara / Backend
-      for (const item of carrito) {
-        const prodOriginal = productos.find((p) => p.idProducto === item.idProducto);
-        if (prodOriginal) {
-          const nuevoStock = Math.max(0, Number(prodOriginal.stock) - item.cantidad);
-          await updateProducto(item.idProducto, {
-            ...prodOriginal,
-            stock: nuevoStock,
-          });
-        }
-      }
-
-      // 2. Construir el Comprobante Electrónico para el historial y backend
-      const serie = tipoComprobante === 'boleta' ? 'B001' : 'F001';
-      const correlativo = String(Math.floor(100000 + Math.random() * 900000));
-      
-      const nuevaOrden = {
-        idOrden: `ORD-${Date.now()}`,
-        numeroComprobante: `${serie}-${correlativo}`,
-        fecha: new Date().toISOString(),
-        tiendaSlug: slug || tienda.slug,
-        tiendaNombre: tienda.nombre,
-        clienteNombre: cliente?.nombre || 'Cliente',
-        clienteCorreo: cliente?.correo || '',
-        tipoComprobante,
-        documento,
-        razonSocial: tipoComprobante === 'factura' ? razonSocial.trim() : cliente?.nombre || 'Cliente',
-        direccion: direccion.trim(),
-        metodoPago,
-        items: carrito,
-        opGravada: Number(opGravada.toFixed(2)),
-        igv: Number(igv.toFixed(2)),
-        total: Number(total.toFixed(2)),
+      // El stock se descuenta en el servidor, dentro de la misma
+      // transacción que registra la venta (una sola llamada, no un loop).
+      const carritoApi = {
+        tipoDocumento: tipoComprobante === 'boleta' ? 'Boleta' : 'Factura',
+        medioPago: metodoPago,
+        items: carrito.map((item) => ({ idProducto: item.idProducto, cantidad: item.cantidad })),
       };
+      const venta = await registrarVenta(carritoApi);
 
-      // 3. Guardar en clienteStore y limpiar carrito
-      registrarCompra(nuevaOrden);
-      showToast(`¡${tipoComprobante === 'boleta' ? 'Boleta' : 'Factura'} ${nuevaOrden.numeroComprobante} emitida!`);
-      navigate(`/tienda/${slug}/confirmacion`);
-    } catch {
+      showToast(`¡${tipoComprobante === 'boleta' ? 'Boleta' : 'Factura'} ${venta.numeroDocumento} emitida!`);
+      navigate(`/tienda/${slug}/confirmacion`, {
+        state: {
+          idVenta: venta.id,
+          numeroDocumento: venta.numeroDocumento,
+          total: venta.total,
+          // Detalle tributario que el backend no guarda: solo para esta
+          // pantalla de confirmación, no viaja con la venta.
+          tipoComprobante,
+          documento,
+          razonSocial: tipoComprobante === 'factura' ? razonSocial.trim() : cliente?.nombre || cliente?.correo || 'Cliente',
+          direccion: direccion.trim(),
+          metodoPago,
+          opGravada: Number(opGravada.toFixed(2)),
+          igv: Number(igv.toFixed(2)),
+        },
+      });
+    } catch (error) {
       setProcesando(false);
-      showToast('Ocurrió un error al procesar tu compra.');
+      if (error instanceof ApiError && error.status === 409) {
+        showToast(error.message || 'No hay stock suficiente para completar la compra.');
+      } else if (error instanceof ApiError) {
+        showToast(error.message);
+      } else {
+        showToast('Ocurrió un error al procesar tu compra.');
+      }
     }
   };
 
