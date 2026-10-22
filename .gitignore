@@ -1,0 +1,2 @@
+# Variables de entorno locales para docker compose (usa .env.example como plantilla).
+.env

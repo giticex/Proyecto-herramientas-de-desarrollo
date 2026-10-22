@@ -28,6 +28,7 @@ services:
       DB_NAME: proyecto
       DB_USER: root
       DB_PASSWORD: ${DB_PASSWORD:-root}
+      JWT_SECRET: ${JWT_SECRET:?define JWT_SECRET}
     ports:
       - "8080:8080"
     depends_on:
