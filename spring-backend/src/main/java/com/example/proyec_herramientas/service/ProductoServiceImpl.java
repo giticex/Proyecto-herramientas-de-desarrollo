@@ -19,8 +19,8 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProductoDTO> listar() {
-        return repository.findAll().stream()
+    public List<ProductoDTO> listar(int idTienda) {
+        return repository.findByIdTienda(idTienda).stream()
                 .sorted((a, b) -> a.getNombre().compareToIgnoreCase(b.getNombre()))
                 .map(this::toDTO)
                 .toList();
@@ -28,14 +28,14 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     @Transactional(readOnly = true)
-    public ProductoDTO obtenerPorId(int idProducto) {
+    public ProductoDTO obtenerPorId(int idProducto, int idTienda) {
         Producto producto = repository.findById(idProducto).orElse(null);
-        return producto != null ? toDTO(producto) : null;
+        return producto != null && producto.getIdTienda() == idTienda ? toDTO(producto) : null;
     }
 
     @Override
     @Transactional
-    public ProductoDTO crear(ProductoDTO producto) {
+    public ProductoDTO crear(ProductoDTO producto, int idTienda) {
         Integer id = producto.getIdProducto();
         if (id == null || id <= 0) {
             id = siguienteId();
@@ -45,16 +45,17 @@ public class ProductoServiceImpl implements ProductoService {
                 producto.getNombre(),
                 producto.getStock(),
                 producto.getPrecio(),
-                producto.getCategoria());
+                producto.getCategoria(),
+                idTienda);
         entity.setAtributos(producto.getAtributos());
         return toDTO(repository.save(entity));
     }
 
     @Override
     @Transactional
-    public ProductoDTO actualizar(int idProducto, ProductoDTO producto) {
+    public ProductoDTO actualizar(int idProducto, ProductoDTO producto, int idTienda) {
         Producto entity = repository.findById(idProducto).orElse(null);
-        if (entity == null) {
+        if (entity == null || entity.getIdTienda() != idTienda) {
             return null;
         }
         entity.setNombre(producto.getNombre());

@@ -6,13 +6,14 @@ import java.util.List;
 
 public interface ProductoService {
 
-    List<ProductoDTO> listar();
+    // idTienda nunca sale del body: siempre viene del token del ADMIN.
+    List<ProductoDTO> listar(int idTienda);
 
-    ProductoDTO obtenerPorId(int idProducto);
+    ProductoDTO obtenerPorId(int idProducto, int idTienda);
 
-    ProductoDTO crear(ProductoDTO producto);
+    ProductoDTO crear(ProductoDTO producto, int idTienda);
 
-    ProductoDTO actualizar(int idProducto, ProductoDTO producto);
+    ProductoDTO actualizar(int idProducto, ProductoDTO producto, int idTienda);
 
     void eliminar(int idProducto);
 

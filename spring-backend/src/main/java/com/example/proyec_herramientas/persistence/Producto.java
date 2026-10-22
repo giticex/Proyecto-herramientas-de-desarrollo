@@ -35,15 +35,21 @@ public class Producto {
     @Column(name = "atributos", columnDefinition = "json")
     private Map<String, String> atributos = new HashMap<>();
 
+    // La tienda dueña del producto. Nunca viaja en ProductoDTO: sale siempre
+    // del token del ADMIN autenticado.
+    @Column(name = "id_tienda", nullable = false)
+    private Integer idTienda;
+
     public Producto() {
     }
 
-    public Producto(Integer idProducto, String nombre, int stock, double precio, String categoria) {
+    public Producto(Integer idProducto, String nombre, int stock, double precio, String categoria, Integer idTienda) {
         this.idProducto = idProducto;
         this.nombre = nombre;
         this.stock = stock;
         this.precio = precio;
         this.categoria = categoria;
+        this.idTienda = idTienda;
     }
 
     public Integer getIdProducto() {
@@ -92,5 +98,13 @@ public class Producto {
 
     public void setAtributos(Map<String, String> atributos) {
         this.atributos = atributos != null ? atributos : new HashMap<>();
+    }
+
+    public Integer getIdTienda() {
+        return idTienda;
+    }
+
+    public void setIdTienda(Integer idTienda) {
+        this.idTienda = idTienda;
     }
 }
