@@ -22,6 +22,11 @@ public class GlobalExceptionHandler {
         return construir(HttpStatus.CONFLICT, e.getMessage());
     }
 
+    @ExceptionHandler(RecursoDuplicadoException.class)
+    public ResponseEntity<Map<String, Object>> duplicado(RecursoDuplicadoException e) {
+        return construir(HttpStatus.CONFLICT, e.getMessage());
+    }
+
     @ExceptionHandler(ValidacionComprobanteException.class)
     public ResponseEntity<Map<String, Object>> comprobante(ValidacionComprobanteException e) {
         return construir(HttpStatus.BAD_REQUEST, e.getMessage());

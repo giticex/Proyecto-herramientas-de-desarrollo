@@ -34,7 +34,7 @@ public class TokenFiltro extends OncePerRequestFilter {
             FilterChain chain) throws ServletException, IOException {
         TokenService.Token token = tokenService.validar(leerToken(request));
         if (token != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            var principal = new SesionPrincipal(token.usuario(), token.rol(), token.idCliente());
+            var principal = new SesionPrincipal(token.usuario(), token.rol(), token.idCliente(), token.idTienda());
             var autenticacion = new UsernamePasswordAuthenticationToken(
                     principal, null,
                     List.of(new SimpleGrantedAuthority(PREFIJO_ROL + token.rol())));

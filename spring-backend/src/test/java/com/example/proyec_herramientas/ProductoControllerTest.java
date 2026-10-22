@@ -1,8 +1,10 @@
 package com.example.proyec_herramientas;
 
 import com.example.proyec_herramientas.persistence.Producto;
+import com.example.proyec_herramientas.persistence.Tienda;
 import com.example.proyec_herramientas.repository.PersonaRepository;
 import com.example.proyec_herramientas.repository.ProductoRepository;
+import com.example.proyec_herramientas.repository.TiendaRepository;
 import com.example.proyec_herramientas.repository.UsuarioRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,24 +49,31 @@ class ProductoControllerTest {
     private PersonaRepository personaRepository;
 
     @Autowired
+    private TiendaRepository tiendaRepository;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     // Gestionar productos es del ADMIN: las pruebas entran con su token.
     private String token;
 
+    // Tienda del ADMIN autenticado: los productos que ve y crea son suyos.
+    private Tienda tienda;
+
     @BeforeEach
     void limpiar() throws Exception {
         productoRepository.deleteAll();
-        CuentasTest.crearAdmin(usuarioRepository, personaRepository);
+        CuentasTest.crearAdmin(usuarioRepository, personaRepository, tiendaRepository);
+        tienda = tiendaRepository.findBySlug(CuentasTest.SLUG_TIENDA).orElseThrow();
         token = CuentasTest.token(mockMvc, objectMapper, CuentasTest.USUARIO_ADMIN, CuentasTest.CLAVE);
     }
 
     @Test
-    void listarProductosCatalogo() throws Exception {
-        productoRepository.save(new Producto(1, "Mouse Gamer", 8, new BigDecimal("50.00"), "Accesorios"));
-        productoRepository.save(new Producto(2, "Teclado Mecánico", 5, new BigDecimal("120.00"), "Accesorios"));
+    void listarProductosDevuelveSoloLosDeLaTienda() throws Exception {
+        guardar(1, "Mouse Gamer", 8, "50.00", "Accesorios");
+        guardar(2, "Teclado Mecánico", 5, "120.00", "Accesorios");
 
-        mockMvc.perform(get("/productos"))
+        mockMvc.perform(get("/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].nombre", is("Mouse Gamer")))
@@ -80,12 +89,13 @@ class ProductoControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.idProducto", is(10)))
                 .andExpect(jsonPath("$.nombre", is("Webcam HD")))
-                .andExpect(jsonPath("$.stock", is(3)));
+                .andExpect(jsonPath("$.stock", is(3)))
+                .andExpect(jsonPath("$.idTienda", is(tienda.getIdTienda())));
     }
 
     @Test
     void crearProductoSinIdAsignaSiguiente() throws Exception {
-        productoRepository.save(new Producto(1, "Mouse Gamer", 8, new BigDecimal("50.00"), "Accesorios"));
+        guardar(1, "Mouse Gamer", 8, "50.00", "Accesorios");
 
         mockMvc.perform(post("/productos")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
@@ -97,7 +107,7 @@ class ProductoControllerTest {
 
     @Test
     void actualizarProducto() throws Exception {
-        productoRepository.save(new Producto(1, "Mouse Gamer", 8, new BigDecimal("50.00"), "Accesorios"));
+        guardar(1, "Mouse Gamer", 8, "50.00", "Accesorios");
 
         mockMvc.perform(put("/productos/1")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
@@ -120,13 +130,13 @@ class ProductoControllerTest {
 
     @Test
     void eliminarProducto() throws Exception {
-        productoRepository.save(new Producto(1, "Mouse Gamer", 8, new BigDecimal("50.00"), "Accesorios"));
+        guardar(1, "Mouse Gamer", 8, "50.00", "Accesorios");
 
         mockMvc.perform(delete("/productos/1")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get("/productos"))
+        mockMvc.perform(get("/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
     }
@@ -135,6 +145,29 @@ class ProductoControllerTest {
     void eliminarProductoNoExistenteDevuelve404() throws Exception {
         mockMvc.perform(delete("/productos/1")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void unAdminNoVeNiModificaProductosDeOtraTienda() throws Exception {
+        Tienda otra = new Tienda();
+        otra.setNombre("Otra Tienda");
+        otra.setRubro("Otros");
+        otra.setSlug("otra-tienda");
+        otra = tiendaRepository.save(otra);
+
+        Producto ajeno = new Producto(500, "Producto Ajeno", 5, new BigDecimal("10.00"), "Otros");
+        ajeno.setIdTienda(otra.getIdTienda());
+        productoRepository.save(ajeno);
+
+        mockMvc.perform(get("/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+
+        mockMvc.perform(get("/productos/500").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(delete("/productos/500").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isNotFound());
     }
 
@@ -153,7 +186,7 @@ class ProductoControllerTest {
                 .andExpect(jsonPath("$.atributos.talla", is("M")))
                 .andExpect(jsonPath("$.atributos.color", is("negro")));
 
-        mockMvc.perform(get("/productos"))
+        mockMvc.perform(get("/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].atributos.talla", is("M")))
                 .andExpect(jsonPath("$[0].atributos.color", is("negro")));
@@ -161,7 +194,7 @@ class ProductoControllerTest {
 
     @Test
     void actualizarProductoActualizaAtributos() throws Exception {
-        productoRepository.save(new Producto(1, "Mouse Gamer", 8, new BigDecimal("50.00"), "Accesorios"));
+        guardar(1, "Mouse Gamer", 8, "50.00", "Accesorios");
 
         Map<String, String> atributos = new HashMap<>();
         atributos.put("conexion", "inalámbrico");
@@ -177,11 +210,17 @@ class ProductoControllerTest {
 
     @Test
     void productoSinAtributosDevuelveMapaVacio() throws Exception {
-        productoRepository.save(new Producto(1, "Mouse Gamer", 8, new BigDecimal("50.00"), "Accesorios"));
+        guardar(1, "Mouse Gamer", 8, "50.00", "Accesorios");
 
-        mockMvc.perform(get("/productos"))
+        mockMvc.perform(get("/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].atributos", is(anEmptyMap())));
+    }
+
+    private void guardar(int id, String nombre, int stock, String precio, String categoria) {
+        Producto producto = new Producto(id, nombre, stock, new BigDecimal(precio), categoria);
+        producto.setIdTienda(tienda.getIdTienda());
+        productoRepository.save(producto);
     }
 
     private Map<String, Object> crearProducto(int id, String nombre, int stock, double precio, String categoria) {

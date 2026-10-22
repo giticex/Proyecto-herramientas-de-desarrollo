@@ -52,6 +52,11 @@ public class Producto {
     @Column(name = "atributos", columnDefinition = "json")
     private Map<String, String> atributos = new HashMap<>();
 
+    // FK a la tienda duena del producto (multi-tienda). Sale del token del
+    // ADMIN, nunca del cuerpo de la peticion.
+    @Column(name = "id_tienda", nullable = false)
+    private Integer idTienda;
+
     public Producto() {
     }
 
@@ -133,5 +138,13 @@ public class Producto {
 
     public void setAtributos(Map<String, String> atributos) {
         this.atributos = atributos != null ? atributos : new HashMap<>();
+    }
+
+    public Integer getIdTienda() {
+        return idTienda;
+    }
+
+    public void setIdTienda(Integer idTienda) {
+        this.idTienda = idTienda;
     }
 }

@@ -2,6 +2,8 @@ package com.example.proyec_herramientas.controller;
 
 import com.example.proyec_herramientas.model.LoginRequestDTO;
 import com.example.proyec_herramientas.model.LoginResponseDTO;
+import com.example.proyec_herramientas.model.auth.RegistroClienteRequest;
+import com.example.proyec_herramientas.model.auth.RegistroTiendaRequest;
 import com.example.proyec_herramientas.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -34,6 +36,20 @@ public class AuthController {
                     .body(Map.of("error", "Usuario o contrasena incorrectos"));
         }
         return ResponseEntity.ok(respuesta);
+    }
+
+    // POST /auth/registro-tienda -> crea la tienda y su cuenta ADMIN, y deja
+    // la sesion iniciada (devuelve token + tienda).
+    @PostMapping("/registro-tienda")
+    public ResponseEntity<LoginResponseDTO> registroTienda(@Valid @RequestBody RegistroTiendaRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.registroTienda(request));
+    }
+
+    // POST /auth/registro-cliente -> crea la cuenta del comprador y deja la
+    // sesion iniciada.
+    @PostMapping("/registro-cliente")
+    public ResponseEntity<LoginResponseDTO> registroCliente(@Valid @RequestBody RegistroClienteRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.registroCliente(request));
     }
 
     // GET /auth/rol -> rol de la cuenta que llamo, segun el token.

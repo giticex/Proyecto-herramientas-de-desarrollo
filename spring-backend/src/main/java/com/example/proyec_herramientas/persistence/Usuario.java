@@ -22,7 +22,7 @@ public class Usuario {
     @Column(name = "usuario", length = 50, nullable = false)
     private String usuario;
 
-    // SHA-256 en hexadecimal (64 caracteres), nunca texto plano.
+    // SHA-256 en hexadecimal (64 caracteres) o BCrypt ("$2..."), nunca texto plano.
     @Column(name = "contrasena", length = 255, nullable = false)
     private String contrasena;
 
@@ -33,6 +33,10 @@ public class Usuario {
     // indica, el insert falla y no se crea una cuenta sin permisos asignados.
     @Column(name = "id_rol", length = 15, nullable = false)
     private String idRol;
+
+    // FK a la tienda que administra esta cuenta (multi-tienda).
+    @Column(name = "id_tienda", nullable = false)
+    private Integer idTienda;
 
     public Usuario() {
     }
@@ -82,5 +86,13 @@ public class Usuario {
 
     public void setIdRol(String idRol) {
         this.idRol = idRol;
+    }
+
+    public Integer getIdTienda() {
+        return idTienda;
+    }
+
+    public void setIdTienda(Integer idTienda) {
+        this.idTienda = idTienda;
     }
 }

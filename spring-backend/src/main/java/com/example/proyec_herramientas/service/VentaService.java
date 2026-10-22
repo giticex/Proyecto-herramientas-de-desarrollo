@@ -7,7 +7,8 @@ import java.util.List;
 
 public interface VentaService {
 
-    Venta registrarVenta(CarritoRequestDTO carrito);
+    // idCliente siempre viene del token del CLIENTE autenticado, nunca del body.
+    Venta registrarVenta(String idCliente, CarritoRequestDTO carrito);
 
     Venta obtenerVentaPorId(String idVenta);
 

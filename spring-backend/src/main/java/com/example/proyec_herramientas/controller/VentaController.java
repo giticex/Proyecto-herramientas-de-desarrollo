@@ -2,17 +2,21 @@ package com.example.proyec_herramientas.controller;
 
 import com.example.proyec_herramientas.model.CarritoRequestDTO;
 import com.example.proyec_herramientas.persistence.Venta;
+import com.example.proyec_herramientas.persistence.Rol;
 import com.example.proyec_herramientas.security.SesionPrincipal;
 import com.example.proyec_herramientas.service.VentaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/ventas")
@@ -24,25 +28,37 @@ public class VentaController {
         this.ventaService = ventaService;
     }
 
+    // El CLIENTE compra siempre a su propio nombre: el idCliente sale del token
+    // y se ignora el que venga en el cuerpo. El ADMIN si puede indicarlo.
     @PostMapping
     public ResponseEntity<Venta> registrar(@Valid @RequestBody CarritoRequestDTO carrito,
             Authentication authentication) {
-        // El ADMIN registra ventas de cualquiera; el CLIENTE solo de su cuenta.
-        if (esCliente(authentication) && !perteneceAlComprador(authentication, carrito.getIdCliente())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "No puedes registrar una compra a nombre de otro cliente");
+        SesionPrincipal principal = principal(authentication);
+        String idCliente = Rol.ADMIN.equals(principal.rol())
+                ? carrito.getIdCliente()
+                : principal.idCliente();
+        if (idCliente == null || idCliente.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "No se pudo determinar el cliente de la venta");
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(ventaService.registrarVenta(carrito));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ventaService.registrarVenta(idCliente, carrito));
     }
 
-    private boolean esCliente(Authentication authentication) {
-        return authentication != null
-                && authentication.getPrincipal() instanceof SesionPrincipal principal
-                && "CLIENTE".equals(principal.rol());
+    // GET /ventas/mias -> historial de compras del CLIENTE que llamo.
+    @GetMapping("/mias")
+    public List<Venta> mias(Authentication authentication) {
+        SesionPrincipal principal = principal(authentication);
+        if (principal.idCliente() == null || principal.idCliente().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "La cuenta no tiene un cliente asociado");
+        }
+        return ventaService.obtenerHistorial(principal.idCliente());
     }
 
-    private boolean perteneceAlComprador(Authentication authentication, String idCliente) {
-        SesionPrincipal principal = (SesionPrincipal) authentication.getPrincipal();
-        return principal.idCliente() != null && principal.idCliente().equals(idCliente);
+    private SesionPrincipal principal(Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof SesionPrincipal sesion) {
+            return sesion;
+        }
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sesion no iniciada");
     }
 }
