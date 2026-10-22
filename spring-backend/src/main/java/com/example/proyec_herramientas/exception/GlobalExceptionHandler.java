@@ -1,5 +1,6 @@
 package com.example.proyec_herramientas.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -20,6 +21,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(StockInsuficienteException.class)
     public ResponseEntity<Map<String, Object>> stock(StockInsuficienteException e) {
         return construir(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    @ExceptionHandler(RecursoDuplicadoException.class)
+    public ResponseEntity<Map<String, Object>> duplicado(RecursoDuplicadoException e) {
+        return construir(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> integridad(DataIntegrityViolationException e) {
+        return construir(HttpStatus.CONFLICT, "El recurso ya existe o viola una restricción.");
+    }
+
+    @ExceptionHandler(CredencialesInvalidasException.class)
+    public ResponseEntity<Map<String, Object>> credenciales(CredencialesInvalidasException e) {
+        return construir(HttpStatus.UNAUTHORIZED, e.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
