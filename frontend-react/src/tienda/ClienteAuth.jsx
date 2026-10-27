@@ -81,7 +81,10 @@ export default function ClienteAuth() {
   };
 
   const navLinks = (
-    <Link to={`/tienda/${slug}`}>← Volver al Catálogo</Link>
+    <>
+      <Link to={`/tienda/${slug}`}>← Volver al Catálogo</Link>
+      <Link to="/login">Acceso unificado</Link>
+    </>
   );
 
   return (
@@ -91,6 +94,9 @@ export default function ClienteAuth() {
           <div className="auth-header">
             <h2>{isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}</h2>
             <p>Para comprar en <strong>{tienda.nombre || 'nuestra tienda'}</strong></p>
+            <p className="auth-unified-link">
+              <Link to="/login">¿Eres administrador, vendedor o cliente? Inicia sesión aquí</Link>
+            </p>
           </div>
 
           <form className="auth-form" onSubmit={handleSubmit}>

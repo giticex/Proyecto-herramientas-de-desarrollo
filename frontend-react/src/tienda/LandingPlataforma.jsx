@@ -30,8 +30,8 @@ export default function LandingPlataforma() {
           <Link to="/registro-tienda" className="btn-tech glass">
             Crear mi tienda
           </Link>
-          <Link to="/admin/login" className="btn-tech primary">
-            Panel Admin
+          <Link to="/login" className="btn-tech primary">
+            Iniciar sesión
           </Link>
         </div>
       </header>
@@ -217,6 +217,9 @@ export default function LandingPlataforma() {
             </Link>
             <Link to={`/tienda/${slugTienda}/login`} className="btn-tech glass">
               Acceso Clientes
+            </Link>
+            <Link to="/login" className="btn-tech glass">
+              Iniciar sesión
             </Link>
           </div>
         </div>

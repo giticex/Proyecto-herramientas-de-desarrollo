@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
-import AdminLogin from './admin/AdminLogin';
+import Login from './auth/Login';
 import RegistroTienda from './admin/RegistroTienda';
 import DashboardAdmin from './admin/DashboardAdmin';
 import MarcaPanel from './admin/MarcaPanel';
@@ -48,7 +48,8 @@ export default function App() {
         </Route>
 
         {/* === 4. MÓDULO ADMINISTRADOR Y ONBOARDING (Kiara) === */}
-        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/admin/login" element={<Login />} />
         <Route path="/registro-tienda" element={<RegistroTienda />} />
         {/* Catálogo y configuración: solo ADMIN (el backend también lo exige). */}
         <Route element={<RutaProtegida roles={['ADMIN']} />}>

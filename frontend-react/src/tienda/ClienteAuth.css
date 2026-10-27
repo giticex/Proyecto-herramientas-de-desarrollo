@@ -35,6 +35,21 @@
   font-size: 15px;
 }
 
+.auth-unified-link {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.auth-unified-link a {
+  color: var(--color-primario, #0071e3);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-unified-link a:hover {
+  text-decoration: underline;
+}
+
 .auth-form {
   display: flex;
   flex-direction: column;
