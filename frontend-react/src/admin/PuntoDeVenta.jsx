@@ -243,15 +243,24 @@ export default function PuntoDeVenta() {
     if (!idVenta || imprimiendo) return;
     setImprimiendo(true);
     try {
-      const { apiClient, apiUrl } = await import('../api/client');
-      const blob = await apiClient.getBlob(rutaComprobantePdf(idVenta));
-      const url = window.URL.createObjectURL(blob);
+      const { tokenActivo, apiUrl } = await import('../api/client');
+      const token = tokenActivo();
+      const ruta = rutaComprobantePdf(idVenta);
+      const url = apiUrl(ruta);
+      const respuesta = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!respuesta.ok) {
+        throw new Error(`Error ${respuesta.status} al descargar comprobante`);
+      }
+      const blob = await respuesta.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
       const archivo = `${nombre || `venta-${idVenta}`}.pdf`;
       if (abrir) {
-        const ventana = window.open(url, '_blank');
+        const ventana = window.open(objectUrl, '_blank');
         if (!ventana) {
           const enlace = document.createElement('a');
-          enlace.href = url;
+          enlace.href = objectUrl;
           enlace.download = archivo;
           document.body.appendChild(enlace);
           enlace.click();
@@ -259,13 +268,13 @@ export default function PuntoDeVenta() {
         }
       } else {
         const enlace = document.createElement('a');
-        enlace.href = url;
+        enlace.href = objectUrl;
         enlace.download = archivo;
         document.body.appendChild(enlace);
         enlace.click();
         enlace.remove();
       }
-      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+      setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60000);
     } catch (error) {
       showToast(error?.message || 'No se pudo obtener el comprobante PDF.');
     } finally {
