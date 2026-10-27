@@ -50,6 +50,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/auth/**", "/roles", "/error").permitAll()
+                        // Consulta RENIEC/SUNAT usada durante el registro (sin sesion).
+                        .requestMatchers(HttpMethod.GET, "/api/sunat/**").permitAll()
                         // Catalogo publico por tienda: el comprador navega sin token.
                         .requestMatchers(HttpMethod.GET, "/tiendas/*", "/tiendas/*/productos").permitAll()
                         // El comprador ve sus propias compras; el administrador tambien.
