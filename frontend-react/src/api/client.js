@@ -4,11 +4,13 @@
 import { useSesion } from '../auth/sesionStore';
 import { useClienteStore } from '../tienda/clienteStore';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/$/, '');
 
 /** URL absoluta de un endpoint (para abrir el PDF o el XML en el navegador). */
 export function apiUrl(path) {
-  return `${BASE_URL}${path}`;
+  if (!path) return BASE_URL;
+  const p = path.startsWith('/') ? path : `/${path}`;
+  return `${BASE_URL}${p}`;
 }
 
 // El token vive en los stores (admin o comprador). Se lee aquí para que cada
@@ -35,7 +37,8 @@ async function request(path, { method = 'GET', body, token } = {}) {
   if (body) headers['Content-Type'] = 'application/json';
   if (cabecera) headers.Authorization = `Bearer ${cabecera}`;
 
-  const respuesta = await fetch(`${BASE_URL}${path}`, {
+  const p = path?.startsWith('/') ? path : `/${path || ''}`;
+  const respuesta = await fetch(`${BASE_URL}${p}`, {
     method,
     headers: Object.keys(headers).length ? headers : undefined,
     body: body ? JSON.stringify(body) : undefined,
@@ -58,7 +61,8 @@ async function requestBlob(path, { token } = {}) {
   const headers = {};
   if (cabecera) headers.Authorization = `Bearer ${cabecera}`;
 
-  const respuesta = await fetch(`${BASE_URL}${path}`, { headers });
+  const p = path?.startsWith('/') ? path : `/${path || ''}`;
+  const respuesta = await fetch(`${BASE_URL}${p}`, { headers });
 
   if (!respuesta.ok) {
     const detalle = await mensajeDeError(respuesta);

@@ -31,7 +31,7 @@ function escribirMock(tienda) {
 // dejará de fallar siempre y se podrá quitar el fallback a TIENDA_DEFAULT.
 export async function getTienda(slug) {
   try {
-    return await apiClient.get(`/tiendas/${slug}`);
+    return await apiClient.get(`/tiendas/${encodeURIComponent(slug)}`);
   } catch {
     return leerMock() || { ...TIENDA_DEFAULT };
   }
