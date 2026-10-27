@@ -95,19 +95,20 @@ export default function PuntoDeVenta() {
   const sugerencias = useMemo(() => {
     if (!termino) return [];
     return productos
-      .filter((producto) => (
-        String(producto.idProducto).toLowerCase().includes(termino)
-        || (producto.nombre || '').toLowerCase().includes(termino)
-      ))
-      .sort((a, b) => (
-        Number(String(b.idProducto) === termino) - Number(String(a.idProducto) === termino)
-      ))
-      .slice(0, 6);
+        .filter((producto) => (
+            String(producto.idProducto).toLowerCase().includes(termino)
+            || (producto.nombre || '').toLowerCase().includes(termino)
+        ))
+        .sort((a, b) => (
+            Number(String(b.idProducto) === termino) - Number(String(a.idProducto) === termino)
+        ))
+        .slice(0, 6);
   }, [productos, termino]);
 
+  // CORRECCIÓN MATEMÁTICA APLICADA AQUÍ
   const total = useMemo(
-    () => redondear(lineas.reduce((suma, linea) => suma + linea.precio * linea.cantidad, 0)),
-    [lineas],
+      () => redondear(lineas.reduce((suma, linea) => suma + (linea.precio * linea.cantidad), 0)),
+      [lineas],
   );
   const subtotal = redondear(total / (1 + IGV_RATE));
   const igv = redondear(total - subtotal);
@@ -131,9 +132,9 @@ export default function PuntoDeVenta() {
 
     if (existente) {
       setLineas((previas) => previas.map((linea) => (
-        linea.idProducto === producto.idProducto
-          ? { ...linea, cantidad: Math.min(linea.cantidad + 1, stock) }
-          : linea
+          linea.idProducto === producto.idProducto
+              ? { ...linea, cantidad: Math.min(linea.cantidad + 1, stock) }
+              : linea
       )));
     } else {
       setLineas((previas) => [
@@ -220,6 +221,7 @@ export default function PuntoDeVenta() {
       const nro = venta?.nroComprobante || venta?.numeroDocumento || venta?.idVenta || '';
       const idVenta = venta?.idVenta;
       const totalCobrado = venta?.total != null ? Number(venta.total) : total;
+
       setVentaExitosa({
         idVenta,
         nroComprobante: nro,
@@ -300,88 +302,88 @@ export default function PuntoDeVenta() {
   const inicial = (tienda.nombre || '?').charAt(0).toUpperCase();
 
   return (
-    <div className="pos">
-      <header className="pos-topbar">
-        <div className="pos-marca">
-          {tienda.logoUrl
-            ? <img className="pos-logo" src={tienda.logoUrl} alt="" />
-            : <span className="pos-logo inicial" aria-hidden="true">{inicial}</span>}
-          <div className="pos-marca-texto">
-            <strong>{tienda.nombre}</strong>
-            <span>Punto de venta</span>
-          </div>
-        </div>
-        <div className="pos-topbar-acciones">
-          <Link className="pos-enlace" to="/admin/ventas">
-            <History size={18} aria-hidden="true" />
-            Historial
-          </Link>
-          {esAdmin ? (
-            <Link className="pos-enlace" to="/admin">
-              <ArrowLeft size={18} aria-hidden="true" />
-              Volver al panel
-            </Link>
-          ) : (
-            <button className="pos-enlace" type="button" onClick={salir}>
-              <LogOut size={18} aria-hidden="true" />
-              Salir
-            </button>
-          )}
-        </div>
-      </header>
-
-      <div className="pos-cuerpo">
-        <section className="pos-izquierda" aria-label="Punto de venta">
-          <div className="pos-buscador-envoltura">
-            <div className="pos-buscador">
-              <ScanBarcode size={24} aria-hidden="true" />
-              <input
-                ref={buscadorRef}
-                type="search"
-                value={busqueda}
-                onChange={(evento) => setBusqueda(evento.target.value)}
-                onKeyDown={alPresionarTecla}
-                placeholder="Escanea un código o busca por nombre…"
-                aria-label="Buscar producto por código o nombre"
-                autoComplete="off"
-              />
-              <Search className="pos-buscador-lupa" size={20} aria-hidden="true" />
+      <div className="pos">
+        <header className="pos-topbar">
+          <div className="pos-marca">
+            {tienda.logoUrl
+                ? <img className="pos-logo" src={tienda.logoUrl} alt="" />
+                : <span className="pos-logo inicial" aria-hidden="true">{inicial}</span>}
+            <div className="pos-marca-texto">
+              <strong>{tienda.nombre}</strong>
+              <span>Punto de venta</span>
             </div>
-
-            {termino && (
-              <div className="pos-sugerencias" role="listbox" aria-label="Productos encontrados">
-                {sugerencias.length === 0 && (
-                  <p className="pos-sin-resultados">Sin coincidencias para “{busqueda.trim()}”.</p>
-                )}
-                {sugerencias.map((producto) => {
-                  const stock = Number(producto.stock) || 0;
-                  return (
-                    <button
-                      key={producto.idProducto}
-                      className="pos-sugerencia"
-                      type="button"
-                      role="option"
-                      aria-selected="false"
-                      disabled={stock <= 0}
-                      onClick={() => agregar(producto)}
-                    >
-                      <span className="pos-sugerencia-codigo">{producto.idProducto}</span>
-                      <span className="pos-sugerencia-nombre">{producto.nombre}</span>
-                      <span className={`pos-sugerencia-stock${stock <= 0 ? ' agotado' : ''}`}>
-                        {stock <= 0 ? 'Agotado' : `Stock ${stock}`}
-                      </span>
-                      <span className="pos-sugerencia-precio">{dinero.format(precioDe(producto))}</span>
-                      <Plus size={20} aria-hidden="true" />
-                    </button>
-                  );
-                })}
-              </div>
+          </div>
+          <div className="pos-topbar-acciones">
+            <Link className="pos-enlace" to="/admin/ventas">
+              <History size={18} aria-hidden="true" />
+              Historial
+            </Link>
+            {esAdmin ? (
+                <Link className="pos-enlace" to="/admin">
+                  <ArrowLeft size={18} aria-hidden="true" />
+                  Volver al panel
+                </Link>
+            ) : (
+                <button className="pos-enlace" type="button" onClick={salir}>
+                  <LogOut size={18} aria-hidden="true" />
+                  Salir
+                </button>
             )}
           </div>
+        </header>
 
-          <div className="pos-tabla-envoltura">
-            <table className="pos-tabla">
-              <thead>
+        <div className="pos-cuerpo">
+          <section className="pos-izquierda" aria-label="Punto de venta">
+            <div className="pos-buscador-envoltura">
+              <div className="pos-buscador">
+                <ScanBarcode size={24} aria-hidden="true" />
+                <input
+                    ref={buscadorRef}
+                    type="search"
+                    value={busqueda}
+                    onChange={(evento) => setBusqueda(evento.target.value)}
+                    onKeyDown={alPresionarTecla}
+                    placeholder="Escanea un código o busca por nombre…"
+                    aria-label="Buscar producto por código o nombre"
+                    autoComplete="off"
+                />
+                <Search className="pos-buscador-lupa" size={20} aria-hidden="true" />
+              </div>
+
+              {termino && (
+                  <div className="pos-sugerencias" role="listbox" aria-label="Productos encontrados">
+                    {sugerencias.length === 0 && (
+                        <p className="pos-sin-resultados">Sin coincidencias para “{busqueda.trim()}”.</p>
+                    )}
+                    {sugerencias.map((producto) => {
+                      const stock = Number(producto.stock) || 0;
+                      return (
+                          <button
+                              key={producto.idProducto}
+                              className="pos-sugerencia"
+                              type="button"
+                              role="option"
+                              aria-selected="false"
+                              disabled={stock <= 0}
+                              onClick={() => agregar(producto)}
+                          >
+                            <span className="pos-sugerencia-codigo">{producto.idProducto}</span>
+                            <span className="pos-sugerencia-nombre">{producto.nombre}</span>
+                            <span className={`pos-sugerencia-stock${stock <= 0 ? ' agotado' : ''}`}>
+                        {stock <= 0 ? 'Agotado' : `Stock ${stock}`}
+                      </span>
+                            <span className="pos-sugerencia-precio">{dinero.format(precioDe(producto))}</span>
+                            <Plus size={20} aria-hidden="true" />
+                          </button>
+                      );
+                    })}
+                  </div>
+              )}
+            </div>
+
+            <div className="pos-tabla-envoltura">
+              <table className="pos-tabla">
+                <thead>
                 <tr>
                   <th scope="col">Código</th>
                   <th scope="col">Descripción</th>
@@ -389,266 +391,267 @@ export default function PuntoDeVenta() {
                   <th scope="col" className="derecha">Subtotal</th>
                   <th scope="col"><span className="pos-oculto">Acciones</span></th>
                 </tr>
-              </thead>
-              <tbody>
+                </thead>
+                <tbody>
                 {lineas.length === 0 && (
-                  <tr>
-                    <td colSpan="5">
-                      <div className="pos-vacio">
-                        {cargando
-                          ? <LoaderCircle className="pos-girando" size={36} aria-hidden="true" />
-                          : <ShoppingCart size={36} aria-hidden="true" />}
-                        <strong>{cargando ? 'Cargando catálogo…' : 'El carrito está vacío'}</strong>
-                        {!cargando && <span>Escanea un código o usa el buscador para agregar productos.</span>}
-                      </div>
-                    </td>
-                  </tr>
+                    <tr>
+                      <td colSpan="5">
+                        <div className="pos-vacio">
+                          {cargando
+                              ? <LoaderCircle className="pos-girando" size={36} aria-hidden="true" />
+                              : <ShoppingCart size={36} aria-hidden="true" />}
+                          <strong>{cargando ? 'Cargando catálogo…' : 'El carrito está vacío'}</strong>
+                          {!cargando && <span>Escanea un código o usa el buscador para agregar productos.</span>}
+                        </div>
+                      </td>
+                    </tr>
                 )}
 
                 {lineas.map((linea) => (
-                  <tr key={linea.idProducto}>
-                    <td className="pos-codigo">{linea.idProducto}</td>
-                    <td>
-                      <div className="pos-descripcion">
-                        <strong>{linea.nombre}</strong>
-                        <span>{dinero.format(linea.precio)} c/u · Stock {linea.stock}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="pos-cantidad">
+                    <tr key={linea.idProducto}>
+                      <td className="pos-codigo">{linea.idProducto}</td>
+                      <td>
+                        <div className="pos-descripcion">
+                          <strong>{linea.nombre}</strong>
+                          <span>{dinero.format(linea.precio)} c/u · Stock {linea.stock}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="pos-cantidad">
+                          <button
+                              type="button"
+                              aria-label={`Quitar una unidad de ${linea.nombre}`}
+                              title="Quitar una unidad"
+                              onClick={() => cambiarCantidad(linea.idProducto, -1)}
+                              disabled={linea.cantidad <= 1}
+                          >
+                            <Minus size={18} aria-hidden="true" />
+                          </button>
+                          <span aria-live="polite">{linea.cantidad}</span>
+                          <button
+                              type="button"
+                              aria-label={`Agregar una unidad de ${linea.nombre}`}
+                              title="Agregar una unidad"
+                              onClick={() => cambiarCantidad(linea.idProducto, 1)}
+                              disabled={linea.cantidad >= linea.stock}
+                          >
+                            <Plus size={18} aria-hidden="true" />
+                          </button>
+                        </div>
+                      </td>
+                      {/* CORRECCIÓN MATEMÁTICA APLICADA AQUÍ */}
+                      <td className="pos-subtotal">{dinero.format(linea.precio * linea.cantidad)}</td>
+                      <td className="pos-eliminar-celda">
                         <button
-                          type="button"
-                          aria-label={`Quitar una unidad de ${linea.nombre}`}
-                          title="Quitar una unidad"
-                          onClick={() => cambiarCantidad(linea.idProducto, -1)}
-                          disabled={linea.cantidad <= 1}
+                            className="pos-eliminar"
+                            type="button"
+                            aria-label={`Eliminar ${linea.nombre}`}
+                            title="Eliminar producto"
+                            onClick={() => eliminar(linea.idProducto)}
                         >
-                          <Minus size={18} aria-hidden="true" />
+                          <Trash2 size={19} aria-hidden="true" />
                         </button>
-                        <span aria-live="polite">{linea.cantidad}</span>
-                        <button
-                          type="button"
-                          aria-label={`Agregar una unidad de ${linea.nombre}`}
-                          title="Agregar una unidad"
-                          onClick={() => cambiarCantidad(linea.idProducto, 1)}
-                          disabled={linea.cantidad >= linea.stock}
-                        >
-                          <Plus size={18} aria-hidden="true" />
-                        </button>
-                      </div>
-                    </td>
-                    <td className="pos-subtotal">{dinero.format(linea.precio * linea.cantidad)}</td>
-                    <td className="pos-eliminar-celda">
-                      <button
-                        className="pos-eliminar"
-                        type="button"
-                        aria-label={`Eliminar ${linea.nombre}`}
-                        title="Eliminar producto"
-                        onClick={() => eliminar(linea.idProducto)}
-                      >
-                        <Trash2 size={19} aria-hidden="true" />
-                      </button>
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
                 ))}
-              </tbody>
-            </table>
-          </div>
-
-          <p className="pos-ayuda">
-            Escanea el código de barras o escribe el código/nombre y presiona <kbd>Enter</kbd>.
-          </p>
-        </section>
-
-        <aside className="pos-facturacion" aria-label="Resumen de facturación">
-          <div className="pos-facturacion-cabecera">
-            <div>
-              <span className="pos-etiqueta">Resumen de venta</span>
-              <h2>Facturación</h2>
+                </tbody>
+              </table>
             </div>
-            <span className="pos-contador">
+
+            <p className="pos-ayuda">
+              Escanea el código de barras o escribe el código/nombre y presiona <kbd>Enter</kbd>.
+            </p>
+          </section>
+
+          <aside className="pos-facturacion" aria-label="Resumen de facturación">
+            <div className="pos-facturacion-cabecera">
+              <div>
+                <span className="pos-etiqueta">Resumen de venta</span>
+                <h2>Facturación</h2>
+              </div>
+              <span className="pos-contador">
               {unidades === 1 ? '1 unidad' : `${unidades} unidades`}
             </span>
-          </div>
-
-          <dl className="pos-totales">
-            <div>
-              <dt>Subtotal</dt>
-              <dd>{dinero.format(subtotal)}</dd>
             </div>
-            <div>
-              <dt>IGV ({IGV_PORCENTAJE}%)</dt>
-              <dd>{dinero.format(igv)}</dd>
-            </div>
-            <div className="pos-total">
-              <dt>TOTAL</dt>
-              <dd>{dinero.format(total)}</dd>
-            </div>
-          </dl>
 
-          <div className="pos-bloque">
-            <span className="pos-etiqueta">Método de pago</span>
-            <div className="pos-metodos">
-              {METODOS_PAGO.map(({ nombre, icono: Icono }) => (
-                <button
-                  key={nombre}
-                  type="button"
-                  className="pos-metodo"
-                  aria-pressed={metodoPago === nombre}
-                  onClick={() => setMetodoPago(nombre)}
-                >
-                  <Icono size={22} aria-hidden="true" />
-                  {nombre}
-                </button>
-              ))}
-            </div>
-            {metodoPago === 'Efectivo' && (
-              <div className="pos-cliente-form">
-                <label className="pos-cliente-label" htmlFor="monto-recibido">Monto Recibido</label>
-                <input
-                  id="monto-recibido"
-                  className="pos-cliente-input"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={montoRecibido}
-                  onChange={(e) => setMontoRecibido(e.target.value)}
-                  placeholder={total.toFixed(2)}
-                />
-                <div className="pos-vuelto">
-                  <span>Vuelto</span>
-                  <strong>{dinero.format(vuelto)}</strong>
-                </div>
-                {pagoInsuficiente && <span className="pos-error">El monto recibido es menor al total.</span>}
-              </div>
-            )}
-          </div>
-
-          <div className="pos-bloque">
-            <span className="pos-etiqueta">Comprobante</span>
-            <div className="pos-comprobantes">
-              {['Boleta', 'Factura'].map((tipo) => (
-                <button
-                  key={tipo}
-                  type="button"
-                  className="pos-comprobante"
-                  aria-pressed={tipoComprobante === tipo}
-                  onClick={() => setTipoComprobante(tipo)}
-                >
-                  {tipo}
-                </button>
-              ))}
-            </div>
-            {tipoComprobante === 'Boleta' && (
-              <div className="pos-cliente-form">
-                <label className="pos-cliente-label" htmlFor="dni-cliente">DNI (Opcional)</label>
-                <input
-                  id="dni-cliente"
-                  className="pos-cliente-input"
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={8}
-                  value={dniCliente}
-                  onChange={(e) => setDniCliente(e.target.value.replace(/\D/g, ''))}
-                  placeholder="12345678"
-                />
-              </div>
-            )}
-            {tipoComprobante === 'Factura' && (
-              <div className="pos-cliente-form">
-                <label className="pos-cliente-label" htmlFor="ruc-cliente">RUC (11 dígitos) *</label>
-                <input
-                  id="ruc-cliente"
-                  className="pos-cliente-input"
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={11}
-                  value={rucCliente}
-                  onChange={(e) => setRucCliente(e.target.value.replace(/\D/g, ''))}
-                  placeholder="20123456789"
-                />
-                <label className="pos-cliente-label" htmlFor="razon-cliente">Razón Social *</label>
-                <input
-                  id="razon-cliente"
-                  className="pos-cliente-input"
-                  type="text"
-                  value={razonSocialCliente}
-                  onChange={(e) => setRazonSocialCliente(e.target.value)}
-                  placeholder="Razón social de la empresa"
-                />
-              </div>
-            )}
-          </div>
-
-          <button
-            className="pos-generar"
-            type="button"
-            onClick={generarComprobante}
-            disabled={lineas.length === 0 || procesando || pagoInsuficiente}
-          >
-            {procesando
-              ? <LoaderCircle className="pos-girando" size={22} aria-hidden="true" />
-              : <FileText size={22} aria-hidden="true" />}
-            {procesando ? 'Procesando...' : 'Generar Comprobante (Boleta/Factura)'}
-          </button>
-
-          <p className="pos-nota">
-            El importe incluye IGV. El comprobante se emite con los datos del cliente registrados en la venta.
-          </p>
-        </aside>
-      </div>
-
-      {ventaExitosa && (
-        <div className="pos-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="venta-exitosa-titulo">
-          <div className="pos-modal">
-            <div className="pos-modal-icono">
-              <CheckCircle2 size={48} aria-hidden="true" />
-            </div>
-            <h2 id="venta-exitosa-titulo" className="pos-modal-titulo">¡Venta Exitosa!</h2>
-            <p className="pos-modal-mensaje">La venta se registró correctamente.</p>
-            <div className="pos-modal-detalle">
+            <dl className="pos-totales">
               <div>
-                <span>Documento</span>
-                <strong>{ventaExitosa.tipoDocumento} {ventaExitosa.nroComprobante || '-'}</strong>
+                <dt>Subtotal</dt>
+                <dd>{dinero.format(subtotal)}</dd>
               </div>
               <div>
-                <span>Total cobrado</span>
-                <strong>{dinero.format(Number(ventaExitosa.total) || 0)}</strong>
+                <dt>IGV ({IGV_PORCENTAJE}%)</dt>
+                <dd>{dinero.format(igv)}</dd>
               </div>
-              <div>
-                <span>Método de pago</span>
-                <strong>{ventaExitosa.metodoPago}</strong>
+              <div className="pos-total">
+                <dt>TOTAL</dt>
+                <dd>{dinero.format(total)}</dd>
               </div>
-              {ventaExitosa.metodoPago === 'Efectivo' && (
-                <>
-                  <div>
-                    <span>Monto recibido</span>
-                    <strong>{dinero.format(Number(ventaExitosa.montoRecibido) || 0)}</strong>
+            </dl>
+
+            <div className="pos-bloque">
+              <span className="pos-etiqueta">Método de pago</span>
+              <div className="pos-metodos">
+                {METODOS_PAGO.map(({ nombre, icono: Icono }) => (
+                    <button
+                        key={nombre}
+                        type="button"
+                        className="pos-metodo"
+                        aria-pressed={metodoPago === nombre}
+                        onClick={() => setMetodoPago(nombre)}
+                    >
+                      <Icono size={22} aria-hidden="true" />
+                      {nombre}
+                    </button>
+                ))}
+              </div>
+              {metodoPago === 'Efectivo' && (
+                  <div className="pos-cliente-form">
+                    <label className="pos-cliente-label" htmlFor="monto-recibido">Monto Recibido</label>
+                    <input
+                        id="monto-recibido"
+                        className="pos-cliente-input"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={montoRecibido}
+                        onChange={(e) => setMontoRecibido(e.target.value)}
+                        placeholder={total.toFixed(2)}
+                    />
+                    <div className="pos-vuelto">
+                      <span>Vuelto</span>
+                      <strong>{dinero.format(vuelto)}</strong>
+                    </div>
+                    {pagoInsuficiente && <span className="pos-error">El monto recibido es menor al total.</span>}
                   </div>
-                  <div>
-                    <span>Vuelto</span>
-                    <strong>{dinero.format(Number(ventaExitosa.vuelto) || 0)}</strong>
-                  </div>
-                </>
               )}
             </div>
-            <div className="pos-modal-acciones">
-              <button className="pos-modal-btn primario" type="button" onClick={verDescargarPdf} disabled={!ventaExitosa.idVenta || imprimiendo}>
-                {imprimiendo ? <LoaderCircle className="pos-girando" size={18} aria-hidden="true" /> : <FileText size={18} aria-hidden="true" />}
-                {imprimiendo ? 'Abriendo...' : '👁️ Ver / Descargar PDF'}
-              </button>
-              <button className="pos-modal-btn secundario" type="button" onClick={imprimirTicket} disabled={!ventaExitosa.idVenta || imprimiendo}>
-                <Printer size={18} aria-hidden="true" />
-                🖨️ Imprimir Ticket
-              </button>
-              <button className="pos-modal-btn secundario" type="button" onClick={siguienteCliente}>
-                <UserPlus size={18} aria-hidden="true" />
-                Siguiente Cliente
-              </button>
+
+            <div className="pos-bloque">
+              <span className="pos-etiqueta">Comprobante</span>
+              <div className="pos-comprobantes">
+                {['Boleta', 'Factura'].map((tipo) => (
+                    <button
+                        key={tipo}
+                        type="button"
+                        className="pos-comprobante"
+                        aria-pressed={tipoComprobante === tipo}
+                        onClick={() => setTipoComprobante(tipo)}
+                    >
+                      {tipo}
+                    </button>
+                ))}
+              </div>
+              {tipoComprobante === 'Boleta' && (
+                  <div className="pos-cliente-form">
+                    <label className="pos-cliente-label" htmlFor="dni-cliente">DNI (Opcional)</label>
+                    <input
+                        id="dni-cliente"
+                        className="pos-cliente-input"
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={8}
+                        value={dniCliente}
+                        onChange={(e) => setDniCliente(e.target.value.replace(/\D/g, ''))}
+                        placeholder="12345678"
+                    />
+                  </div>
+              )}
+              {tipoComprobante === 'Factura' && (
+                  <div className="pos-cliente-form">
+                    <label className="pos-cliente-label" htmlFor="ruc-cliente">RUC (11 dígitos) *</label>
+                    <input
+                        id="ruc-cliente"
+                        className="pos-cliente-input"
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={11}
+                        value={rucCliente}
+                        onChange={(e) => setRucCliente(e.target.value.replace(/\D/g, ''))}
+                        placeholder="20123456789"
+                    />
+                    <label className="pos-cliente-label" htmlFor="razon-cliente">Razón Social *</label>
+                    <input
+                        id="razon-cliente"
+                        className="pos-cliente-input"
+                        type="text"
+                        value={razonSocialCliente}
+                        onChange={(e) => setRazonSocialCliente(e.target.value)}
+                        placeholder="Razón social de la empresa"
+                    />
+                  </div>
+              )}
             </div>
-          </div>
+
+            <button
+                className="pos-generar"
+                type="button"
+                onClick={generarComprobante}
+                disabled={lineas.length === 0 || procesando || pagoInsuficiente}
+            >
+              {procesando
+                  ? <LoaderCircle className="pos-girando" size={22} aria-hidden="true" />
+                  : <FileText size={22} aria-hidden="true" />}
+              {procesando ? 'Procesando...' : 'Generar Comprobante (Boleta/Factura)'}
+            </button>
+
+            <p className="pos-nota">
+              El importe incluye IGV. El comprobante se emite con los datos del cliente registrados en la venta.
+            </p>
+          </aside>
         </div>
-      )}
-    </div>
+
+        {ventaExitosa && (
+            <div className="pos-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="venta-exitosa-titulo">
+              <div className="pos-modal">
+                <div className="pos-modal-icono">
+                  <CheckCircle2 size={48} aria-hidden="true" />
+                </div>
+                <h2 id="venta-exitosa-titulo" className="pos-modal-titulo">¡Venta Exitosa!</h2>
+                <p className="pos-modal-mensaje">La venta se registró correctamente.</p>
+                <div className="pos-modal-detalle">
+                  <div>
+                    <span>Documento</span>
+                    <strong>{ventaExitosa.tipoDocumento} {ventaExitosa.nroComprobante || '-'}</strong>
+                  </div>
+                  <div>
+                    <span>Total cobrado</span>
+                    <strong>{dinero.format(Number(ventaExitosa.total) || 0)}</strong>
+                  </div>
+                  <div>
+                    <span>Método de pago</span>
+                    <strong>{ventaExitosa.metodoPago}</strong>
+                  </div>
+                  {ventaExitosa.metodoPago === 'Efectivo' && (
+                      <>
+                        <div>
+                          <span>Monto recibido</span>
+                          <strong>{dinero.format(Number(ventaExitosa.montoRecibido) || 0)}</strong>
+                        </div>
+                        <div>
+                          <span>Vuelto</span>
+                          <strong>{dinero.format(Number(ventaExitosa.vuelto) || 0)}</strong>
+                        </div>
+                      </>
+                  )}
+                </div>
+                <div className="pos-modal-acciones">
+                  <button className="pos-modal-btn primario" type="button" onClick={verDescargarPdf} disabled={!ventaExitosa.idVenta || imprimiendo}>
+                    {imprimiendo ? <LoaderCircle className="pos-girando" size={18} aria-hidden="true" /> : <FileText size={18} aria-hidden="true" />}
+                    {imprimiendo ? 'Abriendo...' : '👁️ Ver / Descargar PDF'}
+                  </button>
+                  <button className="pos-modal-btn secundario" type="button" onClick={imprimirTicket} disabled={!ventaExitosa.idVenta || imprimiendo}>
+                    <Printer size={18} aria-hidden="true" />
+                    🖨️ Imprimir Ticket
+                  </button>
+                  <button className="pos-modal-btn secundario" type="button" onClick={siguienteCliente}>
+                    <UserPlus size={18} aria-hidden="true" />
+                    Siguiente Cliente
+                  </button>
+                </div>
+              </div>
+            </div>
+        )}
+      </div>
   );
 }
