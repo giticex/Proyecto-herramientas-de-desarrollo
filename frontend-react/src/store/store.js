@@ -43,9 +43,20 @@ export const useStore = create((set, get) => ({
   },
 
   async listProductos(slug) {
-    const productos = slug
+    const respuesta = slug
       ? await listProductosTiendaApi(slug)
       : await listProductosApi();
+    let datos = respuesta;
+    if (respuesta && !Array.isArray(respuesta)) {
+      datos = respuesta.data ?? respuesta.content ?? respuesta.items ?? [];
+    }
+    if (!Array.isArray(datos)) datos = [];
+    const productos = datos.map((p) => ({
+      idProducto: p.idProducto ?? p.id ?? p.codigo ?? '',
+      nombre: p.nombre ?? p.descripcion ?? '',
+      precio: Number(p.precio ?? p.precioVenta ?? p.valor ?? 0),
+      stock: Number(p.stock ?? p.cantidad ?? p.existencias ?? 0),
+    }));
     set({ productos });
     return productos;
   },

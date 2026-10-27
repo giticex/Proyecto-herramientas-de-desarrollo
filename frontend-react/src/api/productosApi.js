@@ -2,10 +2,18 @@
 import { apiClient } from './client';
 
 export async function listProductos() {
+  const token = (await import('./client')).tokenActivo?.();
+  if (token) {
+    return apiClient.get('/productos', { token });
+  }
   return apiClient.get('/productos');
 }
 
 export async function listProductosTienda(slug) {
+  const token = (await import('./client')).tokenActivo?.();
+  if (token) {
+    return apiClient.get(`/tiendas/${encodeURIComponent(slug)}/productos`, { token });
+  }
   return apiClient.get(`/tiendas/${encodeURIComponent(slug)}/productos`);
 }
 
