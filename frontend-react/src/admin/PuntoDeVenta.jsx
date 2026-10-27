@@ -245,36 +245,29 @@ export default function PuntoDeVenta() {
     try {
       const { tokenActivo, apiUrl } = await import('../api/client');
       const token = tokenActivo();
-      const ruta = rutaComprobantePdf(idVenta);
-      const url = apiUrl(ruta);
-      const respuesta = await fetch(url, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      const url = apiUrl(`/comprobantes/${idVenta}/pdf`);
+      const response = await fetch(url, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+          Accept: 'application/pdf',
+        },
       });
-      if (!respuesta.ok) {
-        throw new Error(`Error ${respuesta.status} al descargar comprobante`);
+      if (!response.ok) {
+        throw new Error(`Error ${response.status} al descargar comprobante`);
       }
-      const blob = await respuesta.blob();
-      const objectUrl = window.URL.createObjectURL(blob);
-      const archivo = `${nombre || `venta-${idVenta}`}.pdf`;
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
       if (abrir) {
-        const ventana = window.open(objectUrl, '_blank');
-        if (!ventana) {
-          const enlace = document.createElement('a');
-          enlace.href = objectUrl;
-          enlace.download = archivo;
-          document.body.appendChild(enlace);
-          enlace.click();
-          enlace.remove();
-        }
+        window.open(blobUrl, '_blank');
       } else {
         const enlace = document.createElement('a');
-        enlace.href = objectUrl;
-        enlace.download = archivo;
+        enlace.href = blobUrl;
+        enlace.download = `${nombre || `venta-${idVenta}`}.pdf`;
         document.body.appendChild(enlace);
         enlace.click();
         enlace.remove();
       }
-      setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60000);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
     } catch (error) {
       showToast(error?.message || 'No se pudo obtener el comprobante PDF.');
     } finally {
