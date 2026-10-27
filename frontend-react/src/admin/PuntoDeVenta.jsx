@@ -72,6 +72,9 @@ export default function PuntoDeVenta() {
   const [procesando, setProcesando] = useState(false);
   const [ventaExitosa, setVentaExitosa] = useState(null);
   const [imprimiendo, setImprimiendo] = useState(false);
+  const [dniCliente, setDniCliente] = useState('');
+  const [rucCliente, setRucCliente] = useState('');
+  const [razonSocialCliente, setRazonSocialCliente] = useState('');
   const buscadorRef = useRef(null);
 
   useEffect(() => {
@@ -173,6 +176,20 @@ export default function PuntoDeVenta() {
       showToast('Agrega al menos un producto para generar el comprobante.');
       return;
     }
+    if (tipoComprobante === 'Factura') {
+      if (!rucCliente.trim() || !razonSocialCliente.trim()) {
+        showToast('Completa RUC y Razón Social para emitir Factura.');
+        return;
+      }
+      if (rucCliente.trim().length !== 11) {
+        showToast('El RUC debe tener 11 dígitos.');
+        return;
+      }
+    }
+    if (tipoComprobante === 'Boleta' && dniCliente.trim() && dniCliente.trim().length !== 8) {
+      showToast('El DNI debe tener 8 dígitos.');
+      return;
+    }
     if (procesando) return;
 
     setProcesando(true);
@@ -186,6 +203,15 @@ export default function PuntoDeVenta() {
         medioPago: metodoPago,
         items,
       };
+      if (tipoComprobante === 'Boleta' && dniCliente.trim()) {
+        payload.dni = dniCliente.trim();
+        payload.documentoCliente = dniCliente.trim();
+      }
+      if (tipoComprobante === 'Factura') {
+        payload.ruc = rucCliente.trim();
+        payload.razonSocial = razonSocialCliente.trim();
+        payload.documentoCliente = rucCliente.trim();
+      }
       const venta = await registrarVenta(payload);
       const nro = venta?.nroComprobante || venta?.numeroDocumento || venta?.idVenta || '';
       const idVenta = venta?.idVenta;
@@ -224,10 +250,31 @@ export default function PuntoDeVenta() {
     }
   }
 
+  async function verDescargarPdf() {
+    if (!ventaExitosa?.idVenta || imprimiendo) return;
+    setImprimiendo(true);
+    try {
+      await descargarArchivoSeguro(
+        rutaComprobantePdf(ventaExitosa.idVenta),
+        'PDF',
+        ventaExitosa.nroComprobante || `venta-${ventaExitosa.idVenta}`,
+        { abrir: true },
+      );
+    } catch (error) {
+      showToast(error?.message || 'No se pudo abrir el PDF.');
+    } finally {
+      setImprimiendo(false);
+    }
+  }
+
   function siguienteCliente() {
     setVentaExitosa(null);
     setBusqueda('');
     setMetodoPago('Efectivo');
+    setTipoComprobante('Boleta');
+    setDniCliente('');
+    setRucCliente('');
+    setRazonSocialCliente('');
     buscadorRef.current?.focus();
   }
 
@@ -453,6 +500,45 @@ export default function PuntoDeVenta() {
                 </button>
               ))}
             </div>
+            {tipoComprobante === 'Boleta' && (
+              <div className="pos-cliente-form">
+                <label className="pos-cliente-label" htmlFor="dni-cliente">DNI (Opcional)</label>
+                <input
+                  id="dni-cliente"
+                  className="pos-cliente-input"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={8}
+                  value={dniCliente}
+                  onChange={(e) => setDniCliente(e.target.value.replace(/\D/g, ''))}
+                  placeholder="12345678"
+                />
+              </div>
+            )}
+            {tipoComprobante === 'Factura' && (
+              <div className="pos-cliente-form">
+                <label className="pos-cliente-label" htmlFor="ruc-cliente">RUC (11 dígitos) *</label>
+                <input
+                  id="ruc-cliente"
+                  className="pos-cliente-input"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={11}
+                  value={rucCliente}
+                  onChange={(e) => setRucCliente(e.target.value.replace(/\D/g, ''))}
+                  placeholder="20123456789"
+                />
+                <label className="pos-cliente-label" htmlFor="razon-cliente">Razón Social *</label>
+                <input
+                  id="razon-cliente"
+                  className="pos-cliente-input"
+                  type="text"
+                  value={razonSocialCliente}
+                  onChange={(e) => setRazonSocialCliente(e.target.value)}
+                  placeholder="Razón social de la empresa"
+                />
+              </div>
+            )}
           </div>
 
           <button
@@ -496,9 +582,13 @@ export default function PuntoDeVenta() {
               </div>
             </div>
             <div className="pos-modal-acciones">
-              <button className="pos-modal-btn primario" type="button" onClick={imprimirTicket} disabled={!ventaExitosa.idVenta || imprimiendo}>
-                {imprimiendo ? <LoaderCircle className="pos-girando" size={18} aria-hidden="true" /> : <Printer size={18} aria-hidden="true" />}
-                {imprimiendo ? 'Imprimiendo...' : '🖨️ Imprimir Ticket'}
+              <button className="pos-modal-btn primario" type="button" onClick={verDescargarPdf} disabled={!ventaExitosa.idVenta || imprimiendo}>
+                {imprimiendo ? <LoaderCircle className="pos-girando" size={18} aria-hidden="true" /> : <FileText size={18} aria-hidden="true" />}
+                {imprimiendo ? 'Abriendo...' : '👁️ Ver / Descargar PDF'}
+              </button>
+              <button className="pos-modal-btn secundario" type="button" onClick={imprimirTicket} disabled={!ventaExitosa.idVenta || imprimiendo}>
+                <Printer size={18} aria-hidden="true" />
+                🖨️ Imprimir Ticket
               </button>
               <button className="pos-modal-btn secundario" type="button" onClick={siguienteCliente}>
                 <UserPlus size={18} aria-hidden="true" />
