@@ -75,6 +75,7 @@ export default function PuntoDeVenta() {
   const [dniCliente, setDniCliente] = useState('');
   const [rucCliente, setRucCliente] = useState('');
   const [razonSocialCliente, setRazonSocialCliente] = useState('');
+  const [montoRecibido, setMontoRecibido] = useState('');
   const buscadorRef = useRef(null);
 
   useEffect(() => {
@@ -111,6 +112,9 @@ export default function PuntoDeVenta() {
   const subtotal = redondear(total / (1 + IGV_RATE));
   const igv = redondear(total - subtotal);
   const unidades = lineas.reduce((suma, linea) => suma + linea.cantidad, 0);
+  const montoRecibidoNum = Number(String(montoRecibido).replace(',', '.')) || 0;
+  const vuelto = metodoPago === 'Efectivo' ? Math.max(0, redondear(montoRecibidoNum - total)) : 0;
+  const pagoInsuficiente = metodoPago === 'Efectivo' && lineas.length > 0 && montoRecibidoNum < total;
 
   function agregar(producto) {
     const stock = Number(producto.stock) || 0;
@@ -222,6 +226,8 @@ export default function PuntoDeVenta() {
         tipoDocumento: tipoComprobante,
         total: totalCobrado,
         metodoPago,
+        vuelto: metodoPago === 'Efectivo' ? vuelto : 0,
+        montoRecibido: metodoPago === 'Efectivo' ? montoRecibidoNum : totalCobrado,
       });
       setLineas([]);
       setBusqueda('');
@@ -233,38 +239,48 @@ export default function PuntoDeVenta() {
     }
   }
 
-  async function imprimirTicket() {
-    if (!ventaExitosa?.idVenta || imprimiendo) return;
+  async function descargarPdfConToken(idVenta, nombre, abrir = true) {
+    if (!idVenta || imprimiendo) return;
     setImprimiendo(true);
     try {
-      await descargarArchivoSeguro(
-        rutaComprobantePdf(ventaExitosa.idVenta),
-        'PDF',
-        ventaExitosa.nroComprobante || `venta-${ventaExitosa.idVenta}`,
-        { abrir: true },
-      );
+      const { apiClient, apiUrl } = await import('../api/client');
+      const blob = await apiClient.getBlob(rutaComprobantePdf(idVenta));
+      const url = window.URL.createObjectURL(blob);
+      const archivo = `${nombre || `venta-${idVenta}`}.pdf`;
+      if (abrir) {
+        const ventana = window.open(url, '_blank');
+        if (!ventana) {
+          const enlace = document.createElement('a');
+          enlace.href = url;
+          enlace.download = archivo;
+          document.body.appendChild(enlace);
+          enlace.click();
+          enlace.remove();
+        }
+      } else {
+        const enlace = document.createElement('a');
+        enlace.href = url;
+        enlace.download = archivo;
+        document.body.appendChild(enlace);
+        enlace.click();
+        enlace.remove();
+      }
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
     } catch (error) {
-      showToast(error?.message || 'No se pudo imprimir el ticket.');
+      showToast(error?.message || 'No se pudo obtener el comprobante PDF.');
     } finally {
       setImprimiendo(false);
     }
   }
 
+  async function imprimirTicket() {
+    if (!ventaExitosa?.idVenta) return;
+    await descargarPdfConToken(ventaExitosa.idVenta, ventaExitosa.nroComprobante || `venta-${ventaExitosa.idVenta}`, true);
+  }
+
   async function verDescargarPdf() {
-    if (!ventaExitosa?.idVenta || imprimiendo) return;
-    setImprimiendo(true);
-    try {
-      await descargarArchivoSeguro(
-        rutaComprobantePdf(ventaExitosa.idVenta),
-        'PDF',
-        ventaExitosa.nroComprobante || `venta-${ventaExitosa.idVenta}`,
-        { abrir: true },
-      );
-    } catch (error) {
-      showToast(error?.message || 'No se pudo abrir el PDF.');
-    } finally {
-      setImprimiendo(false);
-    }
+    if (!ventaExitosa?.idVenta) return;
+    await descargarPdfConToken(ventaExitosa.idVenta, ventaExitosa.nroComprobante || `venta-${ventaExitosa.idVenta}`, true);
   }
 
   function siguienteCliente() {
@@ -275,6 +291,7 @@ export default function PuntoDeVenta() {
     setDniCliente('');
     setRucCliente('');
     setRazonSocialCliente('');
+    setMontoRecibido('');
     buscadorRef.current?.focus();
   }
 
@@ -483,6 +500,26 @@ export default function PuntoDeVenta() {
                 </button>
               ))}
             </div>
+            {metodoPago === 'Efectivo' && (
+              <div className="pos-cliente-form">
+                <label className="pos-cliente-label" htmlFor="monto-recibido">Monto Recibido</label>
+                <input
+                  id="monto-recibido"
+                  className="pos-cliente-input"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={montoRecibido}
+                  onChange={(e) => setMontoRecibido(e.target.value)}
+                  placeholder={total.toFixed(2)}
+                />
+                <div className="pos-vuelto">
+                  <span>Vuelto</span>
+                  <strong>{dinero.format(vuelto)}</strong>
+                </div>
+                {pagoInsuficiente && <span className="pos-error">El monto recibido es menor al total.</span>}
+              </div>
+            )}
           </div>
 
           <div className="pos-bloque">
@@ -545,7 +582,7 @@ export default function PuntoDeVenta() {
             className="pos-generar"
             type="button"
             onClick={generarComprobante}
-            disabled={lineas.length === 0 || procesando}
+            disabled={lineas.length === 0 || procesando || pagoInsuficiente}
           >
             {procesando
               ? <LoaderCircle className="pos-girando" size={22} aria-hidden="true" />
@@ -580,6 +617,18 @@ export default function PuntoDeVenta() {
                 <span>Método de pago</span>
                 <strong>{ventaExitosa.metodoPago}</strong>
               </div>
+              {ventaExitosa.metodoPago === 'Efectivo' && (
+                <>
+                  <div>
+                    <span>Monto recibido</span>
+                    <strong>{dinero.format(Number(ventaExitosa.montoRecibido) || 0)}</strong>
+                  </div>
+                  <div>
+                    <span>Vuelto</span>
+                    <strong>{dinero.format(Number(ventaExitosa.vuelto) || 0)}</strong>
+                  </div>
+                </>
+              )}
             </div>
             <div className="pos-modal-acciones">
               <button className="pos-modal-btn primario" type="button" onClick={verDescargarPdf} disabled={!ventaExitosa.idVenta || imprimiendo}>

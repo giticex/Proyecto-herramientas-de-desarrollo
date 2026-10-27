@@ -219,6 +219,25 @@ button.pos-enlace {
   cursor: not-allowed;
 }
 
+.pos-vuelto {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+  padding: 8px 10px;
+  background: #f5f5f7;
+  border-radius: 8px;
+}
+
+.pos-vuelto span {
+  color: #6e6e73;
+}
+
+.pos-error {
+  color: #dc2626;
+  font-size: 12px;
+}
+
 .pos-cliente-form {
   display: flex;
   flex-direction: column;

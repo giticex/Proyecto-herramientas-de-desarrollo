@@ -65,6 +65,9 @@ public class SecurityConfig {
                         // El panel de administracion trabaja sobre SU tienda: el
                         // idTienda sale del token, nunca del body.
                         .requestMatchers("/api/dashboard/**").hasRole("ADMIN")
+                        // Comprobantes PDF/XML: accesibles al POS y panel
+                        .requestMatchers("/comprobantes/**", "/api/comprobantes/**")
+                        .hasAnyRole("ADMIN", "VENDEDOR", "CLIENTE")
                         // El POS consulta el catalogo y los clientes, pero no los gestiona.
                         .requestMatchers(HttpMethod.GET, "/productos", "/productos/**")
                         .hasAnyRole("ADMIN", "VENDEDOR")
