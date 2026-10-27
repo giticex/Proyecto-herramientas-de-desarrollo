@@ -33,10 +33,13 @@ final class CuentasTest {
 
     static final String USUARIO_ADMIN = "admin";
     static final String CORREO_ADMIN = "admin@prueba.com";
+    static final String USUARIO_VENDEDOR = "vendedor";
+    static final String CORREO_VENDEDOR = "vendedor@prueba.com";
     static final String USUARIO_CLIENTE = "comprador";
     static final String CORREO_CLIENTE = "comprador@prueba.com";
     static final String ID_CLIENTE = "CLI-PRUEBA";
     static final String ID_PERSONA_ADMIN = "PER-PRUEBA-ADM";
+    static final String ID_PERSONA_VENDEDOR = "PER-PRUEBA-VEN";
     static final String ID_PERSONA_CLIENTE = "PER-PRUEBA-CLI";
 
     // Tienda de la que es dueno el ADMIN de las pruebas.
@@ -65,6 +68,20 @@ final class CuentasTest {
         usuario.setContrasena(HASH_123456);
         usuario.setIdPersona(persona.getIdPersona());
         usuario.setIdRol(Rol.ADMIN);
+        usuario.setIdTienda(tienda.getIdTienda());
+        return usuarios.save(usuario);
+    }
+
+    static Usuario crearVendedor(UsuarioRepository usuarios, PersonaRepository personas,
+            TiendaRepository tiendas) {
+        Tienda tienda = crearTienda(tiendas);
+        Persona persona = persona(personas, ID_PERSONA_VENDEDOR, "Vendedor", "Prueba", CORREO_VENDEDOR,
+                USUARIO_VENDEDOR);
+        Usuario usuario = usuarios.findByUsuario(USUARIO_VENDEDOR).orElseGet(() -> new Usuario());
+        usuario.setUsuario(USUARIO_VENDEDOR);
+        usuario.setContrasena(HASH_123456);
+        usuario.setIdPersona(persona.getIdPersona());
+        usuario.setIdRol(Rol.VENDEDOR);
         usuario.setIdTienda(tienda.getIdTienda());
         return usuarios.save(usuario);
     }

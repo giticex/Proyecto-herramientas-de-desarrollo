@@ -22,9 +22,11 @@ import java.util.List;
 // Reglas de acceso por rol. El rol lo trae el token (ver TokenFiltro) y sale
 // de la FK id_rol de la base, no de una constante escrita a mano.
 //
-//   ADMIN   -> panel de administracion de SU tienda (productos, clientes, historial).
-//   CLIENTE -> comprar, ver sus propias compras y el catalogo de su tienda.
-//   publico -> login, registro, catalogo de roles y catalogo publico por tienda.
+//   ADMIN    -> panel de administracion de SU tienda (productos, clientes, historial).
+//   VENDEDOR -> punto de venta (POS): consulta el catalogo, clientes y registra
+//               ventas de SU tienda, sin poder administrar el catalogo.
+//   CLIENTE  -> comprar, ver sus propias compras y el catalogo de su tienda.
+//   publico  -> login, registro, catalogo de roles y catalogo publico por tienda.
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -56,14 +58,18 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/tiendas/*", "/tiendas/*/productos").permitAll()
                         // El comprador ve sus propias compras; el administrador tambien.
                         .requestMatchers(HttpMethod.GET, "/ventas/mias").hasAnyRole("CLIENTE", "ADMIN")
-                        // El historial completo (paginado) es solo del panel admin.
-                        .requestMatchers(HttpMethod.GET, "/ventas").hasRole("ADMIN")
-                        // El checkout puede hacerlo el comprador; el administrador tambien.
-                        .requestMatchers(HttpMethod.POST, "/ventas").hasAnyRole("CLIENTE", "ADMIN")
+                        // El historial completo (paginado) lo ven el panel admin y el POS.
+                        .requestMatchers(HttpMethod.GET, "/ventas").hasAnyRole("ADMIN", "VENDEDOR")
+                        // El checkout puede hacerlo el comprador; el POS y el admin tambien.
+                        .requestMatchers(HttpMethod.POST, "/ventas").hasAnyRole("CLIENTE", "ADMIN", "VENDEDOR")
                         // El panel de administracion trabaja sobre SU tienda: el
                         // idTienda sale del token, nunca del body.
                         .requestMatchers("/api/dashboard/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/productos", "/productos/**").hasRole("ADMIN")
+                        // El POS consulta el catalogo y los clientes, pero no los gestiona.
+                        .requestMatchers(HttpMethod.GET, "/productos", "/productos/**")
+                        .hasAnyRole("ADMIN", "VENDEDOR")
+                        .requestMatchers(HttpMethod.GET, "/clientes", "/clientes/**")
+                        .hasAnyRole("ADMIN", "VENDEDOR")
                         .requestMatchers("/productos/**", "/clientes/**", "/ventas/**",
                                 "/historial", "/historial/**", "/boletas", "/boletas/**",
                                 "/boleta/**", "/factura/**", "/tiendas/**").hasRole("ADMIN")

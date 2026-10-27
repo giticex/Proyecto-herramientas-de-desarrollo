@@ -6,7 +6,8 @@ import './AdminLogin.css';
 
 // Puerto de frontend/login.html + frontend/js/login.js: mismos campos,
 // validación y mensajes en español. El login es real (POST /auth/login) y
-// solo deja entrar a quien tiene el rol ADMIN.
+// deja entrar a ADMIN y VENDEDOR; cada rol aterriza en su vista inicial.
+const ROLES_PANEL = ['ADMIN', 'VENDEDOR'];
 export default function AdminLogin() {
   const [usuario, setUsuario] = useState('');
   const [clave, setClave] = useState('');
@@ -33,12 +34,12 @@ export default function AdminLogin() {
     setError('');
     try {
       const respuesta = await loginApi(u, clave);
-      if (respuesta.rol !== 'ADMIN') {
-        setError('Tu cuenta no tiene el rol ADMIN para entrar al panel.');
+      if (!ROLES_PANEL.includes(respuesta.rol)) {
+        setError('Tu cuenta no tiene permisos para entrar al panel.');
         return;
       }
       login(respuesta.usuario ?? u, respuesta.token, respuesta.rol);
-      navigate('/admin');
+      navigate(respuesta.rol === 'VENDEDOR' ? '/admin/pos' : '/admin');
     } catch (problema) {
       setError(problema.message || 'No se pudo iniciar sesión.');
     } finally {
@@ -56,7 +57,7 @@ export default function AdminLogin() {
       <main className="page narrow">
         <header className="head">
           <h1>Bienvenido.</h1>
-          <p>Inicia sesión para administrar tu tienda.</p>
+          <p>Inicia sesión para gestionar tu tienda.</p>
         </header>
 
         <form className="form" onSubmit={manejarSubmit} noValidate>

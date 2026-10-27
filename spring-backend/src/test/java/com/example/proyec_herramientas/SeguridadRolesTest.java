@@ -56,6 +56,7 @@ class SeguridadRolesTest {
     void prepararCuentas() {
         productoRepository.deleteAll();
         CuentasTest.crearAdmin(usuarioRepository, personaRepository, tiendaRepository);
+        CuentasTest.crearVendedor(usuarioRepository, personaRepository, tiendaRepository);
         CuentasTest.crearCliente(usuarioRepository, personaRepository, tiendaRepository);
         CuentasTest.crearFichaCliente(clienteRepository);
     }
@@ -108,6 +109,48 @@ class SeguridadRolesTest {
                 CuentasTest.CLAVE);
         mockMvc.perform(get("/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void elVendedorEntraAlPosPeroNoAdministraElCatalogo() throws Exception {
+        String token = CuentasTest.token(mockMvc, objectMapper, CuentasTest.USUARIO_VENDEDOR,
+                CuentasTest.CLAVE);
+
+        // POS: catalogo, clientes e historial de ventas de su tienda.
+        mockMvc.perform(get("/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/clientes").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/ventas").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk());
+
+        // El catalogo se consulta, pero solo el ADMIN lo modifica.
+        mockMvc.perform(post("/productos")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(producto(51, "Teclado POS")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void elVendedorPuedeRegistrarVentasPeroNoCambiarLaTienda() throws Exception {
+        String token = CuentasTest.token(mockMvc, objectMapper, CuentasTest.USUARIO_VENDEDOR,
+                CuentasTest.CLAVE);
+
+        // Cuerpo invalido (sin items): si el rol no tuviera acceso seria 403;
+        // el 400 confirma que la peticion llega al controller.
+        mockMvc.perform(post("/ventas")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"tipoDocumento\":\"Boleta\",\"items\":[]}"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/tiendas/" + CuentasTest.SLUG_TIENDA)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden());
     }
 
     @Test

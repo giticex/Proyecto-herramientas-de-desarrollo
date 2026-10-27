@@ -31,9 +31,10 @@ INSERT INTO parametro (id_parametro, valor, descripcion) VALUES
     ('PERSONA_MOSTRADOR', 'PER001', 'Persona por defecto de las ventas de mostrador');
 
 -- Roles del sistema. Las pruebas de seguridad usan estas cuentas para
--- comprobar que ADMIN entra al panel y CLIENTE no.
+-- comprobar que ADMIN entra al panel, VENDEDOR entra al POS y CLIENTE no.
 INSERT INTO rol (id_rol, nombre, descripcion) VALUES
     ('ADMIN', 'Administrador', 'Gestiona productos, historial general, clientes y alertas de stock'),
+    ('VENDEDOR', 'Vendedor', 'Opera el punto de venta: consulta catalogo, clientes y registra ventas de su tienda'),
     ('CLIENTE', 'Cliente', 'Compra en la tienda, ve su carrito y sus compras');
 
 INSERT INTO medio_pago VALUES

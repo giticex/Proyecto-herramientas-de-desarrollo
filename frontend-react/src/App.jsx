@@ -5,6 +5,7 @@ import DashboardAdmin from './admin/DashboardAdmin';
 import MarcaPanel from './admin/MarcaPanel';
 import ProductosPanel from './admin/ProductosPanel';
 import HistorialVentas from './admin/HistorialVentas';
+import PuntoDeVenta from './admin/PuntoDeVenta';
 import RutaProtegida from './auth/RutaProtegida';
 import Toast from './components/Toast';
 import LandingPlataforma from './tienda/LandingPlataforma';
@@ -49,11 +50,16 @@ export default function App() {
         {/* === 4. MÓDULO ADMINISTRADOR Y ONBOARDING (Kiara) === */}
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/registro-tienda" element={<RegistroTienda />} />
-        <Route element={<RutaProtegida />}>
+        {/* Catálogo y configuración: solo ADMIN (el backend también lo exige). */}
+        <Route element={<RutaProtegida roles={['ADMIN']} />}>
           <Route path="/admin" element={<DashboardAdmin />} />
           <Route path="/admin/marca" element={<MarcaPanel />} />
           <Route path="/admin/productos" element={<ProductosPanel />} />
+        </Route>
+        {/* Operación de tienda: ADMIN y VENDEDOR. */}
+        <Route element={<RutaProtegida roles={['ADMIN', 'VENDEDOR']} />}>
           <Route path="/admin/ventas" element={<HistorialVentas />} />
+          <Route path="/admin/pos" element={<PuntoDeVenta />} />
         </Route>
       </Routes>
       <Toast />

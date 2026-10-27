@@ -12,6 +12,7 @@ import jakarta.persistence.Table;
 public class Rol {
 
     public static final String ADMIN = "ADMIN";
+    public static final String VENDEDOR = "VENDEDOR";
     public static final String CLIENTE = "CLIENTE";
 
     @Id

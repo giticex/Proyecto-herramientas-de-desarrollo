@@ -32,7 +32,16 @@ export const useSesion = create((set) => ({
   },
 }));
 
-// Solo el ADMIN entra al panel de administración.
+// Personal con acceso al panel: ADMIN administra todo; VENDEDOR opera caja
+// (POS) e historial de ventas.
 export function esAdmin(sesion) {
   return sesion?.rol === 'ADMIN';
+}
+
+export function esVendedor(sesion) {
+  return sesion?.rol === 'VENDEDOR';
+}
+
+export function esPersonal(sesion) {
+  return esAdmin(sesion) || esVendedor(sesion);
 }

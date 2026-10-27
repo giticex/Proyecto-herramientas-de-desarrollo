@@ -6,8 +6,8 @@ import java.security.Principal;
 // que tienda es. Se guarda como principal del contexto de seguridad para que
 // los controllers puedan consultar la pertenencia sin tocar la base.
 //
-// idTienda solo lo tienen las cuentas ADMIN (es la tienda que administran);
-// idCliente solo lo tienen las cuentas CLIENTE.
+// idTienda solo lo tienen las cuentas ADMIN y VENDEDOR (la tienda en la que
+// trabajan); idCliente solo lo tienen las cuentas CLIENTE.
 public record SesionPrincipal(String usuario, String rol, String idCliente, Integer idTienda)
         implements Principal {
 

@@ -18,8 +18,8 @@ public class CarritoRequestDTO {
 
     private String medioPago;
 
-    // Solo lo usa el ADMIN para vender a nombre de un cliente. Para un CLIENTE
-    // se ignora: su idCliente sale del token.
+    // Solo lo usan el ADMIN y el VENDEDOR para vender a nombre de un cliente
+    // (mostrador). Para un CLIENTE se ignora: su idCliente sale del token.
     private String idCliente;
 
     @NotNull

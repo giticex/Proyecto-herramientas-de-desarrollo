@@ -97,7 +97,8 @@ CREATE TABLE persona (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Catalogo de roles. La tabla "rol" es la unica fuente de verdad de los
--- permisos: ADMIN para el panel de administracion, CLIENTE para el comprador.
+-- permisos: ADMIN para el panel de administracion, VENDEDOR para el POS y
+-- CLIENTE para el comprador.
 CREATE TABLE rol (
     id_rol      VARCHAR(15)  NOT NULL,
     nombre      VARCHAR(50)  NOT NULL,
@@ -310,6 +311,7 @@ INSERT INTO parametro (id_parametro, valor, descripcion) VALUES
 -- Los roles del sistema. El codigo lee esta tabla, nunca los escribe a mano.
 INSERT INTO rol (id_rol, nombre, descripcion) VALUES
 ('ADMIN', 'Administrador', 'Gestiona productos, historial general, clientes y alertas de stock'),
+('VENDEDOR', 'Vendedor', 'Opera el punto de venta: consulta catalogo, clientes y registra ventas de su tienda'),
 ('CLIENTE', 'Cliente', 'Compra en la tienda, ve su carrito y sus compras');
 
 INSERT INTO tipo_documento VALUES
@@ -355,7 +357,8 @@ INSERT INTO persona VALUES
 ('PER013', 'Raúl', 'Navarro', '1996-03-29', 'raul@gmail.com', '987654333', 'rauln'),
 ('PER014', 'Sofía', 'Herrera', '2001-05-19', 'sofia@gmail.com', '987654334', 'sofiah'),
 ('PER015', 'Fernando', 'Lozano', '1995-08-11', 'fernando@gmail.com', '987654335', 'fernandol'),
-('PERADM', 'Administrador', 'General', '1995-01-01', 'admin@softplex.com', '999999999', 'admin');
+('PERADM', 'Administrador', 'General', '1995-01-01', 'admin@softplex.com', '999999999', 'admin'),
+('PERVEN', 'Vendedor', 'Demo', '1999-04-15', 'vendedor@softplex.com', '999999998', 'vendedor');
 
 -- Las personas son las RELACIONES (empleados/registrados). Quien compra es
 -- cliente, y su cuenta vive en la tabla cliente.
@@ -378,9 +381,9 @@ INSERT INTO cliente VALUES
 
 -- Las cuentas de acceso. "usuario" es la clave natural con la que se hace
 -- login; "contrasena" guarda el SHA-256 de "123456" y sube a BCrypt la
--- primera vez que la cuenta inicia sesion por /auth/login. Todas quedan como
--- ADMIN de la tienda demo (id_tienda=1): "admin"/"123456" es el ADMIN de
--- pruebas. SOLO PARA DESARROLLO.
+-- primera vez que la cuenta inicia sesion por /auth/login. Las cuentas
+-- "admin" y "vendedor" son de la tienda demo (id_tienda=1); el resto son
+-- ADMIN de esa misma tienda. SOLO PARA DESARROLLO.
 INSERT INTO usuario (usuario, contrasena, id_persona, id_rol, id_tienda) VALUES
 ('luisg', @HASH_123456, 'PER001', 'ADMIN', 1),
 ('anat', @HASH_123456, 'PER002', 'ADMIN', 1),
@@ -397,7 +400,8 @@ INSERT INTO usuario (usuario, contrasena, id_persona, id_rol, id_tienda) VALUES
 ('rauln', @HASH_123456, 'PER013', 'ADMIN', 1),
 ('sofiah', @HASH_123456, 'PER014', 'ADMIN', 1),
 ('fernandol', @HASH_123456, 'PER015', 'ADMIN', 1),
-('admin', @HASH_123456, 'PERADM', 'ADMIN', 1);
+('admin', @HASH_123456, 'PERADM', 'ADMIN', 1),
+('vendedor', @HASH_123456, 'PERVEN', 'VENDEDOR', 1);
 
 -- Catalogo de productos. id_producto no es AUTO_INCREMENT: la pantalla de
 -- gestion de productos lo pide explicitamente al agregar. Todos de la tienda

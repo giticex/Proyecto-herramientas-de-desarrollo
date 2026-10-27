@@ -7,9 +7,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-// Cuenta de acceso del panel de administracion. Antes SCRUM-6 la tabla
-// "usuario" existia en MySQL pero no estaba mapeada: aqui se mapea junto con
-// su rol, que vive en la base y no se deduce en el codigo.
+// Cuenta de acceso del personal de la tienda (ADMIN o VENDEDOR). Antes SCRUM-6
+// la tabla "usuario" existia en MySQL pero no estaba mapeada: aqui se mapea
+// junto con su rol, que vive en la base y no se deduce en el codigo.
 @Entity
 @Table(name = "usuario")
 public class Usuario {

@@ -34,7 +34,8 @@ CREATE TABLE medio_pago (
     PRIMARY KEY (id_medio_pago)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Catalogo de roles: ADMIN para el panel, CLIENTE para el comprador.
+-- Catalogo de roles: ADMIN para el panel, VENDEDOR para el POS y CLIENTE
+-- para el comprador.
 CREATE TABLE rol (
     id_rol      VARCHAR(15)  NOT NULL,
     nombre      VARCHAR(50)  NOT NULL,

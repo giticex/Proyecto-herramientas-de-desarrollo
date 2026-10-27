@@ -88,20 +88,26 @@ public class VentaServiceImpl implements VentaService {
         String tipoDocumento = conValor(carrito.getTipoDocumento(), TIPO_BOLETA);
         String medioPago = conValor(carrito.getMedioPago(), MEDIO_PAGO_EFECTIVO);
 
-        ClienteDTO cliente = clienteService.obtenerPorId(idCliente);
+        // ADMIN/VENDEDOR pueden emitir una venta de mostrador sin indicar
+        // cliente: en ese caso se usa el consumidor final configurado.
+        String idClienteVenta = idCliente == null
+                ? emisorService.obtenerClienteMostrador()
+                : idCliente;
+
+        ClienteDTO cliente = clienteService.obtenerPorId(idClienteVenta);
         if (cliente == null) {
-            throw new RecursoNoEncontradoException("Cliente " + idCliente + " no existe");
+            throw new RecursoNoEncontradoException("Cliente " + idClienteVenta + " no existe");
         }
 
-        String idPersona = personaRepository.findIdPersonaByClienteId(idCliente)
+        String idPersona = personaRepository.findIdPersonaByClienteId(idClienteVenta)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "El cliente " + idCliente + " no tiene una persona asociada"));
+                        "El cliente " + idClienteVenta + " no tiene una persona asociada"));
 
         Venta venta = new Venta();
         int correlativo = siguienteCorrelativo();
         String prefijo = prefijo(tipoDocumento);
         venta.setId(UUID.randomUUID().toString());
-        venta.setIdCliente(idCliente);
+        venta.setIdCliente(idClienteVenta);
         venta.setIdPersona(idPersona);
         venta.setIdTipoDocumento(resolverTipoDocumento(tipoDocumento));
         venta.setNumeroDocumento(prefijo + "-" + String.format("%06d", correlativo));

@@ -31,17 +31,26 @@ public class VentaController {
     }
 
     // El CLIENTE compra siempre a su propio nombre: el idCliente sale del token
-    // y se ignora el que venga en el cuerpo. El ADMIN si puede indicarlo.
+    // y se ignora el que venga en el cuerpo. El ADMIN y el VENDEDOR si pueden
+    // indicarlo (venta de mostrador); si no lo envian, VentaService usa el
+    // cliente de mostrador configurado.
     @PostMapping
     public ResponseEntity<Venta> registrar(@Valid @RequestBody CarritoRequestDTO carrito,
             Authentication authentication) {
         SesionPrincipal principal = principal(authentication);
-        String idCliente = Rol.ADMIN.equals(principal.rol())
-                ? carrito.getIdCliente()
-                : principal.idCliente();
-        if (idCliente == null || idCliente.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "No se pudo determinar el cliente de la venta");
+        String idCliente;
+        if (Rol.CLIENTE.equals(principal.rol())) {
+            idCliente = principal.idCliente();
+            if (idCliente == null || idCliente.isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "No se pudo determinar el cliente de la venta");
+            }
+        } else {
+            idCliente = carrito.getIdCliente();
+            if (idCliente != null && idCliente.isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "No se pudo determinar el cliente de la venta");
+            }
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(ventaService.registrarVenta(idCliente, carrito));
     }
