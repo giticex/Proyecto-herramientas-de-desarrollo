@@ -1,4 +1,4 @@
-// Historial de ventas del panel de administracion.
+// Ventas del panel de administración / punto de venta.
 import { apiClient } from './client';
 
 /**
@@ -16,6 +16,14 @@ export function listarVentas({ pagina = 0, tamanio = 20, busqueda = '' } = {}) {
   const filtro = busqueda.trim();
   if (filtro) parametros.set('q', filtro);
   return apiClient.get(`/ventas?${parametros.toString()}`);
+}
+
+/**
+ * Registra una venta desde el punto de venta o carrito.
+ * @param {{tipoDocumento: string, medioPago?: string, idCliente?: string, items: Array<{idProducto: number, cantidad: number}>}} venta
+ */
+export function registrarVenta(venta) {
+  return apiClient.post('/ventas', venta);
 }
 
 /** Ruta del PDF del comprobante (se descarga con Bearer token). */

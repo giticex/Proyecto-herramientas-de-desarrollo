@@ -19,6 +19,7 @@ import {
 import { useSesion } from '../auth/sesionStore';
 import { useStore } from '../store/store';
 import { showToast } from '../components/toastBus';
+import { registrarVenta } from '../api/ventasApi';
 import './PuntoDeVenta.css';
 
 const IGV_RATE = 0.18;
@@ -64,6 +65,7 @@ export default function PuntoDeVenta() {
   const [metodoPago, setMetodoPago] = useState('Efectivo');
   const [tipoComprobante, setTipoComprobante] = useState('Boleta');
   const [cargando, setCargando] = useState(true);
+  const [procesando, setProcesando] = useState(false);
   const buscadorRef = useRef(null);
 
   useEffect(() => {
@@ -160,14 +162,39 @@ export default function PuntoDeVenta() {
     }
   }
 
-  function generarComprobante() {
+  async function generarComprobante() {
     if (lineas.length === 0) {
       showToast('Agrega al menos un producto para generar el comprobante.');
       return;
     }
-    // TODO: conectar con POST /ventas cuando el POS tenga la seleccion de cliente.
-    showToast(`${tipoComprobante} · ${metodoPago} · ${dinero.format(total)} registrada.`);
-    setLineas([]);
+    if (procesando) return;
+
+    setProcesando(true);
+    try {
+      const items = lineas.map((linea) => ({
+        idProducto: Number(linea.idProducto),
+        cantidad: Number(linea.cantidad),
+      }));
+      const payload = {
+        tipoDocumento: tipoComprobante,
+        medioPago: metodoPago,
+        items,
+      };
+      const venta = await registrarVenta(payload);
+      const nro = venta?.nroComprobante || venta?.idVenta || '';
+      showToast(
+        nro
+          ? `${tipoComprobante} ${nro} generada · ${metodoPago} · ${dinero.format(total)}`
+          : `${tipoComprobante} generada · ${metodoPago} · ${dinero.format(total)}`,
+      );
+      setLineas([]);
+      setBusqueda('');
+      listProductos();
+    } catch (error) {
+      showToast(error?.message || 'No se pudo registrar la venta.');
+    } finally {
+      setProcesando(false);
+    }
   }
 
   const inicial = (tienda.nombre || '?').charAt(0).toUpperCase();
@@ -398,10 +425,12 @@ export default function PuntoDeVenta() {
             className="pos-generar"
             type="button"
             onClick={generarComprobante}
-            disabled={lineas.length === 0}
+            disabled={lineas.length === 0 || procesando}
           >
-            <FileText size={22} aria-hidden="true" />
-            Generar Comprobante (Boleta/Factura)
+            {procesando
+              ? <LoaderCircle className="pos-girando" size={22} aria-hidden="true" />
+              : <FileText size={22} aria-hidden="true" />}
+            {procesando ? 'Procesando...' : 'Generar Comprobante (Boleta/Factura)'}
           </button>
 
           <p className="pos-nota">
