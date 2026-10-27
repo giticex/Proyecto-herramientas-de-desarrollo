@@ -112,6 +112,113 @@ button.pos-enlace {
   outline-offset: 2px;
 }
 
+/* Modal venta exitosa */
+.pos-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+}
+
+.pos-modal {
+  width: min(420px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.4);
+  text-align: center;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.pos-modal-icono {
+  color: #22c55e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pos-modal-titulo {
+  font-size: 24px;
+  font-weight: 800;
+  color: #1d1d1f;
+  margin: 0;
+}
+
+.pos-modal-mensaje {
+  color: #6e6e73;
+  margin: 0;
+}
+
+.pos-modal-detalle {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  text-align: left;
+}
+
+.pos-modal-detalle > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #f5f5f7;
+}
+
+.pos-modal-detalle span {
+  color: #6e6e73;
+}
+
+.pos-modal-detalle strong {
+  color: #1d1d1f;
+}
+
+.pos-modal-acciones {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.pos-modal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  border-radius: 12px;
+  border: none;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pos-modal-btn.primario {
+  background: linear-gradient(135deg, #0071e3, #0051d5);
+  color: #fff;
+}
+
+.pos-modal-btn.secundario {
+  background: #f5f5f7;
+  color: #1d1d1f;
+}
+
+.pos-modal-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 /* ---------- Dos columnas: 70 / 30 ---------- */
 .pos-cuerpo {
   display: grid;

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   Banknote,
+  CheckCircle2,
   CreditCard,
   FileText,
   History,
@@ -10,16 +11,19 @@ import {
   LogOut,
   Minus,
   Plus,
+  Printer,
   ScanBarcode,
   Search,
   ShoppingCart,
   Smartphone,
   Trash2,
+  UserPlus,
 } from 'lucide-react';
 import { useSesion } from '../auth/sesionStore';
 import { useStore } from '../store/store';
 import { showToast } from '../components/toastBus';
-import { registrarVenta } from '../api/ventasApi';
+import { registrarVenta, rutaComprobantePdf } from '../api/ventasApi';
+import { descargarArchivoSeguro } from '../utils/descargas';
 import './PuntoDeVenta.css';
 
 const IGV_RATE = 0.18;
@@ -66,6 +70,8 @@ export default function PuntoDeVenta() {
   const [tipoComprobante, setTipoComprobante] = useState('Boleta');
   const [cargando, setCargando] = useState(true);
   const [procesando, setProcesando] = useState(false);
+  const [ventaExitosa, setVentaExitosa] = useState(null);
+  const [imprimiendo, setImprimiendo] = useState(false);
   const buscadorRef = useRef(null);
 
   useEffect(() => {
@@ -181,12 +187,16 @@ export default function PuntoDeVenta() {
         items,
       };
       const venta = await registrarVenta(payload);
-      const nro = venta?.nroComprobante || venta?.idVenta || '';
-      showToast(
-        nro
-          ? `${tipoComprobante} ${nro} generada · ${metodoPago} · ${dinero.format(total)}`
-          : `${tipoComprobante} generada · ${metodoPago} · ${dinero.format(total)}`,
-      );
+      const nro = venta?.nroComprobante || venta?.numeroDocumento || venta?.idVenta || '';
+      const idVenta = venta?.idVenta;
+      const totalCobrado = venta?.total != null ? Number(venta.total) : total;
+      setVentaExitosa({
+        idVenta,
+        nroComprobante: nro,
+        tipoDocumento: tipoComprobante,
+        total: totalCobrado,
+        metodoPago,
+      });
       setLineas([]);
       setBusqueda('');
       listProductos();
@@ -195,6 +205,30 @@ export default function PuntoDeVenta() {
     } finally {
       setProcesando(false);
     }
+  }
+
+  async function imprimirTicket() {
+    if (!ventaExitosa?.idVenta || imprimiendo) return;
+    setImprimiendo(true);
+    try {
+      await descargarArchivoSeguro(
+        rutaComprobantePdf(ventaExitosa.idVenta),
+        'PDF',
+        ventaExitosa.nroComprobante || `venta-${ventaExitosa.idVenta}`,
+        { abrir: true },
+      );
+    } catch (error) {
+      showToast(error?.message || 'No se pudo imprimir el ticket.');
+    } finally {
+      setImprimiendo(false);
+    }
+  }
+
+  function siguienteCliente() {
+    setVentaExitosa(null);
+    setBusqueda('');
+    setMetodoPago('Efectivo');
+    buscadorRef.current?.focus();
   }
 
   const inicial = (tienda.nombre || '?').charAt(0).toUpperCase();
@@ -438,6 +472,42 @@ export default function PuntoDeVenta() {
           </p>
         </aside>
       </div>
+
+      {ventaExitosa && (
+        <div className="pos-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="venta-exitosa-titulo">
+          <div className="pos-modal">
+            <div className="pos-modal-icono">
+              <CheckCircle2 size={48} aria-hidden="true" />
+            </div>
+            <h2 id="venta-exitosa-titulo" className="pos-modal-titulo">¡Venta Exitosa!</h2>
+            <p className="pos-modal-mensaje">La venta se registró correctamente.</p>
+            <div className="pos-modal-detalle">
+              <div>
+                <span>Documento</span>
+                <strong>{ventaExitosa.tipoDocumento} {ventaExitosa.nroComprobante || '-'}</strong>
+              </div>
+              <div>
+                <span>Total cobrado</span>
+                <strong>{dinero.format(Number(ventaExitosa.total) || 0)}</strong>
+              </div>
+              <div>
+                <span>Método de pago</span>
+                <strong>{ventaExitosa.metodoPago}</strong>
+              </div>
+            </div>
+            <div className="pos-modal-acciones">
+              <button className="pos-modal-btn primario" type="button" onClick={imprimirTicket} disabled={!ventaExitosa.idVenta || imprimiendo}>
+                {imprimiendo ? <LoaderCircle className="pos-girando" size={18} aria-hidden="true" /> : <Printer size={18} aria-hidden="true" />}
+                {imprimiendo ? 'Imprimiendo...' : '🖨️ Imprimir Ticket'}
+              </button>
+              <button className="pos-modal-btn secundario" type="button" onClick={siguienteCliente}>
+                <UserPlus size={18} aria-hidden="true" />
+                Siguiente Cliente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
