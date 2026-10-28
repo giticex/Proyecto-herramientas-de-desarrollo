@@ -238,3 +238,15 @@
   .hist-tabla th,
   .hist-tabla td { padding: 14px 16px; }
 }
+
+@media (max-width: 560px) {
+  .hist-toolbar { gap: 10px; }
+  .hist-buscador { min-width: 0; width: 100%; }
+  .hist-btn.actualizar { width: 100%; justify-content: center; }
+  /* La tabla conserva su ancho mínimo y se desplaza en horizontal. */
+  .hist-tabla { min-width: 620px; }
+  .hist-tabla th,
+  .hist-tabla td { padding: 12px 14px; }
+  .hist-pagina-botones { width: 100%; justify-content: space-between; }
+  .hist-error { padding: 14px 16px; }
+}

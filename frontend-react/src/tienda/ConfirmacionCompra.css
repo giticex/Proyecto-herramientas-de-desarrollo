@@ -52,3 +52,12 @@
   justify-content: center;
   margin-top: 32px;
 }
+
+@media (max-width: 520px) {
+  .confirmacion-page { padding: 88px 16px 40px; }
+  .confirmacion-card { padding: 28px 20px; border-radius: 20px; }
+  .confirmacion-card h2 { font-size: 24px; }
+  .numero-pedido { font-size: 16px; padding: 14px 10px; word-break: break-all; }
+  .confirmacion-acciones { flex-direction: column; gap: 10px; margin-top: 24px; }
+  .confirmacion-acciones > * { width: 100%; }
+}

@@ -3,7 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import PlantillaTienda from '../components/PlantillaTienda';
 import { useClienteStore } from './clienteStore';
 import ComprobanteImpresion from './ComprobanteImpresion';
-import { listarComprobantesDeCliente, urlComprobantePdf, urlComprobanteXml } from '../api/comprobantesApi';
+import { listarComprobantesDeCliente } from '../api/comprobantesApi';
+import { descargarArchivoSeguro } from '../utils/descargas';
 import { showToast } from '../components/toastBus';
 import './MisCompras.css';
 
@@ -58,7 +59,7 @@ function aComprobante(compra) {
     moneda: 'PEN',
     estado: 'EMITIDO',
     receptor: {
-      tipoDocumento: esFactura ? '1' : '6',
+      tipoDocumento: esFactura ? '6' : '1',
       numeroDocumento: compra?.documento,
       razonSocial: compra?.razonSocial,
       domicilioFiscal: { direccion: compra?.direccion, pais: 'PE' },
@@ -88,6 +89,7 @@ export default function MisCompras() {
 
   const [comprobantes, setComprobantes] = useState([]);
   const [seleccionado, setSeleccionado] = useState(null);
+  const [descargando, setDescargando] = useState('');
 
   // Protegemos la ruta
   useEffect(() => {
@@ -130,6 +132,25 @@ export default function MisCompras() {
   if (!cliente) return null;
 
   const lista = comprobantes.length > 0 ? comprobantes : misCompras.map(aComprobante);
+
+  // Los endpoints de archivos exigen el Bearer token: se descargan con el
+  // cliente HTTP y no con un enlace directo.
+  async function descargar(comprobante, tipo) {
+    const clave = `${comprobante.idVenta}-${tipo}`;
+    setDescargando(clave);
+    try {
+      await descargarArchivoSeguro(
+        `/comprobantes/${comprobante.idVenta}/${tipo.toLowerCase()}`,
+        tipo,
+        comprobante.numeroDocumento || comprobante.idVenta
+      );
+      showToast(`${tipo} descargado correctamente.`);
+    } catch (error) {
+      showToast(error?.message || `No se pudo descargar el ${tipo}.`);
+    } finally {
+      setDescargando('');
+    }
+  }
 
   return (
     <PlantillaTienda navLinks={navLinks}>
@@ -190,7 +211,7 @@ export default function MisCompras() {
                     </span>
                     <span>
                       <strong>
-                        {comprobante.receptor?.tipoDocumento === '1' ? 'RUC' : 'DNI'}:
+                        {comprobante.receptor?.tipoDocumento === '6' ? 'RUC' : 'DNI'}:
                       </strong>{' '}
                       {comprobante.receptor?.numeroDocumento}
                     </span>
@@ -238,12 +259,22 @@ export default function MisCompras() {
                     </button>
                     {tieneArchivo && (
                       <>
-                        <a className="btn-link" href={urlComprobantePdf(comprobante.idVenta)} target="_blank" rel="noreferrer">
+                        <button
+                          type="button"
+                          className="btn-link"
+                          onClick={() => descargar(comprobante, 'PDF')}
+                          disabled={descargando === `${comprobante.idVenta}-PDF`}
+                        >
                           PDF
-                        </a>
-                        <a className="btn-link" href={urlComprobanteXml(comprobante.idVenta)} target="_blank" rel="noreferrer">
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-link"
+                          onClick={() => descargar(comprobante, 'XML')}
+                          disabled={descargando === `${comprobante.idVenta}-XML`}
+                        >
                           XML
-                        </a>
+                        </button>
                       </>
                     )}
                   </div>

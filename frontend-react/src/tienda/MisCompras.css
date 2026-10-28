@@ -219,3 +219,21 @@
 .nav-volver:hover .icono-flecha {
   transform: translateX(-6px);
 }
+
+@media (max-width: 600px) {
+  .mis-compras-page { padding: 96px 16px 48px; }
+  .compras-header h2 { font-size: 24px; }
+  .compras-vacio { padding: 48px 18px; }
+
+  .compra-card { padding: 18px; }
+  .compra-top { align-items: flex-start; }
+  .compra-id { word-break: break-word; }
+
+  /* El detalle deja de competir por ancho: artículos arriba y desglose abajo. */
+  .compra-detalle { flex-direction: column; align-items: stretch; }
+  .compra-desglose { min-width: 0; }
+  .compra-montos { text-align: left; }
+
+  .compra-acciones { gap: 10px; }
+  .compra-acciones .btn-compra { flex: 1 1 auto; }
+}

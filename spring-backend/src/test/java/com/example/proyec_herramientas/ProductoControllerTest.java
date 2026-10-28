@@ -73,7 +73,7 @@ class ProductoControllerTest {
         guardar(1, "Mouse Gamer", 8, "50.00", "Accesorios");
         guardar(2, "Teclado Mecánico", 5, "120.00", "Accesorios");
 
-        mockMvc.perform(get("/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+        mockMvc.perform(get("/api/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].nombre", is("Mouse Gamer")))
@@ -82,7 +82,7 @@ class ProductoControllerTest {
 
     @Test
     void crearProducto() throws Exception {
-        mockMvc.perform(post("/productos")
+        mockMvc.perform(post("/api/productos")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(crearProducto(10, "Webcam HD", 3, 75.0, "Accesorios"))))
@@ -97,7 +97,7 @@ class ProductoControllerTest {
     void crearProductoSinIdAsignaSiguiente() throws Exception {
         guardar(1, "Mouse Gamer", 8, "50.00", "Accesorios");
 
-        mockMvc.perform(post("/productos")
+        mockMvc.perform(post("/api/productos")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(crearProducto(0, "Audífonos BT", 12, 89.9, "Audio"))))
@@ -109,7 +109,7 @@ class ProductoControllerTest {
     void actualizarProducto() throws Exception {
         guardar(1, "Mouse Gamer", 8, "50.00", "Accesorios");
 
-        mockMvc.perform(put("/productos/1")
+        mockMvc.perform(put("/api/productos/1")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(crearProducto(1, "Mouse Pro", 20, 60.0, "Accesorios"))))
@@ -121,7 +121,7 @@ class ProductoControllerTest {
 
     @Test
     void actualizarProductoNoExistenteDevuelve404() throws Exception {
-        mockMvc.perform(put("/productos/99")
+        mockMvc.perform(put("/api/productos/99")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(crearProducto(99, "Inexistente", 1, 1.0, "X"))))
@@ -132,18 +132,18 @@ class ProductoControllerTest {
     void eliminarProducto() throws Exception {
         guardar(1, "Mouse Gamer", 8, "50.00", "Accesorios");
 
-        mockMvc.perform(delete("/productos/1")
+        mockMvc.perform(delete("/api/productos/1")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get("/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+        mockMvc.perform(get("/api/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
     }
 
     @Test
     void eliminarProductoNoExistenteDevuelve404() throws Exception {
-        mockMvc.perform(delete("/productos/1")
+        mockMvc.perform(delete("/api/productos/1")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isNotFound());
     }
@@ -160,14 +160,14 @@ class ProductoControllerTest {
         ajeno.setIdTienda(otra.getIdTienda());
         productoRepository.save(ajeno);
 
-        mockMvc.perform(get("/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+        mockMvc.perform(get("/api/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
 
-        mockMvc.perform(get("/productos/500").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+        mockMvc.perform(get("/api/productos/500").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isNotFound());
 
-        mockMvc.perform(delete("/productos/500").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+        mockMvc.perform(delete("/api/productos/500").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isNotFound());
     }
 
@@ -177,7 +177,7 @@ class ProductoControllerTest {
         atributos.put("talla", "M");
         atributos.put("color", "negro");
 
-        mockMvc.perform(post("/productos")
+        mockMvc.perform(post("/api/productos")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
@@ -186,7 +186,7 @@ class ProductoControllerTest {
                 .andExpect(jsonPath("$.atributos.talla", is("M")))
                 .andExpect(jsonPath("$.atributos.color", is("negro")));
 
-        mockMvc.perform(get("/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+        mockMvc.perform(get("/api/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].atributos.talla", is("M")))
                 .andExpect(jsonPath("$[0].atributos.color", is("negro")));
@@ -199,7 +199,7 @@ class ProductoControllerTest {
         Map<String, String> atributos = new HashMap<>();
         atributos.put("conexion", "inalámbrico");
 
-        mockMvc.perform(put("/productos/1")
+        mockMvc.perform(put("/api/productos/1")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
@@ -212,7 +212,7 @@ class ProductoControllerTest {
     void productoSinAtributosDevuelveMapaVacio() throws Exception {
         guardar(1, "Mouse Gamer", 8, "50.00", "Accesorios");
 
-        mockMvc.perform(get("/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+        mockMvc.perform(get("/api/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].atributos", is(anEmptyMap())));
     }

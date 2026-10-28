@@ -48,14 +48,20 @@ export const useStore = create((set, get) => ({
       : await listProductosApi();
     let datos = respuesta;
     if (respuesta && !Array.isArray(respuesta)) {
-      datos = respuesta.data ?? respuesta.content ?? respuesta.items ?? [];
+      datos = respuesta.data ?? respuesta.content ?? respuesta.items ?? respuesta.productos ?? [];
     }
     if (!Array.isArray(datos)) datos = [];
     const productos = datos.map((p) => ({
-      idProducto: p.idProducto ?? p.id ?? p.codigo ?? '',
-      nombre: p.nombre ?? p.descripcion ?? '',
-      precio: Number(p.precio ?? p.precioVenta ?? p.valor ?? 0),
-      stock: Number(p.stock ?? p.cantidad ?? p.existencias ?? 0),
+      idProducto: p.idProducto ?? p.id ?? p.id_producto ?? '',
+      codigo: p.codigo ?? p.cod ?? p.code ?? '',
+      nombre: p.nombre ?? p.descripcion ?? p.name ?? '',
+      categoria: p.categoria ?? p.rubro ?? p.categoriaProducto ?? '',
+      precio: Number(p.precio ?? p.precioVenta ?? p.valor ?? p.price ?? 0),
+      stock: Number(p.stock ?? p.cantidad ?? p.existencias ?? p.cant ?? 0),
+      atributos: p.atributos ?? {},
+      unidadMedida: p.unidadMedida,
+      afectacionIgv: p.afectacionIgv,
+      idTienda: p.idTienda,
     }));
     set({ productos });
     return productos;
@@ -63,16 +69,40 @@ export const useStore = create((set, get) => ({
 
   async createProducto(producto) {
     const nuevo = await createProductoApi(producto);
-    set((estado) => ({ productos: [...estado.productos, nuevo] }));
-    return nuevo;
+    const mapeado = {
+      idProducto: nuevo?.idProducto ?? nuevo?.id ?? nuevo?.id_producto ?? producto.idProducto,
+      codigo: nuevo?.codigo ?? nuevo?.cod ?? producto.codigo ?? '',
+      nombre: nuevo?.nombre ?? nuevo?.descripcion ?? producto.nombre ?? '',
+      categoria: nuevo?.categoria ?? nuevo?.rubro ?? producto.categoria ?? '',
+      precio: Number(nuevo?.precio ?? nuevo?.precioVenta ?? producto.precio ?? 0),
+      stock: Number(nuevo?.stock ?? nuevo?.cantidad ?? producto.stock ?? 0),
+      atributos: nuevo?.atributos ?? producto.atributos ?? {},
+      unidadMedida: nuevo?.unidadMedida ?? producto.unidadMedida,
+      afectacionIgv: nuevo?.afectacionIgv ?? producto.afectacionIgv,
+      idTienda: nuevo?.idTienda ?? producto.idTienda,
+    };
+    set((estado) => ({ productos: [...estado.productos, mapeado] }));
+    return mapeado;
   },
 
   async updateProducto(idProducto, producto) {
     const actualizado = await updateProductoApi(idProducto, producto);
+    const mapeado = {
+      idProducto: actualizado?.idProducto ?? actualizado?.id ?? idProducto,
+      codigo: actualizado?.codigo ?? actualizado?.cod ?? producto.codigo ?? '',
+      nombre: actualizado?.nombre ?? actualizado?.descripcion ?? producto.nombre ?? '',
+      categoria: actualizado?.categoria ?? actualizado?.rubro ?? producto.categoria ?? '',
+      precio: Number(actualizado?.precio ?? actualizado?.precioVenta ?? producto.precio ?? 0),
+      stock: Number(actualizado?.stock ?? actualizado?.cantidad ?? producto.stock ?? 0),
+      atributos: actualizado?.atributos ?? producto.atributos ?? {},
+      unidadMedida: actualizado?.unidadMedida ?? producto.unidadMedida,
+      afectacionIgv: actualizado?.afectacionIgv ?? producto.afectacionIgv,
+      idTienda: actualizado?.idTienda ?? producto.idTienda,
+    };
     set((estado) => ({
-      productos: estado.productos.map((p) => (p.idProducto === idProducto ? actualizado : p)),
+      productos: estado.productos.map((p) => (p.idProducto == idProducto ? mapeado : p)),
     }));
-    return actualizado;
+    return mapeado;
   },
 
   async deleteProducto(idProducto) {

@@ -87,6 +87,15 @@
 .panel-menu-link:hover { background: var(--bg-soft); }
 .panel-menu-link:focus-visible { outline: 2px solid var(--color-primario); outline-offset: 2px; }
 .panel-menu-link.active { background: var(--bg-soft); color: var(--color-primario); }
+/* Créditos a favor: acento rosa pedido para la barra lateral. */
+.panel-menu-link.creditos {
+  background: #fce7f3;
+  color: #be185d;
+  font-weight: 600;
+}
+.panel-menu-link.creditos:hover { background: #fbcfe8; color: #9d174d; }
+.panel-menu-link.creditos.active { background: #fbcfe8; color: #9d174d; }
+.panel-menu-link.creditos:focus-visible { outline-color: #db2777; }
 .panel-menu-link.salir {
   margin-top: auto;
   color: var(--danger);
@@ -94,7 +103,9 @@
 .panel-menu-link.salir:hover { background: #fdecec; }
 
 @media (max-width: 900px) {
-  .panel-shell { flex-direction: column; }
+  /* align-items: stretch es imprescindible: con flex-start el contenido toma
+     el ancho máximo de sus tablas y desborda la pantalla. */
+  .panel-shell { flex-direction: column; align-items: stretch; }
   .panel-sidebar {
     flex-direction: row;
     align-items: center;
@@ -116,4 +127,30 @@
   .panel-menu-link { width: auto; padding: 8px 12px; }
   .panel-menu-link.salir { margin-top: 0; }
   .panel-contenido .page { padding: 32px 20px 64px; }
+}
+
+@media (max-width: 560px) {
+  /* Una sola fila de navegación con desplazamiento horizontal: la barra
+     superior no crece ni empuja el contenido hacia abajo. */
+  .panel-sidebar { gap: 10px; padding: 10px 14px; }
+  .panel-sidebar-marca { flex: none; }
+  .panel-sidebar-nombre { max-width: 104px; }
+  .panel-menu {
+    flex: 1;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    gap: 2px;
+    padding-bottom: 2px;
+  }
+  .panel-menu::-webkit-scrollbar { display: none; }
+  .panel-menu-link {
+    flex: none;
+    padding: 7px 10px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .panel-contenido .page { padding: 26px 14px 56px; }
 }

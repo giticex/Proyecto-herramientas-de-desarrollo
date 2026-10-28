@@ -57,4 +57,54 @@ public interface VentaRepository extends JpaRepository<Venta, String> {
     Page<Venta> buscarPorTienda(@Param("idTienda") int idTienda,
             @Param("q") String q,
             Pageable pageable);
+
+    // Cantidad de lineas de la venta que pertenecen a productos de la tienda.
+    // Sirve para decidir si un ADMIN/VENDEDOR puede tocar el comprobante.
+    @Query("""
+            SELECT COUNT(d)
+            FROM DetalleVenta d
+            WHERE d.venta.idVenta = :idVenta
+              AND EXISTS (
+                  SELECT 1 FROM Producto p
+                  WHERE p.idProducto = d.idProducto AND p.idTienda = :idTienda
+              )
+            """)
+    long contarDetallesDeTienda(@Param("idVenta") String idVenta, @Param("idTienda") int idTienda);
+
+    // Siguiente correlativo de la serie. Se calcula sobre el maximo ya emitido,
+    // no sobre el total de ventas: si una serie arranca en otro numero o hay
+    // huecos, contar filas reutiliza un numero ya usado.
+    @Query("SELECT COALESCE(MAX(v.correlativo), 0) FROM Venta v WHERE v.serie = :serie")
+    int maxCorrelativoPorSerie(@Param("serie") String serie);
+
+    // Historial de la tienda (opcionalmente filtrado por cliente). La venta se
+    // asocia a la tienda por los productos de sus detalles.
+    @Query("""
+            SELECT v
+            FROM Venta v
+            WHERE EXISTS (
+                SELECT 1
+                FROM DetalleVenta d, Producto p
+                WHERE d.venta = v AND p.idProducto = d.idProducto AND p.idTienda = :idTienda
+            )
+              AND (:idCliente = '' OR v.idCliente = :idCliente)
+            ORDER BY v.fechaEmision DESC
+            """)
+    List<Venta> historialPorTienda(@Param("idTienda") int idTienda,
+            @Param("idCliente") String idCliente);
+
+    // Boletas (o cualquier tipo de documento) de la tienda.
+    @Query("""
+            SELECT v
+            FROM Venta v
+            WHERE v.idTipoDocumento = :idTipoDocumento
+              AND EXISTS (
+                  SELECT 1
+                  FROM DetalleVenta d, Producto p
+                  WHERE d.venta = v AND p.idProducto = d.idProducto AND p.idTienda = :idTienda
+              )
+            ORDER BY v.fechaEmision DESC
+            """)
+    List<Venta> boletasPorTienda(@Param("idTipoDocumento") String idTipoDocumento,
+            @Param("idTienda") int idTienda);
 }

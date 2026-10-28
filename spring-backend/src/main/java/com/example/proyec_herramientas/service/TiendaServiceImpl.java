@@ -24,6 +24,14 @@ public class TiendaServiceImpl implements TiendaService {
 
     @Override
     @Transactional(readOnly = true)
+    public TiendaDTO obtenerPorIdTienda(int idTienda) {
+        return repository.findById(idTienda)
+                .map(this::toDTO)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Tienda " + idTienda + " no existe"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public int obtenerIdPorSlug(String slug) {
         return buscar(slug).getIdTienda();
     }

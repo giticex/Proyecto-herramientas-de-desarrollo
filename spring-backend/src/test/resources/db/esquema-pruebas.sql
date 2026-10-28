@@ -1,6 +1,9 @@
 -- Esquema minimo para las pruebas: solo las tablas que mapea spring-backend.
 -- Espejo de database/script_mysql.sql. Se recrea en cada arranque de contexto.
 DROP VIEW IF EXISTS historial_compras;
+DROP TABLE IF EXISTS credito;
+DROP TABLE IF EXISTS devolucion_detalle;
+DROP TABLE IF EXISTS devolucion;
 DROP TABLE IF EXISTS detalle_venta;
 DROP TABLE IF EXISTS venta;
 DROP TABLE IF EXISTS usuario;
@@ -203,6 +206,58 @@ CREATE TABLE detalle_venta (
         REFERENCES venta (id_venta),
     CONSTRAINT fk_detalle_producto FOREIGN KEY (id_producto)
         REFERENCES producto (id_producto)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Devolucion sobre una venta ya emitida. Guarda el usuario que la registro
+-- y el total devuelto; las lineas van en devolucion_detalle.
+CREATE TABLE devolucion (
+    id_devolucion VARCHAR(36)  NOT NULL,
+    id_venta      VARCHAR(36)  NOT NULL,
+    fecha         TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    motivo        VARCHAR(300) NOT NULL DEFAULT '',
+    total         DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    usuario       VARCHAR(50)  NOT NULL DEFAULT '',
+    id_credito    VARCHAR(36)  NULL,
+    PRIMARY KEY (id_devolucion),
+    KEY idx_devolucion_id_venta (id_venta),
+    CONSTRAINT fk_devolucion_venta FOREIGN KEY (id_venta)
+        REFERENCES venta (id_venta)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Lineas devueltas: precio y descripcion congelados del detalle original.
+CREATE TABLE devolucion_detalle (
+    id_detalle      INT            NOT NULL AUTO_INCREMENT,
+    id_devolucion   VARCHAR(36)    NOT NULL,
+    id_producto     INT            NOT NULL,
+    cantidad        INT            NOT NULL,
+    precio_unitario DECIMAL(12, 2) NOT NULL,
+    subtotal        DECIMAL(12, 2) NOT NULL,
+    descripcion     VARCHAR(500)   NOT NULL DEFAULT '',
+    PRIMARY KEY (id_detalle),
+    KEY idx_devolucion_detalle_devolucion (id_devolucion),
+    KEY idx_devolucion_detalle_producto (id_producto),
+    CONSTRAINT fk_devolucion_detalle_devolucion FOREIGN KEY (id_devolucion)
+        REFERENCES devolucion (id_devolucion),
+    CONSTRAINT fk_devolucion_detalle_producto FOREIGN KEY (id_producto)
+        REFERENCES producto (id_producto)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Credito a favor generado por una devolucion. Referencia la venta de origen
+-- sin FK dura: la venta original jamas se modifica ni se elimina.
+CREATE TABLE credito (
+    id_credito              VARCHAR(36)  NOT NULL,
+    codigo                  VARCHAR(20)  NOT NULL,
+    id_venta_origen         VARCHAR(36)  NOT NULL,
+    numero_documento_origen VARCHAR(36)  NOT NULL,
+    cliente_nombre          VARCHAR(200) NOT NULL DEFAULT '',
+    dni_cliente             VARCHAR(15)  NOT NULL DEFAULT '',
+    monto_total             DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    monto_disponible        DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    estado                  VARCHAR(20)  NOT NULL DEFAULT 'Vigente',
+    fecha                   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id_credito),
+    UNIQUE KEY uk_credito_codigo (codigo),
+    KEY idx_credito_venta_origen (id_venta_origen)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Numeracion correlativa por serie. El correlativo no puede calcularse con

@@ -1,5 +1,7 @@
 package com.example.proyec_herramientas.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -7,7 +9,9 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Base64;
 
 // Token de sesion opaco y firmado. Formato: payload.firma, donde el payload
@@ -22,13 +26,26 @@ public class TokenService {
 
     private static final String ALGORITMO = "HmacSHA256";
     private static final String SEPARADOR = ".";
+    private static final Logger LOG = LoggerFactory.getLogger(TokenService.class);
 
     private final byte[] secreto;
     private final long expiracionMinutos;
 
-    public TokenService(@Value("${app.token.secreto}") String secreto,
+    // Sin secreto configurado se genera uno aleatorio por arranque: el valor
+    // por defecto conocido permitia firmar tokens validos en cualquier equipo.
+    // Con secreto aleatorio, reiniciar el backend invalida las sesiones.
+    public TokenService(@Value("${app.token.secreto:}") String secreto,
             @Value("${app.token.expiracion-minutos:120}") long expiracionMinutos) {
-        this.secreto = secreto.getBytes(StandardCharsets.UTF_8);
+        String valor = secreto == null ? "" : secreto.trim();
+        if (valor.isBlank()) {
+            byte[] aleatorio = new byte[32];
+            new SecureRandom().nextBytes(aleatorio);
+            this.secreto = aleatorio;
+            LOG.warn("APP_TOKEN_SECRETO no esta configurado: se genero un secreto aleatorio "
+                    + "para esta ejecucion. Configura la variable en produccion.");
+        } else {
+            this.secreto = valor.getBytes(StandardCharsets.UTF_8);
+        }
         this.expiracionMinutos = expiracionMinutos;
     }
 
@@ -54,7 +71,8 @@ public class TokenService {
         }
         String codificado = partes[0];
         String firma = partes[1];
-        if (!firma.equals(firmar(codificado))) {
+        if (!MessageDigest.isEqual(firma.getBytes(StandardCharsets.UTF_8),
+                firmar(codificado).getBytes(StandardCharsets.UTF_8))) {
             return null;
         }
         String payload;

@@ -97,3 +97,9 @@
   .dash-kpis > :last-child { grid-column: auto; }
   .dash-panel { padding: 16px; }
 }
+
+@media (max-width: 480px) {
+  .dash-kpi { padding: 18px; }
+  .dash-panel-cabecera { flex-wrap: wrap; }
+  .dash-error { padding: 16px; }
+}

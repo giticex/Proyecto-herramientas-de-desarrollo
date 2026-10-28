@@ -22,8 +22,30 @@ export function listarVentas({ pagina = 0, tamanio = 20, busqueda = '' } = {}) {
  * Registra una venta desde el punto de venta o carrito.
  * @param {{tipoDocumento: string, medioPago?: string, idCliente?: string, items: Array<{idProducto: number, cantidad: number}>}} venta
  */
-export function registrarVenta(venta) {
+export async function registrarVenta(venta) {
+  const { tokenActivo } = await import('./client');
+  const token = tokenActivo?.();
+  if (token) {
+    return apiClient.post('/ventas', venta, { token });
+  }
   return apiClient.post('/ventas', venta);
+}
+
+/**
+ * Devuelve la venta con sus detalles y las unidades ya devueltas por línea,
+ * para armar la devolución en el POS.
+ * @param {string} idVenta
+ */
+export function obtenerVentaParaDevolucion(idVenta) {
+  return apiClient.get(`/devoluciones/ventas/${encodeURIComponent(idVenta)}`);
+}
+
+/**
+ * Registra una devolución de productos de una venta previa.
+ * @param {{idVenta: string, motivo?: string, items: Array<{idProducto: number, cantidad: number}>}} devolucion
+ */
+export function registrarDevolucion(devolucion) {
+  return apiClient.post('/devoluciones', devolucion);
 }
 
 /** Ruta del PDF del comprobante (se descarga con Bearer token). */

@@ -63,7 +63,7 @@ class SeguridadRolesTest {
 
     @Test
     void crearProductoSinTokenDevuelve401() throws Exception {
-        mockMvc.perform(post("/productos")
+        mockMvc.perform(post("/api/productos")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(producto(50, "Mouse Pro")))
                 .andExpect(status().isUnauthorized());
@@ -74,7 +74,7 @@ class SeguridadRolesTest {
         String token = CuentasTest.token(mockMvc, objectMapper, CuentasTest.CORREO_CLIENTE,
                 CuentasTest.CLAVE);
 
-        mockMvc.perform(post("/productos")
+        mockMvc.perform(post("/api/productos")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(producto(50, "Mouse Pro")))
@@ -86,7 +86,7 @@ class SeguridadRolesTest {
         String token = CuentasTest.token(mockMvc, objectMapper, CuentasTest.USUARIO_ADMIN,
                 CuentasTest.CLAVE);
 
-        mockMvc.perform(post("/productos")
+        mockMvc.perform(post("/api/productos")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(producto(50, "Mouse Pro")))
@@ -97,17 +97,17 @@ class SeguridadRolesTest {
     @Test
     void listarProductosExigeRolAdmin() throws Exception {
         // El panel de productos trabaja sobre la tienda del token: es del ADMIN.
-        mockMvc.perform(get("/productos"))
+        mockMvc.perform(get("/api/productos"))
                 .andExpect(status().isUnauthorized());
 
         String tokenCliente = CuentasTest.token(mockMvc, objectMapper, CuentasTest.CORREO_CLIENTE,
                 CuentasTest.CLAVE);
-        mockMvc.perform(get("/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenCliente))
+        mockMvc.perform(get("/api/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenCliente))
                 .andExpect(status().isForbidden());
 
         String tokenAdmin = CuentasTest.token(mockMvc, objectMapper, CuentasTest.USUARIO_ADMIN,
                 CuentasTest.CLAVE);
-        mockMvc.perform(get("/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin))
+        mockMvc.perform(get("/api/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin))
                 .andExpect(status().isOk());
     }
 
@@ -117,15 +117,15 @@ class SeguridadRolesTest {
                 CuentasTest.CLAVE);
 
         // POS: catalogo, clientes e historial de ventas de su tienda.
-        mockMvc.perform(get("/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+        mockMvc.perform(get("/api/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk());
-        mockMvc.perform(get("/clientes").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+        mockMvc.perform(get("/api/clientes").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk());
-        mockMvc.perform(get("/ventas").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+        mockMvc.perform(get("/api/ventas").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk());
 
         // El catalogo se consulta, pero solo el ADMIN lo modifica.
-        mockMvc.perform(post("/productos")
+        mockMvc.perform(post("/api/productos")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(producto(51, "Teclado POS")))
@@ -139,14 +139,14 @@ class SeguridadRolesTest {
 
         // Cuerpo invalido (sin items): si el rol no tuviera acceso seria 403;
         // el 400 confirma que la peticion llega al controller.
-        mockMvc.perform(post("/ventas")
+        mockMvc.perform(post("/api/ventas")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"tipoDocumento\":\"Boleta\",\"items\":[]}"))
                 .andExpect(status().isBadRequest());
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-                        .put("/tiendas/" + CuentasTest.SLUG_TIENDA)
+                        .put("/api/tiendas/" + CuentasTest.SLUG_TIENDA)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
@@ -156,22 +156,22 @@ class SeguridadRolesTest {
     @Test
     void elCatalogoPublicoPorTiendaNoExigeSesion() throws Exception {
         // El comprador navega el catalogo por slug sin token.
-        mockMvc.perform(get("/tiendas/" + CuentasTest.SLUG_TIENDA))
+        mockMvc.perform(get("/api/tiendas/" + CuentasTest.SLUG_TIENDA))
                 .andExpect(status().isOk());
-        mockMvc.perform(get("/tiendas/" + CuentasTest.SLUG_TIENDA + "/productos"))
+        mockMvc.perform(get("/api/tiendas/" + CuentasTest.SLUG_TIENDA + "/productos"))
                 .andExpect(status().isOk());
     }
 
     @Test
     void ventasMiasExigeSesion() throws Exception {
-        mockMvc.perform(get("/ventas/mias"))
+        mockMvc.perform(get("/api/ventas/mias"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void actualizarTiendaExigeRolAdmin() throws Exception {
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-                        .put("/tiendas/" + CuentasTest.SLUG_TIENDA)
+                        .put("/api/tiendas/" + CuentasTest.SLUG_TIENDA)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isUnauthorized());
@@ -179,7 +179,7 @@ class SeguridadRolesTest {
         String tokenCliente = CuentasTest.token(mockMvc, objectMapper, CuentasTest.CORREO_CLIENTE,
                 CuentasTest.CLAVE);
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-                        .put("/tiendas/" + CuentasTest.SLUG_TIENDA)
+                        .put("/api/tiendas/" + CuentasTest.SLUG_TIENDA)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenCliente)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
@@ -188,39 +188,39 @@ class SeguridadRolesTest {
 
     @Test
     void listarClientesExigeRolAdmin() throws Exception {
-        mockMvc.perform(get("/clientes"))
+        mockMvc.perform(get("/api/clientes"))
                 .andExpect(status().isUnauthorized());
 
         String tokenCliente = CuentasTest.token(mockMvc, objectMapper, CuentasTest.CORREO_CLIENTE,
                 CuentasTest.CLAVE);
-        mockMvc.perform(get("/clientes").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenCliente))
+        mockMvc.perform(get("/api/clientes").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenCliente))
                 .andExpect(status().isForbidden());
 
         String tokenAdmin = CuentasTest.token(mockMvc, objectMapper, CuentasTest.USUARIO_ADMIN,
                 CuentasTest.CLAVE);
-        mockMvc.perform(get("/clientes").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin))
+        mockMvc.perform(get("/api/clientes").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin))
                 .andExpect(status().isOk());
     }
 
     @Test
     void historialExigeRolAdmin() throws Exception {
-        mockMvc.perform(get("/historial"))
+        mockMvc.perform(get("/api/historial"))
                 .andExpect(status().isUnauthorized());
 
         String tokenCliente = CuentasTest.token(mockMvc, objectMapper, CuentasTest.CORREO_CLIENTE,
                 CuentasTest.CLAVE);
-        mockMvc.perform(get("/historial").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenCliente))
+        mockMvc.perform(get("/api/historial").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenCliente))
                 .andExpect(status().isForbidden());
 
         String tokenAdmin = CuentasTest.token(mockMvc, objectMapper, CuentasTest.USUARIO_ADMIN,
                 CuentasTest.CLAVE);
-        mockMvc.perform(get("/historial").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin))
+        mockMvc.perform(get("/api/historial").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin))
                 .andExpect(status().isOk());
     }
 
     @Test
     void tokenManipuladoDevuelve401() throws Exception {
-        mockMvc.perform(get("/historial")
+        mockMvc.perform(get("/api/historial")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer token.inventado.abc"))
                 .andExpect(status().isUnauthorized());
     }

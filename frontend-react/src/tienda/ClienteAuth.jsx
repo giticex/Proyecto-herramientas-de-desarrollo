@@ -3,7 +3,8 @@ import { useNavigate, useParams, useLocation, Link } from 'react-router-dom';
 import PlantillaTienda from '../components/PlantillaTienda';
 import { useStore } from '../store/store';
 import { useClienteStore } from './clienteStore';
-import { loginApi } from '../auth/authApi';
+import { loginApi, registrarCliente } from '../auth/authApi';
+import { useSesion } from '../auth/sesionStore';
 import { showToast } from '../components/toastBus';
 import './ClienteAuth.css';
 
@@ -13,6 +14,7 @@ export default function ClienteAuth() {
   const location = useLocation();
   const { tienda, getTienda } = useStore();
   const { loginCliente, cliente } = useClienteStore();
+  const loginAdmin = useSesion((estado) => estado.login);
 
   // Si el checkout manda al login, vuelve a esa ruta al terminar.
   const destino = location.state?.from || `/tienda/${slug}`;
@@ -21,6 +23,7 @@ export default function ClienteAuth() {
   const [enviando, setEnviando] = useState(false);
   const [formData, setFormData] = useState({
     nombre: '',
+    apellido: '',
     email: '',
     password: '',
   });
@@ -39,42 +42,61 @@ export default function ClienteAuth() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const identificador = formData.email.trim();
 
     // Validación básica
-    if (!formData.email || !formData.password || (!isLogin && !formData.nombre)) {
+    if (!identificador || !formData.password || (!isLogin && (!formData.nombre.trim() || !formData.apellido.trim()))) {
       showToast('Por favor, completa todos los campos requeridos.');
       return;
     }
-
-    // El alta de compradores todavía no tiene endpoint en el backend.
-    if (!isLogin) {
-      showToast('El registro de compradores todavía no está disponible.');
+    if (!isLogin && formData.password.length < 8) {
+      showToast('La contraseña debe tener al menos 8 caracteres.');
       return;
     }
 
     setEnviando(true);
     try {
-      // El backend valida la clave y devuelve el rol de la cuenta.
-      const respuesta = await loginApi(formData.email.trim(), formData.password);
+      // Con "@" se valida como comprador; sin "@" se busca una cuenta del
+      // panel (usuario), para que el login de tienda no exija un correo.
+      const esCorreo = identificador.includes('@');
+      const respuesta = isLogin
+        ? await loginApi(identificador, formData.password, esCorreo ? 'CLIENTE' : 'PERSONAL')
+        : await registrarCliente({
+          nombre: formData.nombre.trim(),
+          apellido: formData.apellido.trim(),
+          correo: identificador,
+          contrasena: formData.password,
+        });
+
       if (respuesta.rol !== 'CLIENTE') {
+        if (respuesta.rol === 'ADMIN' || respuesta.rol === 'VENDEDOR') {
+          loginAdmin(respuesta.usuario ?? identificador, respuesta.token, respuesta.rol);
+          showToast(`Bienvenido/a, ${respuesta.nombre || identificador}`);
+          navigate(respuesta.rol === 'VENDEDOR' ? '/admin/pos' : '/admin', { replace: true });
+          return;
+        }
         showToast('Tu cuenta no tiene el rol CLIENTE para comprar en esta tienda.');
         return;
       }
 
       const sesion = {
         idCliente: respuesta.idCliente,
-        nombre: respuesta.nombre || formData.email.split('@')[0],
-        correo: respuesta.correo || formData.email,
-        email: respuesta.correo || formData.email,
+        nombre: respuesta.nombre || identificador.split('@')[0],
+        correo: respuesta.correo || identificador,
+        email: respuesta.correo || identificador,
         token: respuesta.token,
         rol: respuesta.rol,
       };
 
       loginCliente(sesion);
-      showToast(`¡Bienvenida/o a ${tienda.nombre}, ${sesion.nombre}!`);
+      showToast(
+        isLogin
+          ? `¡Bienvenida/o a ${tienda.nombre}, ${sesion.nombre}!`
+          : `¡Tu cuenta fue creada, ${sesion.nombre}! Ya puedes comprar en ${tienda.nombre}.`
+      );
       navigate(destino, { replace: true });
     } catch (problema) {
-      showToast(problema.message || 'No se pudo iniciar sesión.');
+      showToast(problema.message || (isLogin ? 'No se pudo iniciar sesión.' : 'No se pudo crear la cuenta.'));
     } finally {
       setEnviando(false);
     }
@@ -101,24 +123,36 @@ export default function ClienteAuth() {
 
           <form className="auth-form" onSubmit={handleSubmit}>
             {!isLogin && (
-              <div className="field">
-                <label>Nombre completo</label>
-                <input
-                  type="text"
-                  name="nombre"
-                  placeholder="Ej. Anelhi Marcos"
-                  value={formData.nombre}
-                  onChange={handleChange}
-                />
-              </div>
+              <>
+                <div className="field">
+                  <label>Nombres</label>
+                  <input
+                    type="text"
+                    name="nombre"
+                    placeholder="Ej. Anelhi"
+                    value={formData.nombre}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="field">
+                  <label>Apellidos</label>
+                  <input
+                    type="text"
+                    name="apellido"
+                    placeholder="Ej. Marcos"
+                    value={formData.apellido}
+                    onChange={handleChange}
+                  />
+                </div>
+              </>
             )}
 
             <div className="field">
-              <label>Correo electrónico</label>
+              <label>{isLogin ? 'Correo o usuario' : 'Correo electrónico'}</label>
               <input
-                type="email"
+                type={isLogin ? 'text' : 'email'}
                 name="email"
-                placeholder="tu@email.com"
+                placeholder={isLogin ? 'tu@email.com o tu usuario' : 'tu@email.com'}
                 value={formData.email}
                 onChange={handleChange}
               />

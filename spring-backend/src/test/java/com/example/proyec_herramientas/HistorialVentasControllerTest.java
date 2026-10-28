@@ -69,6 +69,10 @@ class HistorialVentasControllerTest {
 
     @BeforeEach
     void limpiar() throws Exception {
+        // Devoluciones y creditos de otras clases de prueba referencian ventas.
+        jdbcTemplate.update("DELETE FROM credito");
+        jdbcTemplate.update("DELETE FROM devolucion_detalle");
+        jdbcTemplate.update("DELETE FROM devolucion");
         ventaRepository.deleteAll();
         productoRepository.deleteAll();
         usuarioRepository.deleteAll();
@@ -91,7 +95,7 @@ class HistorialVentasControllerTest {
     void historialListaVentasDeLaTiendaConDatosDeLaTabla() throws Exception {
         String idVenta = registrarVenta(2);
 
-        mockMvc.perform(get("/ventas")
+        mockMvc.perform(get("/api/ventas")
                         .param("page", "0")
                         .param("size", "10")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
@@ -112,7 +116,7 @@ class HistorialVentasControllerTest {
         String numero = jdbcTemplate.queryForObject(
                 "SELECT numero_documento FROM venta WHERE id_venta = ?", String.class, idVenta);
 
-        mockMvc.perform(get("/ventas")
+        mockMvc.perform(get("/api/ventas")
                         .param("q", numero)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
@@ -123,14 +127,14 @@ class HistorialVentasControllerTest {
         jdbcTemplate.update("UPDATE venta SET receptor_num_documento = ? WHERE id_venta = ?",
                 "12345678", idVenta);
 
-        mockMvc.perform(get("/ventas")
+        mockMvc.perform(get("/api/ventas")
                         .param("q", "12345678")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElementos", is(1)))
                 .andExpect(jsonPath("$.contenido[0].documentoCliente", is("12345678")));
 
-        mockMvc.perform(get("/ventas")
+        mockMvc.perform(get("/api/ventas")
                         .param("q", "99999999")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
@@ -145,10 +149,10 @@ class HistorialVentasControllerTest {
         String tokenCliente = CuentasTest.token(mockMvc, objectMapper, CuentasTest.CORREO_CLIENTE,
                 CuentasTest.CLAVE);
 
-        mockMvc.perform(get("/ventas"))
+        mockMvc.perform(get("/api/ventas"))
                 .andExpect(status().isUnauthorized());
 
-        mockMvc.perform(get("/ventas")
+        mockMvc.perform(get("/api/ventas")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenCliente))
                 .andExpect(status().isForbidden());
     }
@@ -159,7 +163,7 @@ class HistorialVentasControllerTest {
                 "tipoDocumento", "Boleta",
                 "medioPago", "Yape",
                 "items", List.of(Map.of("idProducto", 1, "cantidad", cantidad)));
-        String respuesta = mockMvc.perform(post("/ventas")
+        String respuesta = mockMvc.perform(post("/api/ventas")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))

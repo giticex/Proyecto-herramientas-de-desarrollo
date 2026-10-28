@@ -30,3 +30,13 @@
   .split { grid-template-columns: 1fr; gap: 56px; }
   .preview { position: static; }
 }
+
+@media (max-width: 560px) {
+  .split { gap: 32px; }
+  /* Dos muestras de color por fila no caben junto al código en un teléfono. */
+  .colors { grid-template-columns: 1fr; gap: 14px; }
+  .preview { border-radius: 14px; }
+  .pv-hero { padding: 40px 18px; }
+  .pv-grid { padding: 16px; gap: 10px; }
+  .pv-bar { padding: 12px 14px; }
+}

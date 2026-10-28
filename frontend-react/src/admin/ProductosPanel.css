@@ -111,3 +111,15 @@ dialog .form { margin-top: 0; }
   dialog { padding: 24px; }
 }
 
+@media (max-width: 520px) {
+  .alerta { padding: 16px; gap: 12px; }
+  .toolbar { gap: 10px; }
+  .buscador { min-width: 0; width: 100%; }
+  .filtro-categoria { width: 100%; }
+  .filtro-categoria select { flex: 1; min-width: 0; }
+  .atributo-fila { grid-template-columns: 1fr 1fr auto; gap: 6px; }
+  .atributo-fila input { min-width: 0; padding: 9px 10px; }
+  dialog { width: calc(100vw - 24px); padding: 20px; border-radius: 16px; }
+  .lista .fila { grid-template-columns: 1fr; padding: 16px; }
+}
+

@@ -21,8 +21,11 @@ import com.example.proyec_herramientas.repository.ClienteRepository;
 import com.example.proyec_herramientas.repository.CorrelativoRepository;
 import com.example.proyec_herramientas.repository.PersonaRepository;
 import com.example.proyec_herramientas.repository.ProductoRepository;
+import com.example.proyec_herramientas.repository.TiendaRepository;
 import com.example.proyec_herramientas.repository.VentaRepository;
 import com.example.proyec_herramientas.reportes.ComprobantePdfGenerator;
+import com.example.proyec_herramientas.reportes.ComprobanteTicketPdfGenerator;
+import com.example.proyec_herramientas.reportes.MarcaComprobante;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,10 +61,10 @@ import java.util.Map;
 @Service
 public class ComprobanteServiceImpl implements ComprobanteService {
 
-    /** Tipo de documento del adquirente: RUC (catalogo 01). */
-    private static final String TIPO_DOCUMENTO_RUC = "1";
-    /** Tipo de documento del adquirente: DNI (catalogo 01). */
-    private static final String TIPO_DOCUMENTO_DNI = "6";
+    /** Tipo de documento del adquirente: RUC (catalogo 01: 6 = RUC). */
+    private static final String TIPO_DOCUMENTO_RUC = "6";
+    /** Tipo de documento del adquirente: DNI (catalogo 01: 1 = DNI). */
+    private static final String TIPO_DOCUMENTO_DNI = "1";
 
     private static final String REGEX_RUC = "\\d{11}";
     private static final String REGEX_DNI = "\\d{8}";
@@ -110,6 +113,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
 
     private final VentaRepository ventaRepository;
     private final ProductoRepository productoRepository;
+    private final TiendaRepository tiendaRepository;
     private final CorrelativoRepository correlativoRepository;
     private final ClienteRepository clienteRepository;
     private final PersonaRepository personaRepository;
@@ -122,6 +126,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
 
     public ComprobanteServiceImpl(VentaRepository ventaRepository,
                                   ProductoRepository productoRepository,
+                                  TiendaRepository tiendaRepository,
                                   CorrelativoRepository correlativoRepository,
                                   ClienteRepository clienteRepository,
                                   PersonaRepository personaRepository,
@@ -133,6 +138,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
                                   ObjectMapper objectMapper) {
         this.ventaRepository = ventaRepository;
         this.productoRepository = productoRepository;
+        this.tiendaRepository = tiendaRepository;
         this.correlativoRepository = correlativoRepository;
         this.clienteRepository = clienteRepository;
         this.personaRepository = personaRepository;
@@ -239,6 +245,17 @@ public class ComprobanteServiceImpl implements ComprobanteService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ComprobanteRespuestaDTO> listarPorClienteDeTienda(String idCliente, int idTienda) {
+        if (idCliente == null || idCliente.isBlank()) {
+            return List.of();
+        }
+        return ventaRepository.historialPorTienda(idTienda, idCliente).stream()
+                .map(this::mapear)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public String generarXml(String idVenta) {
         return ublXmlGenerator.generar(obtenerPorId(idVenta));
     }
@@ -248,10 +265,38 @@ public class ComprobanteServiceImpl implements ComprobanteService {
     public byte[] generarPdf(String idVenta) {
         ComprobanteRespuestaDTO comprobante = obtenerPorId(idVenta);
         try {
-            return ComprobantePdfGenerator.generarPdfBytes(comprobante);
+            return ComprobantePdfGenerator.generarPdfBytes(comprobante, resolverMarca(idVenta));
         } catch (Exception e) {
             throw new IllegalStateException("No se pudo generar la representacion impresa del comprobante", e);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] generarTicketPdf(String idVenta) {
+        ComprobanteRespuestaDTO comprobante = obtenerPorId(idVenta);
+        try {
+            return ComprobanteTicketPdfGenerator.generarPdfBytes(comprobante, resolverMarca(idVenta));
+        } catch (Exception e) {
+            throw new IllegalStateException("No se pudo generar el ticket del comprobante", e);
+        }
+    }
+
+    /**
+     * Colores de la tienda duena de la venta. Se resuelven desde el primer
+     * producto del detalle; si la venta no permite identificarla se usa la
+     * paleta corporativa por defecto.
+     */
+    private MarcaComprobante resolverMarca(String idVenta) {
+        return ventaRepository.findById(idVenta)
+                .map(Venta::getDetalles)
+                .flatMap(detalles -> detalles.stream().findFirst())
+                .map(DetalleVenta::getIdProducto)
+                .flatMap(productoRepository::findById)
+                .map(Producto::getIdTienda)
+                .flatMap(tiendaRepository::findById)
+                .map(tienda -> new MarcaComprobante(tienda.getColorPrimario(), tienda.getColorSecundario()))
+                .orElseGet(MarcaComprobante::porDefecto);
     }
 
     // ------------------------------------------------------------------
@@ -318,7 +363,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
             if (item == null || item.getIdProducto() == null) {
                 throw new ValidacionComprobanteException("Cada item debe indicar el producto del catalogo.");
             }
-            Producto producto = productoRepository.findById(item.getIdProducto())
+            Producto producto = productoRepository.findByIdForUpdate(item.getIdProducto())
                     .orElseThrow(() -> new ValidacionComprobanteException(
                             "El producto " + item.getIdProducto() + " no existe en el catalogo."));
 

@@ -5,18 +5,20 @@ import com.example.proyec_herramientas.model.TiendaDTO;
 import com.example.proyec_herramientas.security.SesionPrincipal;
 import com.example.proyec_herramientas.service.ProductoService;
 import com.example.proyec_herramientas.service.TiendaService;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/tiendas")
+@RequestMapping("/api/tiendas")
 public class TiendaController {
 
     private final TiendaService tiendaService;
@@ -27,23 +29,41 @@ public class TiendaController {
         this.productoService = productoService;
     }
 
-    // Publico: lo consume el catalogo de la tienda.
+    // 1. Debe ir primero la ruta fija. Con sesion devuelve la tienda del token;
+    //    sin sesion (landing publica) cae al slug por defecto.
+    @GetMapping("/mi-tienda")
+    public TiendaDTO obtenerMiTienda(Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof SesionPrincipal principal
+                && principal.idTienda() != null) {
+            return tiendaService.obtenerPorIdTienda(principal.idTienda());
+        }
+        return tiendaService.obtenerPorSlug("mi-tienda");
+    }
+
+    // 2. Después la ruta dinámica con variable
     @GetMapping("/{slug}")
     public TiendaDTO obtener(@PathVariable String slug) {
         return tiendaService.obtenerPorSlug(slug);
     }
 
-    // Publico: catalogo de productos de esa tienda.
     @GetMapping("/{slug}/productos")
     public List<ProductoDTO> productos(@PathVariable String slug) {
         int idTienda = tiendaService.obtenerIdPorSlug(slug);
         return productoService.listar(idTienda);
     }
 
-    // Solo el ADMIN dueño de esa tienda.
     @PutMapping("/{slug}")
     public TiendaDTO actualizar(@PathVariable String slug, @RequestBody TiendaDTO tienda,
-            @AuthenticationPrincipal SesionPrincipal admin) {
-        return tiendaService.actualizar(slug, tienda, admin.idTienda());
+                                Authentication authentication) {
+        return tiendaService.actualizar(slug, tienda, idTienda(authentication));
+    }
+
+    private int idTienda(Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof SesionPrincipal principal
+                && principal.idTienda() != null) {
+            return principal.idTienda();
+        }
+        throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "La cuenta no tiene una tienda asignada");
     }
 }

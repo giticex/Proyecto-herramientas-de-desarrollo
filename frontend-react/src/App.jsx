@@ -1,10 +1,11 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Link } from 'react-router-dom';
 import Login from './auth/Login';
 import RegistroTienda from './admin/RegistroTienda';
 import DashboardAdmin from './admin/DashboardAdmin';
 import MarcaPanel from './admin/MarcaPanel';
 import ProductosPanel from './admin/ProductosPanel';
 import HistorialVentas from './admin/HistorialVentas';
+import GestionCreditos from './admin/GestionCreditos';
 import PuntoDeVenta from './admin/PuntoDeVenta';
 import RutaProtegida from './auth/RutaProtegida';
 import Toast from './components/Toast';
@@ -18,12 +19,13 @@ import MisCompras from './tienda/MisCompras';
 import RutaProtegidaCliente from './tienda/RutaProtegidaCliente';
 
 
-// Componentes temporales o en desarrollo para las siguientes tareas de cliente
-function EnConstruccion({ titulo }) {
+function PaginaNoEncontrada() {
   return (
     <div style={{ padding: '100px 20px', textAlign: 'center' }}>
-      <h2>{titulo}</h2>
-      <p style={{ color: '#6e6e73', marginTop: 10 }}>Esta pantalla está en proceso de construcción dentro de tu sprint.</p>
+      <h2>Página no encontrada</h2>
+      <p style={{ color: '#6e6e73', marginTop: 10 }}>
+        La dirección que abriste no existe. <Link to="/">Volver al inicio</Link>
+      </p>
     </div>
   );
 }
@@ -60,8 +62,11 @@ export default function App() {
         {/* Operación de tienda: ADMIN y VENDEDOR. */}
         <Route element={<RutaProtegida roles={['ADMIN', 'VENDEDOR']} />}>
           <Route path="/admin/ventas" element={<HistorialVentas />} />
+          <Route path="/admin/creditos" element={<GestionCreditos />} />
           <Route path="/admin/pos" element={<PuntoDeVenta />} />
         </Route>
+
+        <Route path="*" element={<PaginaNoEncontrada />} />
       </Routes>
       <Toast />
     </>

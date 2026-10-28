@@ -12,6 +12,10 @@ public class LoginRequestDTO {
     @NotBlank
     private String clave;
 
+    // Opcional: "CLIENTE" valida solo la tabla de compradores y "PERSONAL"
+    // solo las cuentas del panel. Vacio mantiene el orden historico.
+    private String tipo;
+
     public LoginRequestDTO() {
     }
 
@@ -34,5 +38,13 @@ public class LoginRequestDTO {
 
     public void setClave(String clave) {
         this.clave = clave;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
     }
 }

@@ -57,9 +57,14 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponseDTO login(LoginRequestDTO request) {
         String identificador = request.getUsuario() == null ? "" : request.getUsuario().trim();
         String clave = request.getClave() == null ? "" : request.getClave();
+        String tipo = request.getTipo() == null ? "" : request.getTipo().trim().toUpperCase();
+        boolean soloComprador = "CLIENTE".equals(tipo);
+        boolean soloPersonal = "PERSONAL".equals(tipo);
 
         // 1) Cuenta del panel: por nombre de cuenta o por correo de la persona.
-        Optional<Usuario> cuenta = buscarCuenta(identificador);
+        //    Con tipo=CLIENTE se omite: un comprador no puede entrar al panel
+        //    aunque su correo exista en la tabla de personas.
+        Optional<Usuario> cuenta = soloComprador ? Optional.empty() : buscarCuenta(identificador);
         if (cuenta.isPresent() && verificarYActualizar(cuenta.get(), clave)) {
             Usuario usuario = cuenta.get();
             Persona persona = personaRepository.findById(usuario.getIdPersona()).orElse(null);
@@ -74,7 +79,8 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // 2) Comprador: entra con el correo con el que se registro.
-        Optional<Cliente> cliente = clienteRepository.findByCorreo(identificador);
+        Optional<Cliente> cliente = soloPersonal ? Optional.empty()
+                : clienteRepository.findByCorreo(identificador);
         if (cliente.isPresent() && verificarYActualizar(cliente.get(), clave)) {
             Cliente comprador = cliente.get();
             return respuesta(comprador.getCorreo(), comprador.getIdRol(), comprador.getIdCliente(),

@@ -30,8 +30,8 @@ function tieneArchivoBackend(idVenta) {
 }
 
 function tipoDocumentoTexto(codigo) {
-  if (codigo === '1') return 'RUC';
-  if (codigo === '6') return 'DNI';
+  if (codigo === '6') return 'RUC';
+  if (codigo === '1') return 'DNI';
   if (codigo === '4') return 'Carnet de extranjería';
   if (codigo === '7') return 'Pasaporte';
   if (codigo === 'A') return 'Cédula diplomática';

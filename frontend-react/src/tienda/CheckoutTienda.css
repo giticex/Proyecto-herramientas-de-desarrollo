@@ -208,3 +208,15 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 560px) {
+  .checkout-page-bg { padding: 88px 16px 48px; }
+  .checkout-header h2 { font-size: 26px; }
+  .checkout-card,
+  .checkout-resumen-card { padding: 22px 18px; border-radius: 18px; }
+  .comprobante-selector { gap: 8px; }
+  .comprobante-btn { padding: 12px; }
+  .comprobante-btn strong { font-size: 14px; }
+  .pago-opciones { grid-template-columns: 1fr; }
+  .desglose-fila.total { font-size: 18px; }
+}

@@ -198,11 +198,17 @@ public class UblXmlGenerator {
                 .append("  </cac:AccountingSupplierParty>\n");
     }
 
+    private String tipoDocumentoReceptor(ReceptorDTO receptor) {
+        String tipo = receptor.getTipoDocumento();
+        return tipo == null || tipo.isBlank() ? "0" : escape(tipo);
+    }
+
     private void escribirReceptor(StringBuilder xml, ReceptorDTO receptor) {
         xml.append("  <cac:AccountingCustomerParty>\n")
                 .append("    <cac:Party>\n")
                 .append("      <cac:PartyIdentification>\n")
-                .append("        <cbc:ID schemeID=\"6\">").append(escape(receptor.getNumeroDocumento())).append("</cbc:ID>\n")
+                .append("        <cbc:ID schemeID=\"").append(tipoDocumentoReceptor(receptor)).append("\">")
+                .append(escape(receptor.getNumeroDocumento())).append("</cbc:ID>\n")
                 .append("      </cac:PartyIdentification>\n");
         DomicilioDTO domicilio = receptor.getDomicilioFiscal();
         if (domicilio != null) {

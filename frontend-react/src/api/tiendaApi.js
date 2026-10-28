@@ -1,6 +1,3 @@
-// Tienda (marca): el backend TODAVIA no tiene /tiendas, así que estas llamadas
-// siempre caen al mock de localStorage por ahora. El try/catch ya queda listo
-// para cuando el endpoint exista: solo hay que quitar el TODO.
 import { apiClient } from './client';
 
 const KEY = 'tienda';
@@ -23,26 +20,25 @@ function leerMock() {
   }
 }
 
-function escribirMock(tienda) {
-  localStorage.setItem(KEY, JSON.stringify(tienda));
-}
-
-// TODO: backend aun no tiene GET /tiendas/{slug}. Cuando exista, este fetch
-// dejará de fallar siempre y se podrá quitar el fallback a TIENDA_DEFAULT.
+// Solo se recurre a los datos locales cuando el backend no responde o la
+// tienda no existe (404). Un 401/403 se propaga: ocultarlo dejaria la app
+// mostrando datos de una tienda que el backend no autoriza.
 export async function getTienda(slug) {
+  const targetSlug = slug || 'mi-tienda';
   try {
-    return await apiClient.get(`/tiendas/${encodeURIComponent(slug)}`);
-  } catch {
-    return leerMock() || { ...TIENDA_DEFAULT };
+    if (targetSlug === 'mi-tienda') {
+      return await apiClient.get('/tiendas/mi-tienda');
+    }
+    return await apiClient.get(`/tiendas/${encodeURIComponent(targetSlug)}`);
+  } catch (error) {
+    if (error?.status === 401 || error?.status === 403) throw error;
+    const mock = leerMock();
+    return mock || { ...TIENDA_DEFAULT, slug: targetSlug };
   }
 }
 
-// TODO: backend aun no tiene POST /tiendas (registro) ni PUT /tiendas/{slug} (marca).
+// El PUT exige ADMIN: si falla, el error debe llegar al panel para avisar que
+// la marca no se guardo (antes se simulaba un guardado exitoso).
 export async function saveTienda(tienda) {
-  try {
-    return await apiClient.put(`/tiendas/${tienda.slug}`, tienda);
-  } catch {
-    escribirMock(tienda);
-    return tienda;
-  }
+  return apiClient.put(`/tiendas/${tienda.slug}`, tienda);
 }

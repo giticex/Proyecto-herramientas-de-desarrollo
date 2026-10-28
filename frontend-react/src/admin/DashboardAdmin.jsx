@@ -62,22 +62,8 @@ export default function DashboardAdmin() {
   }, []);
 
   useEffect(() => {
-    let vigente = true;
-    (async () => {
-      try {
-        const resumen = await obtenerResumenDashboard();
-        if (!vigente) return;
-        setDatos(resumen);
-      } catch (problema) {
-        if (vigente) setError(mensajeError(problema));
-      } finally {
-        if (vigente) setCargando(false);
-      }
-    })();
-    return () => {
-      vigente = false;
-    };
-  }, []);
+    cargar();
+  }, [cargar]);
 
   const topProductos = datos?.topProductos ?? [];
   const masVendido = topProductos[0];

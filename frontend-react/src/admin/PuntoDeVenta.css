@@ -383,6 +383,7 @@ button.pos-enlace {
 
 /* ---------- Tabla del carrito ---------- */
 .pos-tabla-envoltura {
+  position: relative;
   margin-top: 20px;
   background: #fff;
   border: 1px solid var(--pos-linea);
@@ -763,6 +764,15 @@ button.pos-enlace {
   .pos-topbar { align-items: flex-start; }
   .pos-izquierda { padding-top: 18px; }
   .pos-tabla { min-width: 560px; }
+  /* Sin líneas no hace falta desplazamiento: el estado vacío ocupa el ancho. */
+  .pos-tabla-envoltura:has(.pos-vacio) .pos-tabla { min-width: 0; }
+  .pos-tabla-envoltura:has(.pos-vacio) .pos-tabla th,
+  .pos-tabla-envoltura:has(.pos-vacio) .pos-tabla td { padding: 10px 6px; }
+  .pos-tabla-envoltura:has(.pos-vacio) .pos-tabla th {
+    white-space: normal;
+    font-size: 10px;
+    letter-spacing: 0.02em;
+  }
   .pos-sugerencia {
     grid-template-columns: minmax(0, 1fr) auto 24px;
     gap: 8px;
@@ -771,6 +781,222 @@ button.pos-enlace {
   .pos-sugerencia-stock { font-size: 11px; }
 }
 
+@media (max-width: 480px) {
+  .pos-topbar { padding: 10px 14px; gap: 10px; }
+  .pos-marca { gap: 8px; }
+  .pos-logo { width: 34px; height: 34px; }
+  .pos-marca-texto strong { font-size: 14px; }
+  .pos-enlace { min-height: 40px; padding: 0 10px; gap: 6px; font-size: 13px; }
+
+  .pos-izquierda { padding: 16px 14px 32px; }
+  .pos-buscador { min-height: 54px; padding: 0 14px; }
+  .pos-buscador input { height: 50px; font-size: 16px; }
+
+  /* El carrito se desplaza en horizontal en lugar de comprimir las columnas. */
+  .pos-tabla { min-width: 540px; }
+  .pos-tabla th,
+  .pos-tabla td { padding: 10px 12px; }
+  .pos-facturacion { padding: 20px 14px 24px; }
+  .pos-facturacion-cabecera h2 { font-size: 20px; }
+  .pos-totales .pos-total dd { font-size: 34px; }
+  .pos-metodo { font-size: 13px; }
+  .pos-generar { min-height: 60px; font-size: 15px; }
+  .pos-modal { padding: 24px 18px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pos * { transition: none !important; animation: none !important; }
+}
+
+/* --- Modal de devoluciones --- */
+.pos-modal-devolucion {
+  width: min(560px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  text-align: left;
+  align-items: stretch;
+}
+
+.pos-modal-devolucion .pos-modal-titulo,
+.pos-modal-devolucion .pos-modal-mensaje { text-align: center; }
+
+.pos-devo-busqueda {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.pos-devo-busqueda input {
+  flex: 1;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid #d2d2d7;
+  font-size: 15px;
+}
+
+.pos-devo-busqueda input:focus {
+  outline: 2px solid #0071e3;
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.pos-devo-busqueda .pos-modal-btn { width: auto; padding: 0 18px; }
+
+.pos-devo-resultados {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pos-devo-resultado {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e5e5ea;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
+}
+
+.pos-devo-resultado:hover { background: #f5f5f7; }
+.pos-devo-resultado:focus-visible { outline: 2px solid #0071e3; outline-offset: 1px; }
+
+.pos-devo-resultado-doc { display: flex; flex-direction: column; gap: 2px; }
+.pos-devo-resultado-doc strong { color: #1d1d1f; }
+.pos-devo-resultado-doc small { color: #6e6e73; }
+.pos-devo-resultado-total { font-weight: 700; color: #1d1d1f; white-space: nowrap; }
+
+.pos-devo-lineas {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pos-devo-linea {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #f5f5f7;
+}
+
+.pos-devo-linea-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pos-devo-linea-info strong { color: #1d1d1f; font-size: 14px; }
+.pos-devo-linea-info small { color: #6e6e73; }
+
+.pos-devo-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-weight: 700;
+}
+
+/* ---------- Crédito a favor como método de pago ---------- */
+.pos-credito {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid #fbcfe8;
+  border-radius: 12px;
+  background: #fdf2f8;
+}
+.pos-credito .pos-cliente-form { margin-top: 0; }
+.pos-credito-fila {
+  display: flex;
+  gap: 8px;
+}
+.pos-credito-fila .pos-cliente-input {
+  flex: 1;
+  min-width: 0;
+  text-transform: uppercase;
+}
+.pos-credito-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: #db2777;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.pos-credito-btn:hover:not(:disabled) { background: #be185d; }
+.pos-credito-btn:focus-visible {
+  outline: 2px solid #be185d;
+  outline-offset: 2px;
+}
+.pos-credito-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.pos-credito-resumen {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pos-credito-resumen > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+.pos-credito-resumen span { color: #9d174d; }
+.pos-credito-resumen strong {
+  color: #831843;
+  font-variant-numeric: tabular-nums;
+}
+.pos-credito-resto {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pos-credito-resto .pos-etiqueta { margin-bottom: 0; }
+.pos-credito-resto .pos-metodos {
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+}
+.pos-credito-resto .pos-metodo {
+  min-height: 46px;
+  justify-content: center;
+  font-size: 14px;
+}
+.pos-credito-nota {
+  font-size: 12px;
+  color: #9d174d;
+}
+.pos-totales .pos-credito-descuento dt,
+.pos-totales .pos-credito-descuento dd {
+  color: #be185d;
+  font-weight: 700;
+}
+.pos-totales .pos-total-cobrar dt {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.pos-totales .pos-total-cobrar dd {
+  font-size: clamp(26px, 3vw, 34px);
+  color: #be185d;
 }

@@ -166,6 +166,17 @@ public class Venta {
     @Transient
     private String medioPago;
 
+    // Resultado de aplicar un credito a favor en esta venta (no se persiste:
+    // el saldo real vive en la tabla credito).
+    @Transient
+    private String creditoCodigo;
+
+    @Transient
+    private BigDecimal creditoMontoUsado;
+
+    @Transient
+    private BigDecimal creditoSaldoRestante;
+
     public Venta() {
     }
 
@@ -519,6 +530,30 @@ public class Venta {
 
     public void setMedioPago(String medioPago) {
         this.medioPago = medioPago;
+    }
+
+    public String getCreditoCodigo() {
+        return creditoCodigo;
+    }
+
+    public void setCreditoCodigo(String creditoCodigo) {
+        this.creditoCodigo = creditoCodigo;
+    }
+
+    public BigDecimal getCreditoMontoUsado() {
+        return creditoMontoUsado;
+    }
+
+    public void setCreditoMontoUsado(BigDecimal creditoMontoUsado) {
+        this.creditoMontoUsado = creditoMontoUsado;
+    }
+
+    public BigDecimal getCreditoSaldoRestante() {
+        return creditoSaldoRestante;
+    }
+
+    public void setCreditoSaldoRestante(BigDecimal creditoSaldoRestante) {
+        this.creditoSaldoRestante = creditoSaldoRestante;
     }
 
     /** Total del comprobante (monto total de la venta). */

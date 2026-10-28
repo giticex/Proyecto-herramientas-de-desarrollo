@@ -17,6 +17,11 @@ public interface VentaService {
 
     List<Venta> obtenerHistorial(String idCliente);
 
+    // Boletas e historial acotados a la tienda del personal autenticado.
+    List<Venta> obtenerBoletasDeTienda(int idTienda);
+
+    List<Venta> obtenerHistorialDeTienda(int idTienda, String idCliente);
+
     // Historial de la tienda para el panel: paginado y filtrable.
     PaginaVentasDTO listarVentas(int idTienda, String busqueda, int pagina, int tamanio);
 }

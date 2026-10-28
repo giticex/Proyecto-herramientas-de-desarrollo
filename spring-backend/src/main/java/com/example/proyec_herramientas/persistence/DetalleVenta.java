@@ -92,6 +92,11 @@ public class DetalleVenta {
     @Transient
     private String producto;
 
+    // Unidades ya devueltas de esta linea (se rellena solo al consultar una
+    // venta para devolucion; no se persiste).
+    @Transient
+    private int cantidadDevuelta = 0;
+
     public DetalleVenta() {
     }
 
@@ -130,6 +135,14 @@ public class DetalleVenta {
 
     public void setProducto(String producto) {
         this.producto = producto;
+    }
+
+    public int getCantidadDevuelta() {
+        return cantidadDevuelta;
+    }
+
+    public void setCantidadDevuelta(int cantidadDevuelta) {
+        this.cantidadDevuelta = cantidadDevuelta;
     }
 
     public int getCantidad() {

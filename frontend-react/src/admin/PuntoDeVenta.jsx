@@ -12,17 +12,25 @@ import {
   Minus,
   Plus,
   Printer,
+  RotateCcw,
   ScanBarcode,
   Search,
   ShoppingCart,
   Smartphone,
   Trash2,
   UserPlus,
+  Wallet,
 } from 'lucide-react';
 import { useSesion } from '../auth/sesionStore';
 import { useStore } from '../store/store';
 import { showToast } from '../components/toastBus';
-import { registrarVenta, rutaComprobantePdf } from '../api/ventasApi';
+import {
+  listarVentas,
+  obtenerVentaParaDevolucion,
+  registrarDevolucion,
+  registrarVenta,
+} from '../api/ventasApi';
+import { buscarCredito } from '../api/creditosApi';
 import { descargarArchivoSeguro } from '../utils/descargas';
 import './PuntoDeVenta.css';
 
@@ -39,7 +47,10 @@ const METODOS_PAGO = [
   { nombre: 'Efectivo', icono: Banknote },
   { nombre: 'Tarjeta', icono: CreditCard },
   { nombre: 'Yape', icono: Smartphone },
+  { nombre: 'Crédito a Favor', icono: Wallet },
 ];
+
+const METODO_CREDITO = 'Crédito a Favor';
 
 function redondear(valor) {
   return Math.round(valor * 100) / 100;
@@ -76,11 +87,25 @@ export default function PuntoDeVenta() {
   const [rucCliente, setRucCliente] = useState('');
   const [razonSocialCliente, setRazonSocialCliente] = useState('');
   const [montoRecibido, setMontoRecibido] = useState('');
+  const [creditoCodigo, setCreditoCodigo] = useState('');
+  const [creditoValidando, setCreditoValidando] = useState(false);
+  const [creditoAplicado, setCreditoAplicado] = useState(null);
+  const [creditoError, setCreditoError] = useState('');
+  const [metodoPagoResto, setMetodoPagoResto] = useState('Efectivo');
+  const [modalDevoluciones, setModalDevoluciones] = useState(false);
+  const [busquedaDevolucion, setBusquedaDevolucion] = useState('');
+  const [buscandoDevolucion, setBuscandoDevolucion] = useState(false);
+  const [resultadosDevolucion, setResultadosDevolucion] = useState([]);
+  const [ventaDevolucion, setVentaDevolucion] = useState(null);
+  const [cantidadesDevolucion, setCantidadesDevolucion] = useState({});
+  const [motivoDevolucion, setMotivoDevolucion] = useState('');
+  const [procesandoDevolucion, setProcesandoDevolucion] = useState(false);
+  const [devolucionExitosa, setDevolucionExitosa] = useState(null);
   const buscadorRef = useRef(null);
 
   useEffect(() => {
     let vigente = true;
-    Promise.allSettled([listProductos(), getTienda()]).finally(() => {
+    Promise.allSettled([listProductos(), getTienda('mi-tienda')]).finally(() => {
       if (vigente) {
         setCargando(false);
         buscadorRef.current?.focus();
@@ -95,13 +120,23 @@ export default function PuntoDeVenta() {
   const sugerencias = useMemo(() => {
     if (!termino) return [];
     return productos
-        .filter((producto) => (
-            String(producto.idProducto).toLowerCase().includes(termino)
-            || (producto.nombre || '').toLowerCase().includes(termino)
-        ))
-        .sort((a, b) => (
-            Number(String(b.idProducto) === termino) - Number(String(a.idProducto) === termino)
-        ))
+        .filter((producto) => {
+          const codigo = String(producto.codigo || '').toLowerCase();
+          const idProd = String(producto.idProducto || '').toLowerCase();
+          const nombre = String(producto.nombre || '').toLowerCase();
+          return codigo.includes(termino) || idProd.includes(termino) || nombre.includes(termino);
+        })
+        .sort((a, b) => {
+          const aCodigo = String(a.codigo || '').toLowerCase();
+          const bCodigo = String(b.codigo || '').toLowerCase();
+          const aId = String(a.idProducto || '').toLowerCase();
+          const bId = String(b.idProducto || '').toLowerCase();
+          const aExact = aCodigo === termino || aId === termino;
+          const bExact = bCodigo === termino || bId === termino;
+          if (aExact && !bExact) return -1;
+          if (!aExact && bExact) return 1;
+          return 0;
+        })
         .slice(0, 6);
   }, [productos, termino]);
 
@@ -114,8 +149,29 @@ export default function PuntoDeVenta() {
   const igv = redondear(total - subtotal);
   const unidades = lineas.reduce((suma, linea) => suma + linea.cantidad, 0);
   const montoRecibidoNum = Number(String(montoRecibido).replace(',', '.')) || 0;
-  const vuelto = metodoPago === 'Efectivo' ? Math.max(0, redondear(montoRecibidoNum - total)) : 0;
-  const pagoInsuficiente = metodoPago === 'Efectivo' && lineas.length > 0 && montoRecibidoNum < total;
+
+  // Crédito a favor: cubre hasta el total de la venta y el resto (si hay) se
+  // cobra con otro método elegido por el cajero.
+  const pagoConCredito = metodoPago === METODO_CREDITO;
+  const creditoDisponible = creditoAplicado ? Number(creditoAplicado.montoDisponible) || 0 : 0;
+  const creditoUsado = pagoConCredito && creditoAplicado
+    ? redondear(Math.min(creditoDisponible, total))
+    : 0;
+  const restantePorCobrar = pagoConCredito ? redondear(total - creditoUsado) : total;
+  const metodoCobro = pagoConCredito
+    ? (restantePorCobrar > 0 ? metodoPagoResto : null)
+    : metodoPago;
+  const vuelto = metodoCobro === 'Efectivo'
+    ? Math.max(0, redondear(montoRecibidoNum - restantePorCobrar))
+    : 0;
+  // Con crédito, el efectivo solo tiene sentido una vez validado el código:
+  // antes de eso todavía no se sabe cuánto queda por cobrar.
+  const cobroEfectivoListo = metodoCobro === 'Efectivo'
+    && (!pagoConCredito || Boolean(creditoAplicado));
+  const pagoInsuficiente = cobroEfectivoListo
+    && lineas.length > 0
+    && montoRecibidoNum < restantePorCobrar;
+  const mostrarMontoEfectivo = cobroEfectivoListo;
 
   function agregar(producto) {
     const stock = Number(producto.stock) || 0;
@@ -141,6 +197,7 @@ export default function PuntoDeVenta() {
         ...previas,
         {
           idProducto: producto.idProducto,
+          codigo: producto.codigo,
           nombre: producto.nombre,
           precio: precioDe(producto),
           stock,
@@ -195,6 +252,16 @@ export default function PuntoDeVenta() {
       showToast('El DNI debe tener 8 dígitos.');
       return;
     }
+    if (pagoConCredito) {
+      if (!creditoAplicado) {
+        showToast('Valida el código del crédito a favor antes de cobrar.');
+        return;
+      }
+      if (creditoUsado <= 0) {
+        showToast('El crédito no tiene saldo para aplicar a esta venta.');
+        return;
+      }
+    }
     if (procesando) return;
 
     setProcesando(true);
@@ -205,34 +272,54 @@ export default function PuntoDeVenta() {
       }));
       const payload = {
         tipoDocumento: tipoComprobante,
-        medioPago: metodoPago,
+        // Pago mixto: el crédito cubre parte del total y el medio de pago
+        // registrado corresponde a lo cobrado por el resto.
+        medioPago: pagoConCredito && restantePorCobrar > 0 ? metodoPagoResto : metodoPago,
         items,
       };
+      if (pagoConCredito && creditoAplicado) {
+        payload.creditoCodigo = creditoAplicado.codigo;
+      }
       if (tipoComprobante === 'Boleta' && dniCliente.trim()) {
-        payload.dni = dniCliente.trim();
         payload.documentoCliente = dniCliente.trim();
       }
       if (tipoComprobante === 'Factura') {
-        payload.ruc = rucCliente.trim();
-        payload.razonSocial = razonSocialCliente.trim();
         payload.documentoCliente = rucCliente.trim();
+        payload.razonSocial = razonSocialCliente.trim();
       }
       const venta = await registrarVenta(payload);
-      const nro = venta?.nroComprobante || venta?.numeroDocumento || venta?.idVenta || '';
-      const idVenta = venta?.idVenta;
-      const totalCobrado = venta?.total != null ? Number(venta.total) : total;
+      // El backend devuelve la venta con los getters de la entidad: el id
+      // viaja como `id` y el total como `total`/`totalVenta`.
+      const idVenta = venta?.id ?? venta?.idVenta;
+      const nro = venta?.numeroDocumento || venta?.nroComprobante || '';
+      const totalCobrado = venta?.total ?? venta?.totalVenta ?? total;
+      const creditoMontoUsado = Number(venta?.creditoMontoUsado ?? creditoUsado) || 0;
+      const creditoSaldoRestante = Number(
+        venta?.creditoSaldoRestante ?? (creditoDisponible - creditoMontoUsado),
+      ) || 0;
+      const etiquetaMetodo = pagoConCredito
+        ? `Crédito a Favor${restantePorCobrar > 0 ? ` + ${metodoPagoResto}` : ''}`
+        : metodoPago;
+      const cobraEfectivo = metodoCobro === 'Efectivo';
 
       setVentaExitosa({
         idVenta,
         nroComprobante: nro,
         tipoDocumento: tipoComprobante,
         total: totalCobrado,
-        metodoPago,
-        vuelto: metodoPago === 'Efectivo' ? vuelto : 0,
-        montoRecibido: metodoPago === 'Efectivo' ? montoRecibidoNum : totalCobrado,
+        metodoPago: etiquetaMetodo,
+        efectivo: cobraEfectivo,
+        vuelto: cobraEfectivo ? vuelto : 0,
+        montoRecibido: cobraEfectivo ? montoRecibidoNum : totalCobrado,
+        creditoCodigo: pagoConCredito ? (venta?.creditoCodigo || creditoAplicado?.codigo) : null,
+        creditoUsado: pagoConCredito ? creditoMontoUsado : 0,
+        creditoSaldoRestante: pagoConCredito ? creditoSaldoRestante : 0,
       });
       setLineas([]);
       setBusqueda('');
+      setCreditoCodigo('');
+      setCreditoAplicado(null);
+      setCreditoError('');
       listProductos();
     } catch (error) {
       showToast(error?.message || 'No se pudo registrar la venta.');
@@ -241,35 +328,22 @@ export default function PuntoDeVenta() {
     }
   }
 
-  async function descargarPdfConToken(idVenta, nombre, abrir = true) {
-    if (!idVenta || imprimiendo) return;
+  async function abrirComprobante(idVenta, nombre, formato) {
+    if (!idVenta) {
+      showToast(formato === 'ticket'
+        ? 'No se encontró el ID de la venta para imprimir el ticket.'
+        : 'No se encontró el ID de la venta para descargar el comprobante.');
+      return;
+    }
+    if (imprimiendo) return;
     setImprimiendo(true);
     try {
-      const { tokenActivo, apiUrl } = await import('../api/client');
-      const token = tokenActivo();
-      const url = apiUrl(`/comprobantes/${idVenta}/pdf`);
-      const response = await fetch(url, {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : '',
-          Accept: 'application/pdf',
-        },
-      });
-      if (!response.ok) {
-        throw new Error(`Error ${response.status} al descargar comprobante`);
-      }
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      if (abrir) {
-        window.open(blobUrl, '_blank');
-      } else {
-        const enlace = document.createElement('a');
-        enlace.href = blobUrl;
-        enlace.download = `${nombre || `venta-${idVenta}`}.pdf`;
-        document.body.appendChild(enlace);
-        enlace.click();
-        enlace.remove();
-      }
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      await descargarArchivoSeguro(
+        `/comprobantes/${idVenta}/${formato}`,
+        'PDF',
+        nombre || `venta-${idVenta}`,
+        { abrir: true }
+      );
     } catch (error) {
       showToast(error?.message || 'No se pudo obtener el comprobante PDF.');
     } finally {
@@ -278,13 +352,13 @@ export default function PuntoDeVenta() {
   }
 
   async function imprimirTicket() {
-    if (!ventaExitosa?.idVenta) return;
-    await descargarPdfConToken(ventaExitosa.idVenta, ventaExitosa.nroComprobante || `venta-${ventaExitosa.idVenta}`, true);
+    const idVenta = ventaExitosa?.idVenta;
+    await abrirComprobante(idVenta, `ticket-${ventaExitosa?.nroComprobante || idVenta}`, 'ticket');
   }
 
   async function verDescargarPdf() {
-    if (!ventaExitosa?.idVenta) return;
-    await descargarPdfConToken(ventaExitosa.idVenta, ventaExitosa.nroComprobante || `venta-${ventaExitosa.idVenta}`, true);
+    const idVenta = ventaExitosa?.idVenta;
+    await abrirComprobante(idVenta, ventaExitosa?.nroComprobante || `venta-${idVenta}`, 'pdf');
   }
 
   function siguienteCliente() {
@@ -296,7 +370,162 @@ export default function PuntoDeVenta() {
     setRucCliente('');
     setRazonSocialCliente('');
     setMontoRecibido('');
+    setCreditoCodigo('');
+    setCreditoAplicado(null);
+    setCreditoError('');
+    setMetodoPagoResto('Efectivo');
     buscadorRef.current?.focus();
+  }
+
+  function elegirMetodoPago(nombre) {
+    setMetodoPago(nombre);
+    if (nombre !== METODO_CREDITO) {
+      setCreditoCodigo('');
+      setCreditoAplicado(null);
+      setCreditoError('');
+    }
+  }
+
+  async function validarCredito(evento) {
+    evento?.preventDefault();
+    const codigo = creditoCodigo.trim();
+    if (!codigo) {
+      setCreditoError('Ingresa el código del crédito (BOL-CR-XXXXXX).');
+      return;
+    }
+    if (creditoValidando) return;
+    setCreditoValidando(true);
+    setCreditoError('');
+    try {
+      const credito = await buscarCredito(codigo);
+      const disponible = Number(credito?.montoDisponible) || 0;
+      if (credito?.estado !== 'Vigente') {
+        setCreditoAplicado(null);
+        setCreditoError(`El crédito está en estado ${credito?.estado || 'no vigente'}.`);
+        return;
+      }
+      if (disponible <= 0) {
+        setCreditoAplicado(null);
+        setCreditoError('El crédito no tiene saldo disponible.');
+        return;
+      }
+      setCreditoAplicado({
+        codigo: credito.codigo || codigo.toUpperCase(),
+        clienteNombre: credito.clienteNombre,
+        montoDisponible: disponible,
+      });
+      setCreditoCodigo(credito.codigo || codigo.toUpperCase());
+      showToast(`Crédito ${credito.codigo || codigo} validado: ${dinero.format(disponible)} disponibles.`);
+    } catch (error) {
+      setCreditoAplicado(null);
+      setCreditoError(error?.message || 'No se pudo validar el crédito.');
+    } finally {
+      setCreditoValidando(false);
+    }
+  }
+
+  function quitarCredito() {
+    setCreditoCodigo('');
+    setCreditoAplicado(null);
+    setCreditoError('');
+  }
+
+  function abrirModalDevoluciones() {
+    setModalDevoluciones(true);
+    setBusquedaDevolucion('');
+    setResultadosDevolucion([]);
+    setVentaDevolucion(null);
+    setCantidadesDevolucion({});
+    setMotivoDevolucion('');
+    setDevolucionExitosa(null);
+  }
+
+  function cerrarModalDevoluciones() {
+    if (procesandoDevolucion) return;
+    setModalDevoluciones(false);
+    setDevolucionExitosa(null);
+  }
+
+  async function buscarVentasDevolucion(evento) {
+    evento?.preventDefault();
+    const filtro = busquedaDevolucion.trim();
+    if (!filtro) {
+      showToast('Ingresa el número de boleta/factura o el DNI del cliente.');
+      return;
+    }
+    if (buscandoDevolucion) return;
+    setBuscandoDevolucion(true);
+    try {
+      const pagina = await listarVentas({ pagina: 0, tamanio: 10, busqueda: filtro });
+      const encontradas = Array.isArray(pagina?.contenido) ? pagina.contenido : [];
+      setResultadosDevolucion(encontradas);
+      setVentaDevolucion(null);
+      if (encontradas.length === 0) {
+        showToast(`No se encontraron ventas para “${filtro}”.`);
+      }
+    } catch (error) {
+      showToast(error?.message || 'No se pudo buscar la venta.');
+    } finally {
+      setBuscandoDevolucion(false);
+    }
+  }
+
+  async function elegirVentaDevolucion(venta) {
+    try {
+      const detalle = await obtenerVentaParaDevolucion(venta.idVenta);
+      setVentaDevolucion(detalle);
+      setCantidadesDevolucion({});
+      setDevolucionExitosa(null);
+    } catch (error) {
+      showToast(error?.message || 'No se pudo cargar la venta.');
+    }
+  }
+
+  function cambiarCantidadDevolucion(idProducto, maximo, delta) {
+    setCantidadesDevolucion((previas) => {
+      const actual = previas[idProducto] || 0;
+      return { ...previas, [idProducto]: Math.min(Math.max(0, actual + delta), maximo) };
+    });
+  }
+
+  const itemsDevolucion = ventaDevolucion
+      ? ventaDevolucion.detalles
+          .filter((detalle) => (cantidadesDevolucion[detalle.idProducto] || 0) > 0)
+          .map((detalle) => ({
+            idProducto: detalle.idProducto,
+            cantidad: cantidadesDevolucion[detalle.idProducto],
+          }))
+      : [];
+
+  const totalDevolucion = ventaDevolucion
+      ? redondear(ventaDevolucion.detalles.reduce(
+          (suma, detalle) => suma
+              + (Number(detalle.precioUnitario) || 0) * (cantidadesDevolucion[detalle.idProducto] || 0),
+          0))
+      : 0;
+
+  async function confirmarDevolucion() {
+    if (!ventaDevolucion) return;
+    if (itemsDevolucion.length === 0) {
+      showToast('Selecciona al menos un producto y la cantidad a devolver.');
+      return;
+    }
+    if (procesandoDevolucion) return;
+    setProcesandoDevolucion(true);
+    try {
+      const devolucion = await registrarDevolucion({
+        idVenta: ventaDevolucion.id ?? ventaDevolucion.idVenta,
+        motivo: motivoDevolucion.trim(),
+        items: itemsDevolucion,
+      });
+      setDevolucionExitosa(devolucion);
+      setCantidadesDevolucion({});
+      listProductos();
+    } catch (error) {
+      showToast(error?.message || 'No se pudo registrar la devolución.');
+    } finally {
+      setProcesandoDevolucion(false);
+    }
   }
 
   const inicial = (tienda.nombre || '?').charAt(0).toUpperCase();
@@ -318,6 +547,10 @@ export default function PuntoDeVenta() {
               <History size={18} aria-hidden="true" />
               Historial
             </Link>
+            <button className="pos-enlace" type="button" onClick={abrirModalDevoluciones}>
+              <RotateCcw size={18} aria-hidden="true" />
+              Devoluciones
+            </button>
             {esAdmin ? (
                 <Link className="pos-enlace" to="/admin">
                   <ArrowLeft size={18} aria-hidden="true" />
@@ -367,7 +600,7 @@ export default function PuntoDeVenta() {
                               disabled={stock <= 0}
                               onClick={() => agregar(producto)}
                           >
-                            <span className="pos-sugerencia-codigo">{producto.idProducto}</span>
+                            <span className="pos-sugerencia-codigo">{producto.codigo || producto.idProducto}</span>
                             <span className="pos-sugerencia-nombre">{producto.nombre}</span>
                             <span className={`pos-sugerencia-stock${stock <= 0 ? ' agotado' : ''}`}>
                         {stock <= 0 ? 'Agotado' : `Stock ${stock}`}
@@ -409,7 +642,7 @@ export default function PuntoDeVenta() {
 
                 {lineas.map((linea) => (
                     <tr key={linea.idProducto}>
-                      <td className="pos-codigo">{linea.idProducto}</td>
+                      <td className="pos-codigo">{linea.codigo || linea.idProducto}</td>
                       <td>
                         <div className="pos-descripcion">
                           <strong>{linea.nombre}</strong>
@@ -487,6 +720,18 @@ export default function PuntoDeVenta() {
                 <dt>TOTAL</dt>
                 <dd>{dinero.format(total)}</dd>
               </div>
+              {pagoConCredito && creditoUsado > 0 && (
+                  <>
+                    <div className="pos-credito-descuento">
+                      <dt>Crédito a favor</dt>
+                      <dd>-{dinero.format(creditoUsado)}</dd>
+                    </div>
+                    <div className="pos-total pos-total-cobrar">
+                      <dt>A COBRAR</dt>
+                      <dd>{dinero.format(restantePorCobrar)}</dd>
+                    </div>
+                  </>
+              )}
             </dl>
 
             <div className="pos-bloque">
@@ -498,14 +743,101 @@ export default function PuntoDeVenta() {
                         type="button"
                         className="pos-metodo"
                         aria-pressed={metodoPago === nombre}
-                        onClick={() => setMetodoPago(nombre)}
+                        onClick={() => elegirMetodoPago(nombre)}
                     >
                       <Icono size={22} aria-hidden="true" />
                       {nombre}
                     </button>
                 ))}
               </div>
-              {metodoPago === 'Efectivo' && (
+              {pagoConCredito && (
+                  <div className="pos-credito">
+                    <form className="pos-cliente-form" onSubmit={validarCredito}>
+                      <label className="pos-cliente-label" htmlFor="credito-codigo">Código del crédito</label>
+                      <div className="pos-credito-fila">
+                        <input
+                            id="credito-codigo"
+                            className="pos-cliente-input"
+                            type="text"
+                            value={creditoCodigo}
+                            onChange={(evento) => setCreditoCodigo(evento.target.value.toUpperCase())}
+                            placeholder="BOL-CR-000001"
+                            autoComplete="off"
+                            disabled={Boolean(creditoAplicado) || creditoValidando}
+                        />
+                        {creditoAplicado ? (
+                            <button className="pos-credito-btn" type="button" onClick={quitarCredito}>
+                              Quitar
+                            </button>
+                        ) : (
+                            <button
+                                className="pos-credito-btn"
+                                type="submit"
+                                disabled={creditoValidando || !creditoCodigo.trim()}
+                            >
+                              {creditoValidando
+                                  ? <LoaderCircle size={16} className="pos-girando" aria-hidden="true" />
+                                  : <Search size={16} aria-hidden="true" />}
+                              {creditoValidando ? 'Validando...' : 'Validar'}
+                            </button>
+                        )}
+                      </div>
+                      {creditoError && <span className="pos-error" role="alert">{creditoError}</span>}
+                    </form>
+                    {creditoAplicado && (
+                        <div className="pos-credito-resumen">
+                          <div>
+                            <span>Saldo del crédito</span>
+                            <strong>{dinero.format(creditoDisponible)}</strong>
+                          </div>
+                          <div>
+                            <span>Se aplicará</span>
+                            <strong>{dinero.format(creditoUsado)}</strong>
+                          </div>
+                          {restantePorCobrar > 0 ? (
+                              <div>
+                                <span>Resto por cobrar</span>
+                                <strong>{dinero.format(restantePorCobrar)}</strong>
+                              </div>
+                          ) : (
+                              lineas.length > 0 && (
+                                  <div>
+                                    <span>Saldo restante del crédito</span>
+                                    <strong>{dinero.format(redondear(creditoDisponible - creditoUsado))}</strong>
+                                  </div>
+                              )
+                          )}
+                        </div>
+                    )}
+                    {creditoAplicado && restantePorCobrar > 0 && (
+                        <div className="pos-credito-resto">
+                          <span className="pos-etiqueta">Cobrar el resto con</span>
+                          <div className="pos-metodos">
+                            {METODOS_PAGO
+                                .filter(({ nombre }) => nombre !== METODO_CREDITO)
+                                .map(({ nombre, icono: Icono }) => (
+                                  <button
+                                      key={nombre}
+                                      type="button"
+                                      className="pos-metodo"
+                                      aria-pressed={metodoPagoResto === nombre}
+                                      onClick={() => setMetodoPagoResto(nombre)}
+                                  >
+                                    <Icono size={22} aria-hidden="true" />
+                                    {nombre}
+                                  </button>
+                            ))}
+                          </div>
+                          {metodoPagoResto === 'Efectivo' && (
+                              <span className="pos-credito-nota">
+                                Ingresa el monto recibido por el resto en la sección de abajo.
+                              </span>
+                          )}
+                        </div>
+                    )}
+                  </div>
+              )}
+              {mostrarMontoEfectivo && (
                   <div className="pos-cliente-form">
                     <label className="pos-cliente-label" htmlFor="monto-recibido">Monto Recibido</label>
                     <input
@@ -516,7 +848,7 @@ export default function PuntoDeVenta() {
                         step="0.01"
                         value={montoRecibido}
                         onChange={(e) => setMontoRecibido(e.target.value)}
-                        placeholder={total.toFixed(2)}
+                        placeholder={restantePorCobrar.toFixed(2)}
                     />
                     <div className="pos-vuelto">
                       <span>Vuelto</span>
@@ -587,7 +919,8 @@ export default function PuntoDeVenta() {
                 className="pos-generar"
                 type="button"
                 onClick={generarComprobante}
-                disabled={lineas.length === 0 || procesando || pagoInsuficiente}
+                disabled={lineas.length === 0 || procesando || pagoInsuficiente
+                    || (pagoConCredito && !creditoAplicado)}
             >
               {procesando
                   ? <LoaderCircle className="pos-girando" size={22} aria-hidden="true" />
@@ -600,6 +933,174 @@ export default function PuntoDeVenta() {
             </p>
           </aside>
         </div>
+
+        {modalDevoluciones && (
+            <div className="pos-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="devoluciones-titulo">
+              <div className="pos-modal pos-modal-devolucion">
+                {devolucionExitosa ? (
+                    <>
+                      <div className="pos-modal-icono">
+                        <CheckCircle2 size={48} aria-hidden="true" />
+                      </div>
+                      <h2 id="devoluciones-titulo" className="pos-modal-titulo">¡Devolución registrada!</h2>
+                      <p className="pos-modal-mensaje">
+                        El stock de los productos devueltos fue restaurado.
+                      </p>
+                      <div className="pos-modal-detalle">
+                        <div>
+                          <span>N° de devolución</span>
+                          <strong>{devolucionExitosa.idDevolucion}</strong>
+                        </div>
+                        <div>
+                          <span>Total devuelto</span>
+                          <strong>{dinero.format(Number(devolucionExitosa.total) || 0)}</strong>
+                        </div>
+                      </div>
+                      <div className="pos-modal-acciones">
+                        <button className="pos-modal-btn primario" type="button" onClick={cerrarModalDevoluciones}>
+                          Cerrar
+                        </button>
+                      </div>
+                    </>
+                ) : !ventaDevolucion ? (
+                    <>
+                      <h2 id="devoluciones-titulo" className="pos-modal-titulo">Buscar venta a devolver</h2>
+                      <p className="pos-modal-mensaje">
+                        Busca por número de Boleta/Factura (ej. BOL-000123) o por DNI del cliente.
+                      </p>
+                      <form className="pos-devo-busqueda" onSubmit={buscarVentasDevolucion}>
+                        <input
+                            type="search"
+                            value={busquedaDevolucion}
+                            onChange={(evento) => setBusquedaDevolucion(evento.target.value)}
+                            placeholder="BOL-000123 o 12345678"
+                            aria-label="Buscar venta por número de comprobante o DNI"
+                            autoComplete="off"
+                        />
+                        <button className="pos-modal-btn primario" type="submit" disabled={buscandoDevolucion}>
+                          {buscandoDevolucion
+                              ? <LoaderCircle className="pos-girando" size={18} aria-hidden="true" />
+                              : <Search size={18} aria-hidden="true" />}
+                          {buscandoDevolucion ? 'Buscando...' : 'Buscar'}
+                        </button>
+                      </form>
+                      {resultadosDevolucion.length > 0 && (
+                          <div className="pos-devo-resultados">
+                            {resultadosDevolucion.map((venta) => (
+                                <button
+                                    key={venta.idVenta}
+                                    type="button"
+                                    className="pos-devo-resultado"
+                                    onClick={() => elegirVentaDevolucion(venta)}
+                                >
+                                  <span className="pos-devo-resultado-doc">
+                                    <strong>{venta.numeroDocumento}</strong>
+                                    <small>{venta.cliente || 'Cliente'}
+                                      {venta.documentoCliente ? ` · ${venta.documentoCliente}` : ''}</small>
+                                  </span>
+                                  <span className="pos-devo-resultado-total">
+                                    {dinero.format(Number(venta.total) || 0)}
+                                  </span>
+                                </button>
+                            ))}
+                          </div>
+                      )}
+                      <div className="pos-modal-acciones">
+                        <button className="pos-modal-btn secundario" type="button" onClick={cerrarModalDevoluciones}>
+                          Cerrar
+                        </button>
+                      </div>
+                    </>
+                ) : (
+                    <>
+                      <h2 id="devoluciones-titulo" className="pos-modal-titulo">
+                        Devolver productos · {ventaDevolucion.numeroDocumento}
+                      </h2>
+                      <p className="pos-modal-mensaje">
+                        {ventaDevolucion.tipoDocumento || 'Comprobante'} · {ventaDevolucion.receptorRazonSocial || 'Cliente'}
+                        {ventaDevolucion.receptorNumDocumento ? ` (${ventaDevolucion.receptorNumDocumento})` : ''}
+                        {' '}· {new Date(ventaDevolucion.fechaEmision).toLocaleString('es-PE')}
+                      </p>
+                      <div className="pos-devo-lineas">
+                        {ventaDevolucion.detalles.map((detalle) => {
+                          const maximo = detalle.cantidad - (detalle.cantidadDevuelta || 0);
+                          const elegida = cantidadesDevolucion[detalle.idProducto] || 0;
+                          return (
+                              <div key={detalle.idDetalle ?? detalle.idProducto} className="pos-devo-linea">
+                                <div className="pos-devo-linea-info">
+                                  <strong>{detalle.descripcion}</strong>
+                                  <small>
+                                    {dinero.format(Number(detalle.precioUnitario) || 0)} c/u
+                                    · Vendidas {detalle.cantidad}
+                                    {(detalle.cantidadDevuelta || 0) > 0 && ` · Ya devueltas ${detalle.cantidadDevuelta}`}
+                                  </small>
+                                </div>
+                                <div className="pos-cantidad">
+                                  <button
+                                      type="button"
+                                      aria-label={`Quitar una unidad de ${detalle.descripcion}`}
+                                      onClick={() => cambiarCantidadDevolucion(detalle.idProducto, maximo, -1)}
+                                      disabled={elegida <= 0}
+                                  >
+                                    <Minus size={18} aria-hidden="true" />
+                                  </button>
+                                  <span aria-live="polite">{elegida}</span>
+                                  <button
+                                      type="button"
+                                      aria-label={`Agregar una unidad de ${detalle.descripcion}`}
+                                      onClick={() => cambiarCantidadDevolucion(detalle.idProducto, maximo, 1)}
+                                      disabled={elegida >= maximo}
+                                  >
+                                    <Plus size={18} aria-hidden="true" />
+                                  </button>
+                                </div>
+                              </div>
+                          );
+                        })}
+                      </div>
+                      <label className="pos-cliente-label" htmlFor="motivo-devolucion">Motivo (opcional)</label>
+                      <input
+                          id="motivo-devolucion"
+                          className="pos-cliente-input"
+                          type="text"
+                          maxLength={300}
+                          value={motivoDevolucion}
+                          onChange={(evento) => setMotivoDevolucion(evento.target.value)}
+                          placeholder="Ej. Producto defectuoso"
+                      />
+                      <div className="pos-devo-total">
+                        <span>Total a devolver</span>
+                        <strong>{dinero.format(totalDevolucion)}</strong>
+                      </div>
+                      <div className="pos-modal-acciones">
+                        <button
+                            className="pos-modal-btn primario"
+                            type="button"
+                            onClick={confirmarDevolucion}
+                            disabled={procesandoDevolucion || itemsDevolucion.length === 0}
+                        >
+                          {procesandoDevolucion
+                              ? <LoaderCircle className="pos-girando" size={18} aria-hidden="true" />
+                              : <RotateCcw size={18} aria-hidden="true" />}
+                          {procesandoDevolucion ? 'Procesando...' : 'Confirmar Devolución'}
+                        </button>
+                        <button
+                            className="pos-modal-btn secundario"
+                            type="button"
+                            onClick={() => setVentaDevolucion(null)}
+                            disabled={procesandoDevolucion}
+                        >
+                          Volver a la búsqueda
+                        </button>
+                        <button className="pos-modal-btn secundario" type="button" onClick={cerrarModalDevoluciones} disabled={procesandoDevolucion}>
+                          Cerrar
+                        </button>
+                      </div>
+                    </>
+                )}
+              </div>
+            </div>
+        )}
 
         {ventaExitosa && (
             <div className="pos-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="venta-exitosa-titulo">
@@ -622,7 +1123,19 @@ export default function PuntoDeVenta() {
                     <span>Método de pago</span>
                     <strong>{ventaExitosa.metodoPago}</strong>
                   </div>
-                  {ventaExitosa.metodoPago === 'Efectivo' && (
+                  {ventaExitosa.creditoCodigo && (
+                      <>
+                        <div>
+                          <span>Crédito aplicado ({ventaExitosa.creditoCodigo})</span>
+                          <strong>{dinero.format(Number(ventaExitosa.creditoUsado) || 0)}</strong>
+                        </div>
+                        <div>
+                          <span>Saldo restante del crédito</span>
+                          <strong>{dinero.format(Number(ventaExitosa.creditoSaldoRestante) || 0)}</strong>
+                        </div>
+                      </>
+                  )}
+                  {ventaExitosa.efectivo && (
                       <>
                         <div>
                           <span>Monto recibido</span>
@@ -636,13 +1149,13 @@ export default function PuntoDeVenta() {
                   )}
                 </div>
                 <div className="pos-modal-acciones">
-                  <button className="pos-modal-btn primario" type="button" onClick={verDescargarPdf} disabled={!ventaExitosa.idVenta || imprimiendo}>
+                  <button className="pos-modal-btn primario" type="button" onClick={verDescargarPdf} disabled={imprimiendo || !ventaExitosa.idVenta}>
                     {imprimiendo ? <LoaderCircle className="pos-girando" size={18} aria-hidden="true" /> : <FileText size={18} aria-hidden="true" />}
-                    {imprimiendo ? 'Abriendo...' : '👁️ Ver / Descargar PDF'}
+                    {imprimiendo ? 'Abriendo...' : 'Ver / Descargar PDF'}
                   </button>
-                  <button className="pos-modal-btn secundario" type="button" onClick={imprimirTicket} disabled={!ventaExitosa.idVenta || imprimiendo}>
+                  <button className="pos-modal-btn secundario" type="button" onClick={imprimirTicket} disabled={imprimiendo || !ventaExitosa.idVenta}>
                     <Printer size={18} aria-hidden="true" />
-                    🖨️ Imprimir Ticket
+                    Imprimir Ticket
                   </button>
                   <button className="pos-modal-btn secundario" type="button" onClick={siguienteCliente}>
                     <UserPlus size={18} aria-hidden="true" />

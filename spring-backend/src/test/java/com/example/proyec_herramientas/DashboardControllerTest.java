@@ -72,6 +72,10 @@ class DashboardControllerTest {
 
     @BeforeEach
     void limpiar() throws Exception {
+        // Devoluciones y creditos de otras clases de prueba referencian ventas.
+        jdbcTemplate.update("DELETE FROM credito");
+        jdbcTemplate.update("DELETE FROM devolucion_detalle");
+        jdbcTemplate.update("DELETE FROM devolucion");
         ventaRepository.deleteAll();
         productoRepository.deleteAll();
         usuarioRepository.deleteAll();
@@ -147,7 +151,7 @@ class DashboardControllerTest {
                 "tipoDocumento", "Boleta",
                 "medioPago", "Yape",
                 "items", items);
-        String respuesta = mockMvc.perform(post("/ventas")
+        String respuesta = mockMvc.perform(post("/api/ventas")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))

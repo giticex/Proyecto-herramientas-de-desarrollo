@@ -416,3 +416,62 @@
     grid-column: span 1;
   }
 }
+
+@media (max-width: 800px) {
+  /* La barra pasa a dos filas: marca arriba y acciones desplazables abajo. */
+  .landing-nav {
+    height: auto;
+    min-height: 60px;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    padding: 10px 16px;
+  }
+  .landing-nav-actions {
+    width: 100%;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .landing-nav-actions::-webkit-scrollbar { display: none; }
+  .btn-tech { padding: 9px 14px; font-size: 13px; white-space: nowrap; }
+  .landing-hero { padding-top: 136px; }
+}
+
+@media (max-width: 640px) {
+  .landing-logo { gap: 8px; font-size: 16px; }
+  .landing-logo-badge { width: 30px; height: 30px; font-size: 14px; }
+  /* El CTA de explorar se repite en el hero y el pie: en el teléfono se
+     retira para que "Iniciar sesión" quede visible sin desplazar la barra. */
+  .landing-nav-actions > .btn-tech:first-child { display: none; }
+
+  .landing-hero { padding: 168px 16px 64px; gap: 40px; }
+  .hero-title { margin-bottom: 18px; }
+  .hero-subtitle { font-size: 16px; margin-bottom: 28px; }
+  .hero-cta-group { gap: 10px; margin-bottom: 32px; }
+  .hero-cta-group .btn-tech { flex: 1 1 auto; }
+
+  /* Las estadísticas pasan de tres columnas a filas apiladas legibles. */
+  .hero-stats { grid-template-columns: 1fr; gap: 0; padding-top: 16px; }
+  .stat-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .stat-item:last-child { border-bottom: 0; }
+  .stat-item strong { font-size: 20px; }
+
+  .hero-showcase { padding: 18px; border-radius: 20px; }
+  .showcase-banner { flex-wrap: wrap; gap: 12px; padding: 16px; }
+  .showcase-mini-grid { gap: 10px; }
+  .showcase-card { padding: 12px; }
+
+  .bento-section { padding: 56px 16px; }
+  .bento-head { margin-bottom: 36px; }
+  .bento-card { padding: 22px; border-radius: 18px; }
+  .landing-footer { padding: 24px 16px 56px; }
+  .footer-cta-box { border-radius: 22px; }
+}

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 public class AuthController {
 
     private final AuthService authService;
@@ -27,7 +27,7 @@ public class AuthController {
         this.authService = authService;
     }
 
-    // POST /auth/login { usuario, clave } -> { token, usuario, rol, ... }
+    // POST /api/auth/login { usuario, clave } -> { token, usuario, rol, ... }
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDTO request) {
         LoginResponseDTO respuesta = authService.login(request);
@@ -38,21 +38,19 @@ public class AuthController {
         return ResponseEntity.ok(respuesta);
     }
 
-    // POST /auth/registro-tienda -> crea la tienda y su cuenta ADMIN, y deja
-    // la sesion iniciada (devuelve token + tienda).
+    // POST /api/auth/registro-tienda -> crea la tienda y su cuenta ADMIN
     @PostMapping("/registro-tienda")
     public ResponseEntity<LoginResponseDTO> registroTienda(@Valid @RequestBody RegistroTiendaRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.registroTienda(request));
     }
 
-    // POST /auth/registro-cliente -> crea la cuenta del comprador y deja la
-    // sesion iniciada.
+    // POST /api/auth/registro-cliente -> crea la cuenta del comprador
     @PostMapping("/registro-cliente")
     public ResponseEntity<LoginResponseDTO> registroCliente(@Valid @RequestBody RegistroClienteRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.registroCliente(request));
     }
 
-    // GET /auth/rol -> rol de la cuenta que llamo, segun el token.
+    // GET /api/auth/rol -> rol de la cuenta que llamo, segun el token
     @GetMapping("/rol")
     public ResponseEntity<?> rol(Authentication authentication) {
         if (authentication == null) {

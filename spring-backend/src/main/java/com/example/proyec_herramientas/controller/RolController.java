@@ -11,7 +11,7 @@ import java.util.List;
 // Catalogo de roles del sistema (ADMIN, CLIENTE). Es publico a proposito:
 // el frontend lo necesita para mostrar los nombres de los roles.
 @RestController
-@RequestMapping("/roles")
+@RequestMapping("/api/roles")
 public class RolController {
 
     private final RolService rolService;

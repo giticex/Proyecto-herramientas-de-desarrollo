@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, LogOut, Package, Palette, Receipt, ScanBarcode } from 'lucide-react';
+import { LayoutDashboard, LogOut, Package, Palette, Receipt, ScanBarcode, Wallet } from 'lucide-react';
 import { useSesion } from '../auth/sesionStore';
 
 // Navegación del panel de administrador. Vive dentro de la barra lateral
@@ -44,6 +44,10 @@ export default function PanelNavLinks() {
       <NavLink to="/admin/ventas" className="panel-menu-link">
         <Receipt size={18} aria-hidden="true" />
         {esAdmin ? 'Ventas' : 'Historial de ventas'}
+      </NavLink>
+      <NavLink to="/admin/creditos" className="panel-menu-link creditos">
+        <Wallet size={18} aria-hidden="true" />
+        Créditos
       </NavLink>
       <button className="panel-menu-link salir" type="button" onClick={salir}>
         <LogOut size={18} aria-hidden="true" />

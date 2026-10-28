@@ -2,6 +2,7 @@ package com.example.proyec_herramientas.service;
 
 import com.example.proyec_herramientas.exception.RecursoNoEncontradoException;
 import com.example.proyec_herramientas.exception.StockInsuficienteException;
+import com.example.proyec_herramientas.exception.ValidacionComprobanteException;
 import com.example.proyec_herramientas.facturacion.service.EmisorService;
 import com.example.proyec_herramientas.model.CarritoRequestDTO;
 import com.example.proyec_herramientas.model.ClienteDTO;
@@ -48,6 +49,11 @@ public class VentaServiceImpl implements VentaService {
     private static final String CONDICION_OPERACION = "01";
     private static final String FORMA_PAGO = "01";
     private static final String TIPO_DOCUMENTO_SIN_DOCUMENTO = "0";
+    /** Catalogo 01 SUNAT: 1 = DNI, 6 = RUC. */
+    private static final String TIPO_DOCUMENTO_DNI = "1";
+    private static final String TIPO_DOCUMENTO_RUC = "6";
+    private static final String REGEX_DNI = "\\d{8}";
+    private static final String REGEX_RUC = "\\d{11}";
     private static final String ESTADO_LEGACY = "LEGACY";
     private static final int ESCALA_VALOR_UNITARIO = 6;
     private static final int ESCALA_IMPORTE = 2;
@@ -65,6 +71,7 @@ public class VentaServiceImpl implements VentaService {
     private final TipoDocumentoRepository tipoDocumentoRepository;
     private final MedioPagoRepository medioPagoRepository;
     private final EmisorService emisorService;
+    private final CreditoService creditoService;
 
     public VentaServiceImpl(VentaRepository ventaRepository,
                             ProductoRepository productoRepository,
@@ -72,7 +79,8 @@ public class VentaServiceImpl implements VentaService {
                             PersonaRepository personaRepository,
                             TipoDocumentoRepository tipoDocumentoRepository,
                             MedioPagoRepository medioPagoRepository,
-                            EmisorService emisorService) {
+                            EmisorService emisorService,
+                            CreditoService creditoService) {
         this.ventaRepository = ventaRepository;
         this.productoRepository = productoRepository;
         this.clienteService = clienteService;
@@ -80,6 +88,7 @@ public class VentaServiceImpl implements VentaService {
         this.tipoDocumentoRepository = tipoDocumentoRepository;
         this.medioPagoRepository = medioPagoRepository;
         this.emisorService = emisorService;
+        this.creditoService = creditoService;
     }
 
     @Override
@@ -98,14 +107,15 @@ public class VentaServiceImpl implements VentaService {
         if (cliente == null) {
             throw new RecursoNoEncontradoException("Cliente " + idClienteVenta + " no existe");
         }
+        validarDatosReceptor(tipoDocumento, carrito);
 
         String idPersona = personaRepository.findIdPersonaByClienteId(idClienteVenta)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "El cliente " + idClienteVenta + " no tiene una persona asociada"));
 
         Venta venta = new Venta();
-        int correlativo = siguienteCorrelativo();
         String prefijo = prefijo(tipoDocumento);
+        int correlativo = siguienteCorrelativo(prefijo);
         venta.setId(UUID.randomUUID().toString());
         venta.setIdCliente(idClienteVenta);
         venta.setIdPersona(idPersona);
@@ -122,7 +132,7 @@ public class VentaServiceImpl implements VentaService {
         venta.setObservacion("");
 
         for (CarritoRequestDTO.Item item : carrito.getItems()) {
-            Producto producto = productoRepository.findById(item.getIdProducto())
+            Producto producto = productoRepository.findByIdForUpdate(item.getIdProducto())
                     .orElseThrow(() -> new RecursoNoEncontradoException(
                             "Producto " + item.getIdProducto() + " no existe"));
 
@@ -138,9 +148,33 @@ public class VentaServiceImpl implements VentaService {
             venta.agregarDetalle(detalle(producto, item.getCantidad()));
         }
 
-        aplicarDatosFiscales(venta, cliente);
+        aplicarDatosFiscales(venta, cliente, carrito, tipoDocumento);
+        aplicarCredito(venta, carrito);
 
-        return enriquecer(ventaRepository.save(venta));
+        // La venta tiene id asignado: save() hace merge y devuelve una copia
+        // que no arrastra los campos @Transient, por eso se copian al resultado.
+        Venta guardada = ventaRepository.save(venta);
+        guardada.setCreditoCodigo(venta.getCreditoCodigo());
+        guardada.setCreditoMontoUsado(venta.getCreditoMontoUsado());
+        guardada.setCreditoSaldoRestante(venta.getCreditoSaldoRestante());
+        return enriquecer(guardada);
+    }
+
+    // Consume el saldo del credito a favor dentro de la misma transaccion de la
+    // venta. Si el credito no alcanza, el resto queda como cobro con el medio
+    // de pago elegido (pago mixto); el comprobante no cambia de importe.
+    private void aplicarCredito(Venta venta, CarritoRequestDTO carrito) {
+        String codigo = texto(carrito.getCreditoCodigo());
+        if (codigo.isEmpty()) {
+            return;
+        }
+        CreditoService.ResultadoUsoCredito uso = creditoService.aplicarEnVenta(
+                codigo, venta.getTotalVenta());
+        venta.setCreditoCodigo(uso.codigo());
+        venta.setCreditoMontoUsado(uso.usado());
+        venta.setCreditoSaldoRestante(uso.saldoRestante());
+        venta.setObservacion("Crédito " + uso.codigo() + " aplicado: S/ " + uso.usado()
+                + ". Saldo restante del crédito: S/ " + uso.saldoRestante() + ".");
     }
 
     @Override
@@ -167,6 +201,22 @@ public class VentaServiceImpl implements VentaService {
             return enriquecer(ventaRepository.findAllByOrderByFechaEmisionDesc());
         }
         return enriquecer(ventaRepository.findByIdClienteOrderByFechaEmisionDesc(idCliente));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Venta> obtenerBoletasDeTienda(int idTienda) {
+        String idTipoDocumento = tipoDocumentoRepository.findByNombreIgnoreCase(TIPO_BOLETA)
+                .map(TipoDocumento::getIdDocumento)
+                .orElse(TIPO_BOLETA_ID);
+        return enriquecer(ventaRepository.boletasPorTienda(idTipoDocumento, idTienda));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Venta> obtenerHistorialDeTienda(int idTienda, String idCliente) {
+        String filtro = idCliente == null ? "" : idCliente.trim();
+        return enriquecer(ventaRepository.historialPorTienda(idTienda, filtro));
     }
 
     @Override
@@ -223,8 +273,11 @@ public class VentaServiceImpl implements VentaService {
         return TIPO_BOLETA.equalsIgnoreCase(tipoDocumento) ? PREFIJO_BOLETA : PREFIJO_FACTURA;
     }
 
-    private int siguienteCorrelativo() {
-        return (int) ventaRepository.count() + 1;
+    // La serie no tiene tabla de correlativos: se toma el maximo ya emitido en
+    // esa serie. Contar todas las ventas reutilizaria numeros que ya existen
+    // (por ejemplo, la serie legacy B001 frente a la serie BOL).
+    private synchronized int siguienteCorrelativo(String serie) {
+        return ventaRepository.maxCorrelativoPorSerie(serie) + 1;
     }
 
     private DetalleVenta detalle(Producto producto, int cantidad) {
@@ -244,7 +297,8 @@ public class VentaServiceImpl implements VentaService {
      * Calcula los datos fiscales del comprobante: valor unitario sin IGV, IGV
      * por item y los totales por afectacion del IGV.
      */
-    private void aplicarDatosFiscales(Venta venta, ClienteDTO cliente) {
+    private void aplicarDatosFiscales(Venta venta, ClienteDTO cliente, CarritoRequestDTO carrito,
+                                      String tipoDocumento) {
         BigDecimal igvPorcentaje = emisorService.obtenerIgvPorcentaje();
         BigDecimal factor = BigDecimal.ONE.add(igvPorcentaje.movePointRight(2));
 
@@ -291,9 +345,29 @@ public class VentaServiceImpl implements VentaService {
         venta.setTotalDescuentos(BigDecimal.ZERO);
         venta.setMontoTotalCredito(BigDecimal.ZERO);
 
-        venta.setReceptorTipoDocumento(TIPO_DOCUMENTO_SIN_DOCUMENTO);
-        venta.setReceptorNumDocumento("");
-        venta.setReceptorRazonSocial(cliente.getNombre() + " " + cliente.getApellido());
+        boolean factura = !TIPO_BOLETA.equalsIgnoreCase(tipoDocumento);
+        String documento = texto(carrito.getDocumentoCliente());
+        String nombreCliente = cliente.getNombre() + " " + cliente.getApellido();
+        String razonSocial = texto(carrito.getRazonSocial());
+
+        if (factura) {
+            venta.setReceptorTipoDocumento(TIPO_DOCUMENTO_RUC);
+            venta.setReceptorNumDocumento(documento);
+            venta.setReceptorRazonSocial(razonSocial.isEmpty() ? nombreCliente : razonSocial);
+        } else if (!documento.isEmpty()) {
+            venta.setReceptorTipoDocumento(TIPO_DOCUMENTO_DNI);
+            venta.setReceptorNumDocumento(documento);
+            venta.setReceptorRazonSocial(razonSocial.isEmpty() ? nombreCliente : razonSocial);
+        } else {
+            BigDecimal limite = emisorService.obtenerLimiteBoletaSinRuc();
+            if (limite != null && totalVenta.compareTo(limite) > 0) {
+                throw new ValidacionComprobanteException("La boleta sin documento del comprador (DNI o RUC) "
+                        + "no puede superar " + limite + ". Identifique al comprador o emita una factura.");
+            }
+            venta.setReceptorTipoDocumento(TIPO_DOCUMENTO_SIN_DOCUMENTO);
+            venta.setReceptorNumDocumento("");
+            venta.setReceptorRazonSocial(nombreCliente);
+        }
         venta.setReceptorDireccion("");
         venta.setReceptorUbigeo("");
         venta.setReceptorDistrito("");
@@ -303,6 +377,30 @@ public class VentaServiceImpl implements VentaService {
         venta.setEntregaDireccion("");
         venta.setEntregaUbigeo("");
         venta.setEmailContacto(cliente.getCorreo() == null ? "" : cliente.getCorreo());
+    }
+
+    // Factura: el adquirente debe ser RUC con razon social. Boleta: el DNI es
+    // opcional, pero si viene debe ser valido.
+    private void validarDatosReceptor(String tipoDocumento, CarritoRequestDTO carrito) {
+        String documento = texto(carrito.getDocumentoCliente());
+        if (!TIPO_BOLETA.equalsIgnoreCase(tipoDocumento)) {
+            if (!documento.matches(REGEX_RUC)) {
+                throw new ValidacionComprobanteException(
+                        "Para emitir una factura el cliente debe identificarse con RUC de 11 digitos.");
+            }
+            if (texto(carrito.getRazonSocial()).isEmpty()) {
+                throw new ValidacionComprobanteException(
+                        "Para emitir una factura se requiere la razon social del cliente.");
+            }
+            return;
+        }
+        if (!documento.isEmpty() && !documento.matches(REGEX_DNI)) {
+            throw new ValidacionComprobanteException("El DNI del cliente debe tener 8 digitos.");
+        }
+    }
+
+    private String texto(String valor) {
+        return valor == null ? "" : valor.trim();
     }
 
     private String conValor(String valor, String porDefecto) {

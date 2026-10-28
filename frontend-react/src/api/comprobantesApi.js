@@ -12,10 +12,10 @@ export const TIPO_COMPROBANTE = {
   BOLETA: '03',
 };
 
-/** Tipo de documento del adquirente (catalogo 01 de SUNAT). */
+/** Tipo de documento del adquirente (catalogo 01 de SUNAT: 6 = RUC, 1 = DNI). */
 export const TIPO_DOCUMENTO = {
-  RUC: '1',
-  DNI: '6',
+  RUC: '6',
+  DNI: '1',
 };
 
 /** Condicion de la operacion (catalogo 51 de SUNAT). */

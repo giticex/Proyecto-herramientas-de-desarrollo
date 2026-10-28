@@ -210,6 +210,7 @@
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 999px;
+  white-space: nowrap;
 }
 
 .stock-pill.ok {
@@ -301,8 +302,33 @@
 @media (max-width: 860px) {
   .catalogo-container {
     grid-template-columns: 1fr;
+    padding: 32px 16px 72px;
+    gap: 24px;
   }
   .filtros-panel {
     position: static;
+    padding: 18px;
+    border-radius: 16px;
   }
+}
+
+@media (max-width: 560px) {
+  .catalogo-hero { margin-top: 56px; padding: 40px 16px 36px; }
+  .catalogo-hero p { font-size: 15px; }
+  .catalogo-search-box { width: 100%; min-width: 0; }
+
+  /* Dos columnas en pantallas de 360 px o más; una sola en teléfonos pequeños. */
+  .productos-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
+  .producto-card { padding: 14px; border-radius: 14px; }
+  .producto-visual { height: 96px; font-size: 30px; margin-bottom: 12px; }
+  .producto-nombre { font-size: 16px; margin-bottom: 8px; }
+  .producto-precio { font-size: 18px; }
+  .producto-footer { flex-wrap: wrap; gap: 10px; padding-top: 12px; }
+  .producto-footer .btn { flex: 1; }
+  .producto-card-top { flex-wrap: wrap; gap: 6px; }
+  .producto-cat-badge { font-size: 11px; padding: 4px 8px; letter-spacing: 0.03em; }
+  .stock-pill { font-size: 11px; padding: 4px 8px; }
+  .atributos-tags { margin-bottom: 12px; }
+  .filtros-header { margin-bottom: 14px; }
+  .filtro-grupo { margin-bottom: 16px; }
 }

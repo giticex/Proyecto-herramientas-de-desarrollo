@@ -6,10 +6,10 @@ import AtributosEditor, { atributosAFilas, filasAAtributos } from './AtributosEd
 import PanelLayout from './PanelLayout';
 import './ProductosPanel.css';
 
-const fmt = new Intl.NumberFormat('es', { style: 'currency', currency: 'USD' });
+const fmt = new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' });
 
-const FORM_VACIO = { nombre: '', categoria: '', precio: '', stock: '' };
-const ERRORES_VACIOS = { nombre: '', categoria: '', precio: '', stock: '' };
+const FORM_VACIO = { codigo: '', nombre: '', categoria: '', precio: '', stock: '' };
+const ERRORES_VACIOS = { codigo: '', nombre: '', categoria: '', precio: '', stock: '' };
 
 function IconoAlerta() {
   return (
@@ -24,8 +24,6 @@ function BadgeStock({ stock, umbral }) {
   return <span className={`badge ${clase}`}>{stock === 0 ? 'Agotado' : stock}</span>;
 }
 
-// Porta frontend/productos.html + frontend/js/productos.js, mas el editor de
-// atributos (clave/valor) que no existía en el sitio viejo.
 export default function ProductosPanel() {
   const productos = useStore((estado) => estado.productos);
   const listProductos = useStore((estado) => estado.listProductos);
@@ -58,18 +56,24 @@ export default function ProductosPanel() {
     (total, p) => total + Number(p.precio || 0) * Number(p.stock || 0),
     0,
   );
+
   const textoBuscado = busqueda.trim().toLowerCase();
+  
+  // CORRECCIÓN: Filtra tanto por nombre como por código del producto
   const productosFiltrados = visibles.filter((p) => {
-    const coincideTexto = !textoBuscado || p.nombre.toLowerCase().includes(textoBuscado);
+    const coincideTexto = !textoBuscado || 
+      (p.nombre && p.nombre.toLowerCase().includes(textoBuscado)) || 
+      (p.codigo && p.codigo.toLowerCase().includes(textoBuscado));
     const coincideCategoria = !categoriaFiltro || p.categoria === categoriaFiltro;
     return coincideTexto && coincideCategoria;
   });
+  
   const filtrosActivos = Boolean(textoBuscado || categoriaFiltro);
 
   function abrir(producto) {
     setEditandoId(producto ? producto.idProducto : null);
     setForm(producto
-      ? { nombre: producto.nombre, categoria: producto.categoria, precio: String(producto.precio), stock: String(producto.stock) }
+      ? { codigo: producto.codigo || '', nombre: producto.nombre, categoria: producto.categoria, precio: String(producto.precio), stock: String(producto.stock) }
       : FORM_VACIO);
     setAtributosFilas(atributosAFilas(producto?.atributos));
     setErrores(ERRORES_VACIOS);
@@ -83,37 +87,52 @@ export default function ProductosPanel() {
   async function manejarSubmit(evento) {
     evento.preventDefault();
     const v = {
+      codigo: form.codigo.trim(),
       nombre: form.nombre.trim(),
       categoria: form.categoria.trim(),
       precio: parseFloat(form.precio),
       stock: parseInt(form.stock, 10),
     };
     const reglas = {
+      codigo: v.codigo ? '' : 'Requerido.',
       nombre: v.nombre ? '' : 'Requerido.',
       categoria: v.categoria ? '' : 'Requerida.',
-      precio: v.precio >= 0 ? '' : 'Precio inválido.',
+      precio: !Number.isNaN(v.precio) && v.precio >= 0 ? '' : 'Precio inválido.',
       stock: Number.isInteger(v.stock) && v.stock >= 0 ? '' : 'Stock inválido.',
     };
     setErrores(reglas);
     if (Object.values(reglas).some(Boolean)) return;
 
     const payload = { ...v, atributos: filasAAtributos(atributosFilas) };
-    // BACKEND: POST /productos o PUT /productos/{id}, ya existen ambos.
-    if (editandoId) {
-      await updateProducto(editandoId, payload);
-    } else {
-      await createProducto(payload);
+    try {
+      if (editandoId) {
+        await updateProducto(editandoId, payload);
+        showToast('Producto actualizado');
+      } else {
+        await createProducto(payload);
+        showToast('Producto creado');
+      }
+      cerrarModal();
+      await listProductos();
+    } catch (error) {
+      console.log(error);
+      if (error?.status === 409) {
+        alert('El código de producto ya existe');
+        return;
+      }
+      showToast(error?.message || 'No se pudo guardar el producto');
     }
-    cerrarModal();
-    showToast(editandoId ? 'Producto actualizado' : 'Producto creado');
-    await listProductos();
   }
 
   async function eliminar(producto) {
     if (!confirm(`¿Eliminar "${producto.nombre}"?`)) return;
-    await deleteProducto(producto.idProducto);
-    showToast('Producto eliminado');
-    await listProductos();
+    try {
+      await deleteProducto(producto.idProducto);
+      showToast('Producto eliminado');
+      await listProductos();
+    } catch (error) {
+      showToast(error?.message || 'No se pudo eliminar el producto.');
+    }
   }
 
   function cambiarUmbral(valor) {
@@ -213,8 +232,8 @@ export default function ProductosPanel() {
               type="search"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar producto por nombre..."
-              aria-label="Buscar producto por nombre"
+              placeholder="Buscar por código o nombre del producto..."
+              aria-label="Buscar producto por código o nombre"
             />
           </div>
           <label className="filtro-categoria">
@@ -238,13 +257,14 @@ export default function ProductosPanel() {
           )}
           {productosFiltrados.length > 0 && (
             <div className="fila cab">
-              {['Nombre', 'Categoría', 'Precio', 'Stock', ''].map((h) => <span key={h || 'acciones'}>{h}</span>)}
+              {['Código', 'Nombre', 'Categoría', 'Precio', 'Stock', ''].map((h) => <span key={h || 'acciones'}>{h}</span>)}
             </div>
           )}
           {productosFiltrados.map((p) => {
             const bajo = esBajo(p);
             return (
               <div className={`fila${bajo ? ' bajo' : ''}`} key={p.idProducto}>
+                <span data-label="Código" className="codigo">{p.codigo || '-'}</span>
                 <span className="nombre">{p.nombre}</span>
                 <span data-label="Categoría">{p.categoria}</span>
                 <span data-label="Precio">{fmt.format(p.precio)}</span>
@@ -278,6 +298,12 @@ export default function ProductosPanel() {
       <dialog ref={dialogRef}>
         <form className="form" onSubmit={manejarSubmit} noValidate>
           <h1>{editandoId ? 'Editar producto' : 'Nuevo producto'}</h1>
+
+          <div className={`field ${errores.codigo ? 'invalid' : ''}`}>
+            <label htmlFor="f-codigo">Código</label>
+            <input id="f-codigo" type="text" value={form.codigo} onChange={(e) => setForm({ ...form, codigo: e.target.value })} />
+            <span className="error">{errores.codigo}</span>
+          </div>
 
           <div className={`field ${errores.nombre ? 'invalid' : ''}`}>
             <label htmlFor="f-nombre">Nombre</label>

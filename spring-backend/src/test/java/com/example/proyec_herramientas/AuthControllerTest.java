@@ -57,7 +57,7 @@ class AuthControllerTest {
 
     @Test
     void loginDeAdministradorDevuelveRolAdmin() throws Exception {
-        mockMvc.perform(post("/auth/login")
+        mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(credenciales(CuentasTest.USUARIO_ADMIN, CuentasTest.CLAVE)))
                 .andExpect(status().isOk())
@@ -69,7 +69,7 @@ class AuthControllerTest {
 
     @Test
     void loginDeAdministradorPorCorreoTambienDevuelveRolAdmin() throws Exception {
-        mockMvc.perform(post("/auth/login")
+        mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(credenciales(CuentasTest.CORREO_ADMIN, CuentasTest.CLAVE)))
                 .andExpect(status().isOk())
@@ -78,7 +78,7 @@ class AuthControllerTest {
 
     @Test
     void loginDeCompradorDevuelveRolCliente() throws Exception {
-        mockMvc.perform(post("/auth/login")
+        mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(credenciales(CuentasTest.CORREO_CLIENTE, CuentasTest.CLAVE)))
                 .andExpect(status().isOk())
@@ -89,7 +89,7 @@ class AuthControllerTest {
 
     @Test
     void loginDeCuentaDeUsuarioDevuelveRolCliente() throws Exception {
-        mockMvc.perform(post("/auth/login")
+        mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(credenciales(CuentasTest.USUARIO_CLIENTE, CuentasTest.CLAVE)))
                 .andExpect(status().isOk())
@@ -98,7 +98,7 @@ class AuthControllerTest {
 
     @Test
     void loginConClaveIncorrectaDevuelve401() throws Exception {
-        mockMvc.perform(post("/auth/login")
+        mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(credenciales(CuentasTest.USUARIO_ADMIN, "clave-mala")))
                 .andExpect(status().isUnauthorized())
@@ -107,7 +107,7 @@ class AuthControllerTest {
 
     @Test
     void loginDeCuentaInexistenteDevuelve401() throws Exception {
-        mockMvc.perform(post("/auth/login")
+        mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(credenciales("nadie", CuentasTest.CLAVE)))
                 .andExpect(status().isUnauthorized());
@@ -115,7 +115,7 @@ class AuthControllerTest {
 
     @Test
     void loginSinDatosDevuelve400() throws Exception {
-        mockMvc.perform(post("/auth/login")
+        mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"usuario\":\"\",\"clave\":\"\"}"))
                 .andExpect(status().isBadRequest());
@@ -126,7 +126,7 @@ class AuthControllerTest {
         String token = CuentasTest.token(mockMvc, objectMapper, CuentasTest.USUARIO_ADMIN,
                 CuentasTest.CLAVE);
 
-        mockMvc.perform(get("/auth/rol").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+        mockMvc.perform(get("/api/auth/rol").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.rol", is("ADMIN")))
                 .andExpect(jsonPath("$.usuario", is(CuentasTest.USUARIO_ADMIN)));
@@ -134,13 +134,13 @@ class AuthControllerTest {
 
     @Test
     void authRolSinTokenDevuelve401() throws Exception {
-        mockMvc.perform(get("/auth/rol"))
+        mockMvc.perform(get("/api/auth/rol"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void loginDeAdministradorDevuelveSuTienda() throws Exception {
-        mockMvc.perform(post("/auth/login")
+        mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(credenciales(CuentasTest.USUARIO_ADMIN, CuentasTest.CLAVE)))
                 .andExpect(status().isOk())
@@ -150,7 +150,7 @@ class AuthControllerTest {
 
     @Test
     void registroDeTiendaCreaLaCuentaAdminConTienda() throws Exception {
-        mockMvc.perform(post("/auth/registro-tienda")
+        mockMvc.perform(post("/api/auth/registro-tienda")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "nombre", "Bodega Nueva",
@@ -167,7 +167,7 @@ class AuthControllerTest {
 
     @Test
     void registroDeTiendaConSlugRepetidoDevuelve409() throws Exception {
-        mockMvc.perform(post("/auth/registro-tienda")
+        mockMvc.perform(post("/api/auth/registro-tienda")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "nombre", "Otra Tienda",
@@ -180,7 +180,7 @@ class AuthControllerTest {
 
     @Test
     void registroDeClienteDevuelveRolClienteConToken() throws Exception {
-        mockMvc.perform(post("/auth/registro-cliente")
+        mockMvc.perform(post("/api/auth/registro-cliente")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "nombre", "Nuevo",
@@ -196,7 +196,7 @@ class AuthControllerTest {
 
     @Test
     void registroDeClienteConCorreoRepetidoDevuelve409() throws Exception {
-        mockMvc.perform(post("/auth/registro-cliente")
+        mockMvc.perform(post("/api/auth/registro-cliente")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "nombre", "Repetido",

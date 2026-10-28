@@ -22,6 +22,16 @@ public class CarritoRequestDTO {
     // (mostrador). Para un CLIENTE se ignora: su idCliente sale del token.
     private String idCliente;
 
+    // Documento del adquirente que imprime el comprobante. En factura es el
+    // RUC (11 digitos) y en boleta el DNI (8 digitos) si el comprador lo da.
+    private String documentoCliente;
+
+    private String razonSocial;
+
+    // Codigo BOL-CR-XXXXXX del credito a favor que se aplica al total. Si el
+    // saldo no cubre todo, el resto se cobra con el medio de pago elegido.
+    private String creditoCodigo;
+
     @NotNull
     @NotEmpty
     private List<Item> items;
@@ -48,6 +58,30 @@ public class CarritoRequestDTO {
 
     public void setIdCliente(String idCliente) {
         this.idCliente = idCliente;
+    }
+
+    public String getDocumentoCliente() {
+        return documentoCliente;
+    }
+
+    public void setDocumentoCliente(String documentoCliente) {
+        this.documentoCliente = documentoCliente;
+    }
+
+    public String getRazonSocial() {
+        return razonSocial;
+    }
+
+    public void setRazonSocial(String razonSocial) {
+        this.razonSocial = razonSocial;
+    }
+
+    public String getCreditoCodigo() {
+        return creditoCodigo;
+    }
+
+    public void setCreditoCodigo(String creditoCodigo) {
+        this.creditoCodigo = creditoCodigo;
     }
 
     public List<Item> getItems() {

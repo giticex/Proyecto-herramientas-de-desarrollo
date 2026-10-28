@@ -6,6 +6,9 @@ public interface TiendaService {
 
     TiendaDTO obtenerPorSlug(String slug);
 
+    // Tienda del personal autenticado (idTienda del token).
+    TiendaDTO obtenerPorIdTienda(int idTienda);
+
     // Lanza RecursoNoEncontradoException si el slug no existe.
     int obtenerIdPorSlug(String slug);
 

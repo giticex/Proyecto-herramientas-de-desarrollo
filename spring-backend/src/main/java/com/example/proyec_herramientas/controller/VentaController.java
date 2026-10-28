@@ -4,6 +4,7 @@ import com.example.proyec_herramientas.model.CarritoRequestDTO;
 import com.example.proyec_herramientas.model.PaginaVentasDTO;
 import com.example.proyec_herramientas.persistence.Venta;
 import com.example.proyec_herramientas.persistence.Rol;
+import com.example.proyec_herramientas.security.AccesoService;
 import com.example.proyec_herramientas.security.SesionPrincipal;
 import com.example.proyec_herramientas.service.VentaService;
 import jakarta.validation.Valid;
@@ -21,13 +22,15 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/ventas")
+@RequestMapping("/api/ventas")
 public class VentaController {
 
     private final VentaService ventaService;
+    private final AccesoService accesoService;
 
-    public VentaController(VentaService ventaService) {
+    public VentaController(VentaService ventaService, AccesoService accesoService) {
         this.ventaService = ventaService;
+        this.accesoService = accesoService;
     }
 
     // El CLIENTE compra siempre a su propio nombre: el idCliente sale del token
@@ -51,6 +54,8 @@ public class VentaController {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "No se pudo determinar el cliente de la venta");
             }
+            accesoService.validarProductos(carrito.getItems().stream()
+                    .map(CarritoRequestDTO.Item::getIdProducto).toList(), authentication);
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(ventaService.registrarVenta(idCliente, carrito));
     }

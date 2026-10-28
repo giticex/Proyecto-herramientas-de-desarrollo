@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import PlantillaTienda from '../components/PlantillaTienda';
 import { useStore } from '../store/store';
 import { useClienteStore } from './clienteStore';
+import { showToast } from '../components/toastBus';
 import './CatalogoTienda.css';
 
 export default function CatalogoTienda() {

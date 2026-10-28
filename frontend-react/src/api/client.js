@@ -1,20 +1,32 @@
-// Base para hablar con el backend Spring Boot. Centraliza la URL, el token de
-// sesion y el manejo de errores para que cada *Api.js solo arme el endpoint y
-// el body.
 import { useSesion } from '../auth/sesionStore';
 import { useClienteStore } from '../tienda/clienteStore';
 
-const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/$/, '');
+const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080/api').replace(/\/$/, '');
+// Raiz del backend sin el sufijo /api: las rutas ya prefijadas (las que
+// devuelven los helpers de descarga) se resuelven contra esta base.
+const BASE_RAIZ = BASE_URL.replace(/\/api\/?$/, '');
 
-/** URL absoluta de un endpoint (para abrir el PDF o el XML en el navegador). */
-export function apiUrl(path) {
+/**
+ * Normaliza una ruta a la URL absoluta del endpoint.
+ *
+ * Acepta rutas relativas con o sin el prefijo /api, y los alias historicos
+ * /mi-tienda y /tiendas/mi-tienda del catalogo publico.
+ */
+function construirUrl(path) {
   if (!path) return BASE_URL;
-  const p = path.startsWith('/') ? path : `/${path}`;
-  return `${BASE_URL}${p}`;
+
+  const limpio = path.startsWith('/') ? path : `/${path}`;
+  if (limpio === '/mi-tienda' || limpio === '/tiendas/mi-tienda') {
+    return `${BASE_RAIZ}/api/tiendas/mi-tienda`;
+  }
+  const ruta = limpio === '/api' || limpio.startsWith('/api/') ? limpio : `/api${limpio}`;
+  return `${BASE_RAIZ}${ruta}`;
 }
 
-// El token vive en los stores (admin o comprador). Se lee aquí para que cada
-// llamada salga con "Authorization: Bearer ..." sin repetirlo en cada vista.
+export function apiUrl(path) {
+  return construirUrl(path);
+}
+
 export function tokenActivo() {
   const admin = useSesion.getState().token;
   if (admin) return admin;
@@ -37,8 +49,7 @@ async function request(path, { method = 'GET', body, token } = {}) {
   if (body) headers['Content-Type'] = 'application/json';
   if (cabecera) headers.Authorization = `Bearer ${cabecera}`;
 
-  const p = path?.startsWith('/') ? path : `/${path || ''}`;
-  const respuesta = await fetch(`${BASE_URL}${p}`, {
+  const respuesta = await fetch(construirUrl(path), {
     method,
     headers: Object.keys(headers).length ? headers : undefined,
     body: body ? JSON.stringify(body) : undefined,
@@ -47,7 +58,6 @@ async function request(path, { method = 'GET', body, token } = {}) {
   if (!respuesta.ok) {
     const detalle = await mensajeDeError(respuesta);
     const error = new Error(detalle || `Error ${respuesta.status} al llamar ${method} ${path}`);
-    // El status permite a las vistas reaccionar a 401/403 (sesión vencida).
     error.status = respuesta.status;
     throw error;
   }
@@ -61,8 +71,7 @@ async function requestBlob(path, { token } = {}) {
   const headers = {};
   if (cabecera) headers.Authorization = `Bearer ${cabecera}`;
 
-  const p = path?.startsWith('/') ? path : `/${path || ''}`;
-  const respuesta = await fetch(`${BASE_URL}${p}`, { headers });
+  const respuesta = await fetch(construirUrl(path), { headers });
 
   if (!respuesta.ok) {
     const detalle = await mensajeDeError(respuesta);
@@ -71,7 +80,6 @@ async function requestBlob(path, { token } = {}) {
     throw error;
   }
 
-  // Equivalente a responseType: 'blob' de axios, con fetch nativo.
   return respuesta.blob();
 }
 

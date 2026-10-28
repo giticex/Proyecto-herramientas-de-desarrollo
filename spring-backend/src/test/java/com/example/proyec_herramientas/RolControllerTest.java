@@ -24,7 +24,7 @@ class RolControllerTest {
 
     @Test
     void listarRolesDevuelveAdminClienteYVendedor() throws Exception {
-        mockMvc.perform(get("/roles"))
+        mockMvc.perform(get("/api/roles"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(3)))
                 .andExpect(jsonPath("$[0].idRol", is("ADMIN")))
@@ -37,7 +37,7 @@ class RolControllerTest {
 
     @Test
     void elCatalogoDeRolesEsPublico() throws Exception {
-        mockMvc.perform(get("/roles"))
+        mockMvc.perform(get("/api/roles"))
                 .andExpect(status().isOk());
     }
 }

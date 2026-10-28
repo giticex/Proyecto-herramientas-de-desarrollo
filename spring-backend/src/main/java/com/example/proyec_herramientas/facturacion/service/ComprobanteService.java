@@ -24,9 +24,15 @@ public interface ComprobanteService {
     /** Lista los comprobantes emitidos a un cliente (historial de compras). */
     List<ComprobanteRespuestaDTO> listarPorCliente(String idCliente);
 
+    /** Comprobantes del cliente cuyos productos pertenecen a la tienda indicada. */
+    List<ComprobanteRespuestaDTO> listarPorClienteDeTienda(String idCliente, int idTienda);
+
     /** XML UBL 2.1 del comprobante (regenerado a partir de la informacion guardada). */
     String generarXml(String idVenta);
 
     /** Representacion impresa del comprobante en PDF. */
     byte[] generarPdf(String idVenta);
+
+    /** Ticket compacto de 80 mm para impresora termica. */
+    byte[] generarTicketPdf(String idVenta);
 }

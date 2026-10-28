@@ -128,7 +128,7 @@ final class CuentasTest {
     static String token(MockMvc mockMvc, ObjectMapper objectMapper, String usuario, String clave)
             throws Exception {
         String cuerpo = objectMapper.writeValueAsString(Map.of("usuario", usuario, "clave", clave));
-        String respuesta = mockMvc.perform(post("/auth/login")
+        String respuesta = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(cuerpo))
                 .andExpect(status().isOk())

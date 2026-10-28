@@ -11,11 +11,19 @@ const URL_HTTP = /^https?:\/\//i;
 // Porta frontend/marca.html + frontend/js/marca.js.
 export default function MarcaPanel() {
   const tienda = useStore((estado) => estado.tienda);
+  const getTienda = useStore((estado) => estado.getTienda);
   const saveTienda = useStore((estado) => estado.saveTienda);
 
   const [logoUrl, setLogoUrl] = useState('');
   const [colorPrimario, setColorPrimario] = useState(TIENDA_DEFAULT.colorPrimario);
   const [colorSecundario, setColorSecundario] = useState(TIENDA_DEFAULT.colorSecundario);
+  const [guardando, setGuardando] = useState(false);
+
+  // La marca real vive en el backend: al entrar directo al panel hay que
+  // traerla, porque el store arranca con los valores por defecto.
+  useEffect(() => {
+    getTienda().catch(() => {});
+  }, [getTienda]);
 
   // Cuando la tienda llega del store (cargar()), carga el formulario.
   useEffect(() => {
@@ -37,9 +45,15 @@ export default function MarcaPanel() {
       showToast('El logo debe empezar con http:// o https://');
       return;
     }
-    // TODO: cuando exista, saveTienda hará PUT /tiendas/{slug} con el objeto completo.
-    await saveTienda({ ...tienda, logoUrl: logo, colorPrimario, colorSecundario });
-    showToast('Marca guardada');
+    setGuardando(true);
+    try {
+      await saveTienda({ ...tienda, logoUrl: logo, colorPrimario, colorSecundario });
+      showToast('Marca guardada');
+    } catch (error) {
+      showToast(error?.message || 'No se pudo guardar la marca.');
+    } finally {
+      setGuardando(false);
+    }
   }
 
   const logoValido = URL_HTTP.test(logoUrl.trim());
@@ -82,7 +96,9 @@ export default function MarcaPanel() {
               </div>
             </div>
             <div className="actions">
-              <button className="btn" type="submit">Guardar marca</button>
+              <button className="btn" type="submit" disabled={guardando}>
+                {guardando ? 'Guardando...' : 'Guardar marca'}
+              </button>
               <button className="btn ghost" type="button" onClick={restablecer}>Restablecer</button>
             </div>
           </form>

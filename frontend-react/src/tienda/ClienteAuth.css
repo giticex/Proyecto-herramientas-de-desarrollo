@@ -80,3 +80,11 @@
   opacity: 0.7;
   text-decoration: underline;
 }
+
+@media (max-width: 520px) {
+  .auth-page { padding: 88px 16px 40px; }
+  .auth-container { padding: 28px 22px; border-radius: 20px; }
+  .auth-header { margin-bottom: 24px; }
+  .auth-form { gap: 16px; }
+  .auth-footer { margin-top: 24px; padding-top: 18px; }
+}
