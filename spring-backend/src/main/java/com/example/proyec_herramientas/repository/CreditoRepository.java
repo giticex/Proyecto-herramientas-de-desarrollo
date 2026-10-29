@@ -25,4 +25,16 @@ public interface CreditoRepository extends JpaRepository<Credito, String> {
     Optional<Credito> findTopByCodigoStartingWithOrderByCodigoDesc(String prefijo);
 
     List<Credito> findAllByOrderByFechaDesc();
+
+    // Creditos del cliente autenticado. La pertenencia se resuelve por la venta
+    // que los origino: el credito no guarda idCliente propio.
+    @Query("""
+            SELECT c
+            FROM Credito c
+            WHERE c.idVentaOrigen IN (
+                SELECT v.idVenta FROM Venta v WHERE v.idCliente = :idCliente
+            )
+            ORDER BY c.fecha DESC
+            """)
+    List<Credito> findByCliente(@Param("idCliente") String idCliente);
 }

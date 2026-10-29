@@ -6,6 +6,7 @@ import com.example.proyec_herramientas.model.LoginResponseDTO;
 import com.example.proyec_herramientas.model.TiendaDTO;
 import com.example.proyec_herramientas.model.auth.RegistroClienteRequest;
 import com.example.proyec_herramientas.model.auth.RegistroTiendaRequest;
+import com.example.proyec_herramientas.persistence.AuditoriaEvento;
 import com.example.proyec_herramientas.persistence.Cliente;
 import com.example.proyec_herramientas.persistence.Persona;
 import com.example.proyec_herramientas.persistence.Rol;
@@ -16,8 +17,10 @@ import com.example.proyec_herramientas.repository.PersonaRepository;
 import com.example.proyec_herramientas.repository.RolRepository;
 import com.example.proyec_herramientas.repository.TiendaRepository;
 import com.example.proyec_herramientas.repository.UsuarioRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -35,6 +38,7 @@ public class AuthServiceImpl implements AuthService {
     private final TiendaRepository tiendaRepository;
     private final ContrasenaService contrasena;
     private final TokenService tokenService;
+    private final AuditoriaService auditoriaService;
 
     public AuthServiceImpl(UsuarioRepository usuarioRepository,
             ClienteRepository clienteRepository,
@@ -42,7 +46,8 @@ public class AuthServiceImpl implements AuthService {
             RolRepository rolRepository,
             TiendaRepository tiendaRepository,
             ContrasenaService contrasena,
-            TokenService tokenService) {
+            TokenService tokenService,
+            AuditoriaService auditoriaService) {
         this.usuarioRepository = usuarioRepository;
         this.clienteRepository = clienteRepository;
         this.personaRepository = personaRepository;
@@ -50,6 +55,7 @@ public class AuthServiceImpl implements AuthService {
         this.tiendaRepository = tiendaRepository;
         this.contrasena = contrasena;
         this.tokenService = tokenService;
+        this.auditoriaService = auditoriaService;
     }
 
     @Override
@@ -61,12 +67,35 @@ public class AuthServiceImpl implements AuthService {
         boolean soloComprador = "CLIENTE".equals(tipo);
         boolean soloPersonal = "PERSONAL".equals(tipo);
 
-        // 1) Cuenta del panel: por nombre de cuenta o por correo de la persona.
+        // 1) Comprador primero: si el correo esta registrado como cliente, esa
+        //    identidad manda aunque exista una cuenta de panel con el mismo
+        //    correo (caso luis@gmail.com / luisg). Asi el token nunca sale con
+        //    rol de staff para una cuenta de comprador. El personal que comparte
+        //    correo sigue entrando con su nombre de usuario.
+        Optional<Cliente> comprador = soloPersonal ? Optional.empty()
+                : clienteRepository.findByCorreo(identificador);
+        if (comprador.isPresent()) {
+            Cliente cliente = comprador.get();
+            if (!verificarYActualizar(cliente, clave)) {
+                return null;
+            }
+            return respuesta(cliente.getCorreo(), cliente.getIdRol(), cliente.getIdCliente(),
+                    cliente.getNombre(), cliente.getApellido(), cliente.getCorreo(), null);
+        }
+
+        // 2) Cuenta del panel: por nombre de cuenta o por correo de la persona.
         //    Con tipo=CLIENTE se omite: un comprador no puede entrar al panel
         //    aunque su correo exista en la tabla de personas.
         Optional<Usuario> cuenta = soloComprador ? Optional.empty() : buscarCuenta(identificador);
         if (cuenta.isPresent() && verificarYActualizar(cuenta.get(), clave)) {
             Usuario usuario = cuenta.get();
+            // El bloqueo individual lo aplica el SUPER_ADMIN desde la consola.
+            // Se informa recién después de validar la clave para no revelar el
+            // estado de una cuenta ajena.
+            if (usuario.estaSuspendido()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "La cuenta está suspendida. Contacta al administrador de la plataforma.");
+            }
             Persona persona = personaRepository.findById(usuario.getIdPersona()).orElse(null);
             String correo = persona != null ? persona.getCorreo() : null;
             // El SUPER_ADMIN es una cuenta global: no pertenece a ninguna tienda.
@@ -77,19 +106,16 @@ public class AuthServiceImpl implements AuthService {
             Tienda tienda = !superAdmin && usuario.getIdTienda() != null
                     ? tiendaRepository.findById(usuario.getIdTienda()).orElse(null)
                     : null;
+            // La suspension la aplica el SUPER_ADMIN desde la consola global:
+            // nadie de la tienda puede iniciar sesion mientras este suspendida.
+            if (tienda != null && tienda.estaSuspendida()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "El acceso de esta tienda está suspendido. Contacta al administrador de la plataforma.");
+            }
             return respuesta(usuario.getUsuario(), usuario.getIdRol(), idClienteDe(correo),
                     persona != null ? persona.getNombre() : null,
                     persona != null ? persona.getApellido() : null,
                     correo, tienda);
-        }
-
-        // 2) Comprador: entra con el correo con el que se registro.
-        Optional<Cliente> cliente = soloPersonal ? Optional.empty()
-                : clienteRepository.findByCorreo(identificador);
-        if (cliente.isPresent() && verificarYActualizar(cliente.get(), clave)) {
-            Cliente comprador = cliente.get();
-            return respuesta(comprador.getCorreo(), comprador.getIdRol(), comprador.getIdCliente(),
-                    comprador.getNombre(), comprador.getApellido(), comprador.getCorreo(), null);
         }
 
         return null;
@@ -131,6 +157,11 @@ public class AuthServiceImpl implements AuthService {
         usuario.setIdRol(Rol.ADMIN);
         usuario.setIdTienda(tienda.getIdTienda());
         usuarioRepository.save(usuario);
+
+        auditoriaService.registrar(AuditoriaEvento.TIPO_TIENDA_CREADA,
+                AuditoriaEvento.SEVERIDAD_INFO,
+                "Se registró la tienda " + tienda.getNombre() + " (" + slug + ")",
+                tienda.getIdTienda(), tienda.getNombre(), correo);
 
         return respuesta(correo, Rol.ADMIN, "", persona.getNombre(), persona.getApellido(), correo, tienda);
     }

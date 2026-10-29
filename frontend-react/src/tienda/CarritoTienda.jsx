@@ -8,15 +8,28 @@ import './CarritoTienda.css';
 export default function CarritoTienda() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { carrito, quitarDelCarrito, cambiarCantidad, cliente } = useClienteStore();
+  const { carrito, quitarDelCarrito, cambiarCantidad, cliente, sincronizarCarrito } = useClienteStore();
   const { productos, getTienda, listProductos } = useStore();
 
   // Estado para controlar nuestro nuevo modal animado
   const [modalLogin, setModalLogin] = useState(false);
+  // Al abrir el carrito se descartan los productos que ya no están en el
+  // catálogo (o se agotaron) para no arrastrarlos hasta el checkout.
   useEffect(() => {
+    let vigente = true;
     getTienda(slug);
-    if (productos.length === 0) listProductos(slug);
-  }, [slug, getTienda, listProductos, productos.length]);
+    (async () => {
+      try {
+        const catalogo = await listProductos(slug);
+        if (vigente) sincronizarCarrito(catalogo);
+      } catch {
+        // Si el catálogo no responde se conserva el carrito ya guardado.
+      }
+    })();
+    return () => {
+      vigente = false;
+    };
+  }, [slug, getTienda, listProductos, sincronizarCarrito]);
 
   const total = carrito.reduce((sum, item) => sum + (Number(item.precio) * item.cantidad), 0);
 

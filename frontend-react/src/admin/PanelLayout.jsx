@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useStore } from '../store/store';
+import { useClienteStore } from '../tienda/clienteStore';
 import PlantillaTienda from '../components/PlantillaTienda';
 import PanelNavLinks from './PanelNavLinks';
 import './PanelLayout.css';
@@ -10,11 +12,17 @@ import './PanelLayout.css';
 export default function PanelLayout({ children }) {
   const getTienda = useStore((estado) => estado.getTienda);
   const tienda = useStore((estado) => estado.tienda);
+  const cliente = useClienteStore((estado) => estado.cliente);
 
   useEffect(() => {
     getTienda();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Última barrera: el sidebar corporativo jamás se dibuja para un comprador.
+  if (cliente?.rol === 'CLIENTE') {
+    return <Navigate to="/portal-cliente" replace />;
+  }
 
   const inicial = (tienda.nombre || '?').charAt(0).toUpperCase();
 

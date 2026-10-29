@@ -14,8 +14,24 @@ function leerJson(key, fallback) {
   }
 }
 
+// El carrito sobrevive a recargas y a datos de pruebas viejas. Al leerlo se
+// descartan entradas incompletas para que ningún producto residual llegue al
+// checkout; la depuración contra el catálogo la hace sincronizarCarrito.
+function leerCarrito() {
+  const guardado = leerJson(CART_KEY, []);
+  if (!Array.isArray(guardado)) return [];
+  return guardado.filter(
+    (item) =>
+      item &&
+      item.idProducto !== undefined &&
+      item.idProducto !== null &&
+      item.idProducto !== '' &&
+      Number(item.cantidad) > 0
+  );
+}
+
 export const useClienteStore = create((set, get) => ({
-  carrito: leerJson(CART_KEY, []),
+  carrito: leerCarrito(),
   cliente: leerJson(CLIENTE_SESION_KEY, null),
   misCompras: leerJson(COMPRAS_KEY, []),
 
@@ -41,7 +57,8 @@ export const useClienteStore = create((set, get) => ({
     }
 
     const actual = get().carrito;
-    const existente = actual.find((item) => item.idProducto === producto.idProducto);
+    const clave = String(producto.idProducto);
+    const existente = actual.find((item) => String(item.idProducto) === clave);
     const cantidadEnCarrito = existente ? existente.cantidad : 0;
 
     if (cantidadEnCarrito + cantidad > stockReal) {
@@ -52,7 +69,7 @@ export const useClienteStore = create((set, get) => ({
     let nuevoCarrito;
     if (existente) {
       nuevoCarrito = actual.map((item) =>
-        item.idProducto === producto.idProducto
+        String(item.idProducto) === clave
           ? { ...item, cantidad: item.cantidad + cantidad }
           : item
       );
@@ -89,17 +106,74 @@ export const useClienteStore = create((set, get) => ({
       showToast(`Solo quedan ${stockDisponible} unidades en stock.`);
       return;
     }
+    const clave = String(idProducto);
     const nuevoCarrito = get().carrito.map((item) =>
-      item.idProducto === idProducto ? { ...item, cantidad: nuevaCantidad } : item
+      String(item.idProducto) === clave ? { ...item, cantidad: nuevaCantidad } : item
     );
     localStorage.setItem(CART_KEY, JSON.stringify(nuevoCarrito));
     set({ carrito: nuevoCarrito });
   },
 
   quitarDelCarrito(idProducto) {
-    const nuevoCarrito = get().carrito.filter((item) => item.idProducto !== idProducto);
+    const clave = String(idProducto);
+    const nuevoCarrito = get().carrito.filter((item) => String(item.idProducto) !== clave);
     localStorage.setItem(CART_KEY, JSON.stringify(nuevoCarrito));
     set({ carrito: nuevoCarrito });
+  },
+
+  // Reconcilia el carrito con el catálogo vigente antes de mostrar totales o
+  // emitir un comprobante: quita productos que ya no existen o están agotados,
+  // elimina duplicados y recorta cantidades al stock real. Devuelve el carrito
+  // depurado para que quien valida use exactamente los items que se compran.
+  sincronizarCarrito(productos) {
+    const actual = get().carrito;
+    if (!Array.isArray(actual) || actual.length === 0) return actual;
+    if (!Array.isArray(productos) || productos.length === 0) return actual;
+
+    const catalogo = new Map(productos.map((p) => [String(p.idProducto), p]));
+    const porId = new Map();
+    let huboCambios = false;
+
+    actual.forEach((item) => {
+      const clave = String(item?.idProducto ?? '');
+      if (!clave) {
+        huboCambios = true;
+        return;
+      }
+      const producto = catalogo.get(clave);
+      if (!producto) {
+        huboCambios = true;
+        return;
+      }
+      const stock = Number(producto.stock ?? 0);
+      if (!Number.isFinite(stock) || stock <= 0) {
+        huboCambios = true;
+        return;
+      }
+      const cantidadPrevia = Number(porId.get(clave)?.cantidad) || 0;
+      const cantidad = Math.max(1, Math.floor(Number(item.cantidad) || 0)) + cantidadPrevia;
+      const cantidadFinal = Math.min(cantidad, stock);
+      if (porId.has(clave) || cantidadFinal !== (Number(item.cantidad) || 0)) {
+        huboCambios = true;
+      }
+      porId.set(clave, {
+        ...item,
+        idProducto: producto.idProducto ?? item.idProducto,
+        nombre: producto.nombre ?? item.nombre,
+        precio: Number(producto.precio ?? item.precio) || 0,
+        afectacionIgv: producto.afectacionIgv ?? item.afectacionIgv,
+        unidadMedida: producto.unidadMedida ?? item.unidadMedida,
+        cantidad: cantidadFinal,
+      });
+    });
+
+    const depurado = Array.from(porId.values());
+    if (depurado.length !== actual.length) huboCambios = true;
+    if (!huboCambios) return actual;
+
+    localStorage.setItem(CART_KEY, JSON.stringify(depurado));
+    set({ carrito: depurado });
+    return depurado;
   },
 
   vaciarCarrito() {

@@ -1,5 +1,6 @@
 import { Link, Navigate, Outlet } from 'react-router-dom';
 import { useSesion } from './sesionStore';
+import { useClienteStore } from '../tienda/clienteStore';
 
 // Redirige a /admin/login si no hay sesión, igual que la guarda de nav.js.
 // `roles` define quién puede entrar a cada bloque de rutas: por defecto el
@@ -10,9 +11,21 @@ export default function RutaProtegida({ roles = ['ADMIN', 'VENDEDOR'] }) {
   const token = useSesion((estado) => estado.token);
   const rol = useSesion((estado) => estado.rol);
   const usuario = useSesion((estado) => estado.usuario);
+  const cliente = useClienteStore((estado) => estado.cliente);
+
+  // Un CLIENTE autenticado nunca entra a una ruta interna, ni escribiendo la
+  // URL a mano. Se comprueba antes que el token del panel para que una sesión
+  // de comprador no pueda abrir vistas gerenciales aunque quede un token viejo.
+  if (cliente?.rol === 'CLIENTE') {
+    return <Navigate to="/portal-cliente" replace />;
+  }
 
   if (!token) {
     return <Navigate to="/admin/login" replace />;
+  }
+
+  if (rol === 'CLIENTE') {
+    return <Navigate to="/portal-cliente" replace />;
   }
 
   if (roles.includes(rol)) {

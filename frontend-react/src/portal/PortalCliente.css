@@ -1,0 +1,651 @@
+/* Portal de Cliente: cabecera comercial, menú lateral de cuatro secciones y
+   área principal con catálogo, compras, créditos y perfil. No muestra
+   métricas de inventario: el cliente solo ve información de compra. */
+
+.portal-pagina {
+  min-height: 100vh;
+  background: var(--bg-soft);
+}
+
+/* ----- Cabecera ----- */
+.portal-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px clamp(16px, 3vw, 32px);
+  background: rgba(255, 255, 255, 0.94);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+
+.portal-marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.portal-marca:focus-visible { outline: 2px solid var(--color-primario); outline-offset: 4px; border-radius: 10px; }
+.portal-marca-logo {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+.portal-marca-logo.inicial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primario);
+  color: var(--on-primario);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.portal-marca-texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+.portal-marca-texto strong {
+  overflow: hidden;
+  font-size: var(--fs-s);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.portal-marca-texto small {
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+.portal-buscador {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  max-width: 620px;
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--text-soft);
+  transition: border-color var(--ease), background var(--ease);
+}
+.portal-buscador:focus-within {
+  border-color: var(--color-primario);
+  background: #fff;
+}
+.portal-buscador input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-s);
+}
+.portal-buscador input::-webkit-search-cancel-button { cursor: pointer; }
+
+.portal-categorias {
+  height: 44px;
+  max-width: 240px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-s);
+  cursor: pointer;
+}
+.portal-categorias:focus-visible {
+  outline: 2px solid var(--color-primario);
+  outline-offset: 2px;
+}
+
+.portal-carrito {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color var(--ease), box-shadow var(--ease), transform var(--ease);
+}
+.portal-carrito:hover {
+  border-color: var(--color-primario);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+.portal-carrito:focus-visible { outline: 2px solid var(--color-primario); outline-offset: 2px; }
+.portal-carrito-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #db2777;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ----- Cuerpo: sidebar + contenido ----- */
+.portal-cuerpo {
+  display: flex;
+  align-items: flex-start;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+.portal-sidebar {
+  position: sticky;
+  top: 69px;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 248px;
+  height: calc(100vh - 69px);
+  padding: 24px 16px;
+  background: #fff;
+  border-right: 1px solid var(--line);
+}
+.portal-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.portal-menu-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: var(--fs-s);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--ease), color var(--ease);
+  white-space: nowrap;
+}
+.portal-menu-link:hover { background: var(--bg-soft); color: var(--text); }
+.portal-menu-link.active {
+  background: #eef5ff;
+  color: #0058b0;
+  font-weight: 600;
+}
+.portal-menu-link:focus-visible { outline: 2px solid var(--color-primario); outline-offset: 2px; }
+
+.portal-sidebar-pie {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.portal-sidebar-datos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+.portal-sidebar-datos strong {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.portal-sidebar-datos small {
+  overflow: hidden;
+  color: var(--text-soft);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-avatar {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--text-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+.portal-avatar.grande { width: 64px; height: 64px; font-size: 20px; }
+
+.portal-main {
+  flex: 1;
+  min-width: 0;
+  padding: 28px clamp(16px, 3vw, 40px) 72px;
+}
+.portal-seccion { display: flex; flex-direction: column; gap: 24px; }
+
+/* ----- Banner corporativo ----- */
+.portal-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  overflow: hidden;
+  padding: clamp(24px, 4vw, 44px);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.22), transparent 42%),
+    linear-gradient(120deg, var(--color-secundario, #1d1d1f), var(--color-primario, #0071e3));
+  color: var(--on-primario);
+}
+.portal-banner-texto { max-width: 620px; }
+.portal-banner-etiqueta {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 4px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.portal-banner h1 {
+  font-size: clamp(26px, 3.4vw, 40px);
+  letter-spacing: -0.02em;
+}
+.portal-banner p {
+  max-width: 54ch;
+  margin-top: 12px;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: var(--fs-s);
+}
+.portal-banner-visual {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 150px;
+  height: 150px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ----- Encabezado de sección ----- */
+.portal-seccion-cabecera {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.portal-seccion-cabecera h2 { font-size: 22px; }
+.portal-seccion-cabecera p {
+  margin-top: 4px;
+  color: var(--text-soft);
+  font-size: var(--fs-s);
+}
+.portal-contador {
+  flex: none;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--line);
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+/* ----- Grid de productos ----- */
+.portal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 20px;
+}
+.portal-producto {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  transition: transform var(--ease), box-shadow var(--ease);
+}
+.portal-producto:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
+}
+.portal-producto-imagen {
+  display: grid;
+  place-items: center;
+  height: 156px;
+  background:
+    radial-gradient(circle at 22% 20%, rgba(255, 255, 255, 0.9), transparent 46%),
+    linear-gradient(135deg, #e6f0ff, #f6e9ff 52%, #e6fbf2);
+}
+.portal-producto-imagen span {
+  color: rgba(29, 29, 31, 0.24);
+  font-size: 46px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.portal-producto-cuerpo {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+}
+.portal-producto-categoria {
+  color: var(--text-soft);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.portal-producto-nombre {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  min-height: 43px;
+}
+.portal-producto-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.portal-producto-precio { font-size: 18px; font-weight: 700; }
+.portal-producto-pie .btn { white-space: nowrap; }
+
+/* ----- Compras ----- */
+.portal-lista { display: flex; flex-direction: column; gap: 12px; }
+.portal-compra {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 24px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+}
+.portal-compra-principal { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.portal-compra-lado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.portal-compra-acciones {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.portal-doc { font-weight: 600; }
+.portal-meta { color: var(--text-soft); font-size: 13px; }
+.portal-total { font-size: 18px; font-weight: 700; }
+
+.portal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 600;
+}
+.portal-badge.vigente { background: var(--ok-bg); color: var(--ok); }
+.portal-badge.neutral { background: var(--bg-soft); color: var(--text-soft); }
+
+/* ----- Créditos ----- */
+.portal-saldo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border: 1px solid #fbcfe8;
+  border-radius: 16px;
+  background: linear-gradient(120deg, #fff1f7, #fde7f1);
+  color: #9d174d;
+}
+.portal-saldo > div { display: flex; flex-direction: column; gap: 2px; }
+.portal-saldo strong { font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+.portal-saldo .portal-meta { color: #be185d; }
+
+.portal-credito {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+}
+.portal-credito-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.portal-credito-datos {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.portal-credito-datos > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* ----- Perfil ----- */
+.portal-perfil {
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+}
+.portal-perfil-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.portal-perfil-cabecera h3 { font-size: 20px; }
+.portal-perfil-datos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 24px;
+  margin-top: 20px;
+}
+.portal-perfil-datos div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.portal-perfil-datos dt {
+  color: var(--text-soft);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.portal-perfil-datos dd { margin: 0; font-weight: 500; }
+
+.portal-bloque {
+  padding: 20px 24px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+}
+.portal-bloque h3 { margin-bottom: 12px; }
+.portal-direcciones {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.portal-direcciones li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-soft);
+}
+.portal-bloque .btn { width: auto; }
+
+/* ----- Estados ----- */
+.portal-estado {
+  padding: 40px 20px;
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--text-soft);
+  text-align: center;
+}
+.portal-vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 48px 24px;
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--text-soft);
+  text-align: center;
+}
+.portal-vacio h3 { color: var(--text); }
+.portal-vacio .btn { margin-top: 6px; }
+.portal-aviso {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: var(--fs-s);
+}
+.portal-aviso.error {
+  border: 1px solid #f5c2c0;
+  background: #fdecec;
+  color: var(--danger);
+}
+
+/* ----- Responsivo ----- */
+@media (max-width: 1024px) {
+  .portal-topbar { flex-wrap: wrap; }
+  .portal-marca { flex: 1; }
+  .portal-carrito { order: 2; margin-left: 0; }
+  .portal-buscador {
+    order: 3;
+    flex-basis: 100%;
+    max-width: none;
+  }
+  .portal-categorias { order: 4; flex: 1; max-width: none; }
+  .portal-banner { padding: 28px; }
+  .portal-banner-visual { width: 110px; height: 110px; }
+}
+
+@media (max-width: 900px) {
+  .portal-cuerpo { flex-direction: column; align-items: stretch; }
+  .portal-sidebar {
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: auto;
+    padding: 10px 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .portal-menu {
+    flex: 1;
+    flex-direction: row;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .portal-menu::-webkit-scrollbar { display: none; }
+  .portal-menu-link { width: auto; padding: 9px 12px; }
+  .portal-sidebar-pie { display: none; }
+  .portal-main { padding: 24px 20px 64px; }
+  .portal-credito-datos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .portal-topbar { gap: 10px; padding: 10px 14px; }
+  .portal-marca-texto small { display: none; }
+  .portal-banner { padding: 24px; border-radius: 16px; }
+  .portal-banner-visual { display: none; }
+  .portal-banner p { font-size: 13px; }
+  .portal-main { padding: 20px 14px 56px; }
+  .portal-seccion { gap: 18px; }
+  .portal-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .portal-producto-imagen { height: 118px; }
+  .portal-producto-imagen span { font-size: 34px; }
+  .portal-producto-cuerpo { padding: 12px; }
+  .portal-producto-nombre { font-size: 14px; min-height: 38px; }
+  .portal-producto-pie { flex-direction: column; align-items: stretch; }
+  .portal-producto-precio { font-size: 16px; }
+  .portal-producto-pie .btn { width: 100%; padding: 9px 10px; font-size: 12px; }
+  .portal-compra { grid-template-columns: 1fr; padding: 16px; }
+  .portal-compra-lado { flex-direction: row; align-items: center; justify-content: space-between; }
+  .portal-compra-acciones { justify-content: stretch; }
+  .portal-compra-acciones .btn { flex: 1; }
+  .portal-credito-datos { grid-template-columns: 1fr; gap: 12px; }
+  .portal-perfil { padding: 18px; }
+  .portal-perfil-datos { grid-template-columns: 1fr; gap: 14px; }
+  .portal-bloque { padding: 16px 18px; }
+  .portal-saldo strong { font-size: 24px; }
+  .portal-seccion-cabecera { flex-direction: column; align-items: flex-start; gap: 8px; }
+}

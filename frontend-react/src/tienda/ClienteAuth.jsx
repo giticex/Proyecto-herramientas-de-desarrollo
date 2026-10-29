@@ -13,11 +13,13 @@ export default function ClienteAuth() {
   const navigate = useNavigate();
   const location = useLocation();
   const { tienda, getTienda } = useStore();
-  const { loginCliente, cliente } = useClienteStore();
+  const { loginCliente, logoutCliente, cliente } = useClienteStore();
   const loginAdmin = useSesion((estado) => estado.login);
+  const logoutAdmin = useSesion((estado) => estado.logout);
 
-  // Si el checkout manda al login, vuelve a esa ruta al terminar.
-  const destino = location.state?.from || `/tienda/${slug}`;
+  // Si el checkout manda al login, vuelve a esa ruta al terminar. En cualquier
+  // otro caso el comprador entra directo a su portal, no al panel ni al catálogo.
+  const destino = location.state?.from || '/portal-cliente';
 
   const [isLogin, setIsLogin] = useState(true);
   const [enviando, setEnviando] = useState(false);
@@ -70,6 +72,7 @@ export default function ClienteAuth() {
 
       if (respuesta.rol !== 'CLIENTE') {
         if (respuesta.rol === 'ADMIN' || respuesta.rol === 'VENDEDOR') {
+          logoutCliente();
           loginAdmin(respuesta.usuario ?? identificador, respuesta.token, respuesta.rol);
           showToast(`Bienvenido/a, ${respuesta.nombre || identificador}`);
           navigate(respuesta.rol === 'VENDEDOR' ? '/admin/pos' : '/admin', { replace: true });
@@ -88,6 +91,9 @@ export default function ClienteAuth() {
         rol: respuesta.rol,
       };
 
+      // Una sola identidad activa por navegador: se descarta cualquier sesión
+      // del panel para que las llamadas del comprador usen su propio token.
+      logoutAdmin();
       loginCliente(sesion);
       showToast(
         isLogin

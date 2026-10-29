@@ -17,7 +17,10 @@ import CheckoutTienda from './tienda/CheckoutTienda';
 import ConfirmacionCompra from './tienda/ConfirmacionCompra';
 import MisCompras from './tienda/MisCompras';
 import RutaProtegidaCliente from './tienda/RutaProtegidaCliente';
+import PortalCliente from './portal/PortalCliente';
+import RutaPortalCliente from './portal/RutaPortalCliente';
 import SuperAdminPanel from './superadmin/SuperAdminPanel';
+import { useClienteStore } from './tienda/clienteStore';
 
 
 function PaginaNoEncontrada() {
@@ -31,6 +34,25 @@ function PaginaNoEncontrada() {
   );
 }
 
+// Rutas internas antiguas: un CLIENTE que las escriba a mano vuelve a su
+// portal; para el personal siguen sin existir, como antes.
+function BloqueoCliente() {
+  const cliente = useClienteStore((estado) => estado.cliente);
+  if (cliente?.rol === 'CLIENTE') {
+    return <Navigate to="/portal-cliente" replace />;
+  }
+  return <PaginaNoEncontrada />;
+}
+
+// /tienda sin slug: el comprador va a su portal y el visitante al catálogo.
+function RedireccionTienda() {
+  const cliente = useClienteStore((estado) => estado.cliente);
+  if (cliente?.rol === 'CLIENTE') {
+    return <Navigate to="/portal-cliente" replace />;
+  }
+  return <Navigate to="/tienda/mi-tienda" replace />;
+}
+
 export default function App() {
   return (
     <>
@@ -39,9 +61,15 @@ export default function App() {
         <Route path="/" element={<LandingPlataforma />} />
 
         {/* === 2. VITRINA PÚBLICA DE LA TIENDA (Abierta a todo comprador) === */}
+        <Route path="/tienda" element={<RedireccionTienda />} />
         <Route path="/tienda/:slug" element={<CatalogoTienda />} />
         <Route path="/tienda/:slug/login" element={<ClienteAuth />} />
         <Route path="/tienda/:slug/carrito" element={<CarritoTienda />} />
+
+        {/* === 2b. PORTAL DEL CLIENTE (exclusivo del rol CLIENTE) === */}
+        <Route element={<RutaPortalCliente />}>
+          <Route path="/portal-cliente" element={<PortalCliente />} />
+        </Route>
 
         {/* === 3. ZONA PRIVADA DEL COMPRADOR (Requiere Login de Cliente) === */}
         <Route element={<RutaProtegidaCliente />}>
@@ -72,6 +100,12 @@ export default function App() {
           <Route path="/admin/creditos" element={<GestionCreditos />} />
           <Route path="/admin/pos" element={<PuntoDeVenta />} />
         </Route>
+
+        {/* Rutas internas antiguas que un CLIENTE no debe poder abrir. */}
+        <Route path="/dashboard" element={<BloqueoCliente />} />
+        <Route path="/productos" element={<BloqueoCliente />} />
+        <Route path="/punto-de-venta" element={<BloqueoCliente />} />
+        <Route path="/marca" element={<BloqueoCliente />} />
 
         <Route path="*" element={<PaginaNoEncontrada />} />
       </Routes>

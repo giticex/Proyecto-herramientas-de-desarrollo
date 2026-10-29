@@ -34,6 +34,15 @@ public class CreditoServiceImpl implements CreditoService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<Credito> listarPorCliente(String idCliente) {
+        if (idCliente == null || idCliente.isBlank()) {
+            return List.of();
+        }
+        return creditoRepository.findByCliente(idCliente);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Credito buscarPorCodigo(String codigo) {
         return creditoRepository.findByCodigo(normalizar(codigo))
                 .orElseThrow(() -> new RecursoNoEncontradoException(

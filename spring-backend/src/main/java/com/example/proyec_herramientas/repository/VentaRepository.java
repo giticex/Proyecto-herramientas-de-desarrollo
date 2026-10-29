@@ -19,6 +19,10 @@ public interface VentaRepository extends JpaRepository<Venta, String> {
 
     List<Venta> findAllByOrderByFechaEmisionDesc();
 
+    // Una persona con ventas emitidas no puede borrarse: el comprobante
+    // historico la referencia.
+    long countByIdPersona(String idPersona);
+
     // Suma de los totales de las ventas de la tienda en el rango [inicio, fin).
     // La venta no guarda id_tienda: la pertenencia se resuelve por los productos
     // de sus detalles. Se usa EXISTS para no duplicar la venta si tiene varias

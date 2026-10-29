@@ -14,6 +14,9 @@ import jakarta.persistence.Table;
 @Table(name = "usuario")
 public class Usuario {
 
+    public static final String ESTADO_ACTIVO = "ACTIVO";
+    public static final String ESTADO_SUSPENDIDO = "SUSPENDIDO";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_usuario", nullable = false)
@@ -37,6 +40,12 @@ public class Usuario {
     // FK a la tienda que administra esta cuenta (multi-tienda).
     @Column(name = "id_tienda", nullable = false)
     private Integer idTienda;
+
+    // Bloqueo individual de la cuenta, independiente del estado de la tienda.
+    // Las filas anteriores a esta columna quedan ACTIVO por el default.
+    @Column(name = "estado", length = 15, nullable = false,
+            columnDefinition = "varchar(15) default 'ACTIVO'")
+    private String estado = ESTADO_ACTIVO;
 
     public Usuario() {
     }
@@ -94,5 +103,17 @@ public class Usuario {
 
     public void setIdTienda(Integer idTienda) {
         this.idTienda = idTienda;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+
+    public boolean estaSuspendido() {
+        return ESTADO_SUSPENDIDO.equalsIgnoreCase(estado);
     }
 }

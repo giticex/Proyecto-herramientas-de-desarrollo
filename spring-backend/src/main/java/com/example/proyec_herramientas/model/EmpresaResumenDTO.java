@@ -20,5 +20,10 @@ public record EmpresaResumenDTO(
         BigDecimal ventasMes,
         BigDecimal ventasTotales,
         String ultimaVenta,
-        String estado) {
+        String estado,
+        String estadoAcceso,
+        String plan,
+        Integer limiteProductos,
+        Integer limiteUsuarios,
+        long totalUsuarios) {
 }

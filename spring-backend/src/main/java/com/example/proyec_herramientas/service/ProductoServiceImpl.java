@@ -4,9 +4,13 @@ import com.example.proyec_herramientas.exception.RecursoDuplicadoException;
 import com.example.proyec_herramientas.model.ProductoDTO;
 import com.example.proyec_herramientas.persistence.DetalleVenta;
 import com.example.proyec_herramientas.persistence.Producto;
+import com.example.proyec_herramientas.persistence.Tienda;
 import com.example.proyec_herramientas.repository.ProductoRepository;
+import com.example.proyec_herramientas.repository.TiendaRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -17,9 +21,11 @@ import java.util.List;
 public class ProductoServiceImpl implements ProductoService {
 
     private final ProductoRepository repository;
+    private final TiendaRepository tiendaRepository;
 
-    public ProductoServiceImpl(ProductoRepository repository) {
+    public ProductoServiceImpl(ProductoRepository repository, TiendaRepository tiendaRepository) {
         this.repository = repository;
+        this.tiendaRepository = tiendaRepository;
     }
 
     @Override
@@ -62,6 +68,8 @@ public class ProductoServiceImpl implements ProductoService {
         if (id > 0 && repository.existsById(id)) {
             throw new RecursoDuplicadoException("Ya existe un producto con id " + id);
         }
+        int tiendaDestino = idTienda == 0 ? 1 : idTienda;
+        validarLimitePlan(tiendaDestino);
         if (id <= 0) {
             id = siguienteId();
         }
@@ -85,8 +93,24 @@ public class ProductoServiceImpl implements ProductoService {
         entity.setCodigo(codigo);
         entity.setUnidadMedida(producto.getUnidadMedida() == null ? Producto.UNIDAD_NIU : producto.getUnidadMedida());
         entity.setAfectacionIgv(producto.getAfectacionIgv() == null ? DetalleVenta.AFECTACION_GRAVADA : producto.getAfectacionIgv());
-        entity.setIdTienda(idTienda == 0 ? 1 : idTienda);
+        entity.setIdTienda(tiendaDestino);
         return toDTO(repository.save(entity));
+    }
+
+    // Los limites del plan contratado se administran desde la consola global.
+    // Solo bloquean altas: actualizar o eliminar productos existentes sigue
+    // disponible para que la tienda pueda operar aunque este en el tope.
+    private void validarLimitePlan(int idTienda) {
+        Tienda tienda = tiendaRepository.findById(idTienda).orElse(null);
+        if (tienda == null || tienda.getLimiteProductos() == null) {
+            return;
+        }
+        long actuales = repository.countByIdTienda(idTienda);
+        if (actuales >= tienda.getLimiteProductos()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "La tienda alcanzó el límite de " + tienda.getLimiteProductos()
+                            + " productos de su plan. Solicita ampliar el límite desde la consola de plataforma.");
+        }
     }
 
     @Override

@@ -13,6 +13,9 @@ public interface CreditoService {
 
     List<Credito> listar();
 
+    // Solo los creditos generados por ventas del cliente autenticado.
+    List<Credito> listarPorCliente(String idCliente);
+
     Credito buscarPorCodigo(String codigo);
 
     // Genera el crédito a favor de una devolución (estado Vigente). Se ejecuta

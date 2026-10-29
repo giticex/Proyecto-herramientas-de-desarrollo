@@ -64,6 +64,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/tiendas/mi-tienda",
                                 "/api/tiendas/*", "/api/tiendas/*/productos").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/ventas/mias").hasAnyRole("CLIENTE", "ADMIN")
+                        // Portal del CLIENTE: sus propios recursos. Van antes de
+                        // las reglas de staff para que /creditos y /clientes no
+                        // se los traguen con hasAnyRole("ADMIN", "VENDEDOR").
+                        .requestMatchers(HttpMethod.GET, "/api/creditos/mios").hasRole("CLIENTE")
+                        .requestMatchers(HttpMethod.GET, "/api/clientes/mi-perfil").hasRole("CLIENTE")
                         .requestMatchers(HttpMethod.GET, "/api/ventas").hasAnyRole("ADMIN", "VENDEDOR")
                         .requestMatchers(HttpMethod.POST, "/api/ventas")
                         .hasAnyRole("CLIENTE", "ADMIN", "VENDEDOR")

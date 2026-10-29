@@ -1,6 +1,7 @@
 -- Esquema minimo para las pruebas: solo las tablas que mapea spring-backend.
 -- Espejo de database/script_mysql.sql. Se recrea en cada arranque de contexto.
 DROP VIEW IF EXISTS historial_compras;
+DROP TABLE IF EXISTS auditoria_evento;
 DROP TABLE IF EXISTS credito;
 DROP TABLE IF EXISTS devolucion_detalle;
 DROP TABLE IF EXISTS devolucion;
@@ -54,8 +55,28 @@ CREATE TABLE tienda (
     color_primario   VARCHAR(7)   NOT NULL DEFAULT '#0071e3',
     color_secundario VARCHAR(7)   NOT NULL DEFAULT '#1d1d1f',
     logo_url         VARCHAR(255),
+    estado_acceso    VARCHAR(15)  NOT NULL DEFAULT 'ACTIVA',
+    plan             VARCHAR(15)  NOT NULL DEFAULT 'BASICO',
+    limite_productos INT          NOT NULL DEFAULT 100,
+    limite_usuarios  INT          NOT NULL DEFAULT 5,
     PRIMARY KEY (id_tienda),
     UNIQUE KEY uk_tienda_slug (slug)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Bitacora global de la plataforma. Sin FK a tienda: es un historico y debe
+-- sobrevivir aunque la empresa se elimine.
+CREATE TABLE auditoria_evento (
+    id_evento     BIGINT       NOT NULL AUTO_INCREMENT,
+    fecha         TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    tipo          VARCHAR(40)  NOT NULL,
+    severidad     VARCHAR(15)  NOT NULL DEFAULT 'INFO',
+    descripcion   VARCHAR(300) NOT NULL,
+    id_tienda     INT          NULL,
+    tienda_nombre VARCHAR(100) NULL,
+    actor         VARCHAR(100) NULL,
+    PRIMARY KEY (id_evento),
+    KEY idx_auditoria_fecha (fecha),
+    KEY idx_auditoria_tipo (tipo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE persona (
@@ -77,6 +98,7 @@ CREATE TABLE usuario (
     id_persona VARCHAR(25)  NOT NULL,
     id_rol     VARCHAR(15)  NOT NULL DEFAULT 'ADMIN',
     id_tienda  INT          NOT NULL,
+    estado     VARCHAR(15)  NOT NULL DEFAULT 'ACTIVO',
     PRIMARY KEY (id_usuario),
     UNIQUE KEY uk_usuario_usuario (usuario),
     KEY idx_usuario_id_persona (id_persona),

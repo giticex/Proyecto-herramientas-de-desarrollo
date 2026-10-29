@@ -55,11 +55,20 @@ function calcularResumen(carrito, productos) {
 
 const centavos = (valor) => Number(valor).toFixed(2);
 
+// Firma de los items que el cliente está viendo: permite detectar si la
+// depuración contra el catálogo cambió la compra antes de emitirla.
+function firmaCarrito(items) {
+  return (Array.isArray(items) ? items : [])
+    .map((item) => `${item.idProducto}:${item.cantidad}:${item.precio}`)
+    .sort()
+    .join('|');
+}
+
 export default function CheckoutTienda() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { carrito, cliente, registrarCompra } = useClienteStore();
+  const { carrito, cliente, registrarCompra, sincronizarCarrito } = useClienteStore();
   const { tienda, productos, getTienda, listProductos } = useStore();
 
   const [tipoComprobante, setTipoComprobante] = useState('boleta');
@@ -70,11 +79,24 @@ export default function CheckoutTienda() {
   const [metodoPago, setMetodoPago] = useState('tarjeta');
   const [procesando, setProcesando] = useState(false);
 
-  // Proteger la ruta: si no hay carrito o cliente, regresar
+  // El carrito puede traer restos de sesiones o pruebas anteriores. Al entrar
+  // al checkout se reconcilia con el catálogo vigente para que los totales y
+  // la validación de stock usen solo los productos que el cliente tiene hoy.
   useEffect(() => {
+    let vigente = true;
     getTienda(slug);
-    if (productos.length === 0) listProductos(slug);
-  }, [slug, getTienda, listProductos, productos.length]);
+    (async () => {
+      try {
+        const catalogo = await listProductos(slug);
+        if (vigente) sincronizarCarrito(catalogo);
+      } catch {
+        // La emisión sigue validando en el backend; aquí no se bloquea la vista.
+      }
+    })();
+    return () => {
+      vigente = false;
+    };
+  }, [slug, getTienda, listProductos, sincronizarCarrito]);
 
   // Si el carrito está vacío y NO estamos procesando una compra, volver al catálogo
   useEffect(() => {
@@ -122,23 +144,50 @@ export default function CheckoutTienda() {
     }
 
     const esFactura = tipoComprobante === 'factura';
-    const { valido, errores } = validarDatosFacturacion({
-      tipoComprobante: esFactura ? TIPO_COMPROBANTE.FACTURA : TIPO_COMPROBANTE.BOLETA,
-      numeroDocumento: documento,
-      nombreAdquirente,
-      domicilioFiscal: esFactura ? domicilioFiscal : direccionEntrega,
-      direccionEntrega,
-      total: resumen.total,
-    });
-
-    if (!valido) {
-      showToast(errores[0]);
-      return;
-    }
 
     setProcesando(true);
 
     try {
+      // Validación estricta: se refresca el catálogo y se depura el carrito
+      // contra él. Solo los items que quedan vigentes se validan, se muestran
+      // y se envían; cualquier producto fantasma o agotado queda fuera.
+      const catalogo = await listProductos(slug);
+      const carritoActual = sincronizarCarrito(catalogo);
+      if (carritoActual.length === 0) {
+        setProcesando(false);
+        showToast('Tu carrito no tiene productos disponibles para comprar.');
+        return;
+      }
+
+      // Si la depuración quitó productos o ajustó cantidades, el total que el
+      // cliente vio ya no es el de la compra: se pide confirmar de nuevo en
+      // lugar de cobrar un importe distinto sin avisar.
+      if (firmaCarrito(carritoActual) !== firmaCarrito(carrito)) {
+        setProcesando(false);
+        showToast('Actualizamos tu carrito: se quitaron productos sin stock. Revisa el resumen y confirma de nuevo.');
+        return;
+      }
+
+      const totalActual = carritoActual.reduce(
+        (suma, item) => suma + (Number(item.precio) || 0) * (Number(item.cantidad) || 0),
+        0
+      );
+
+      const { valido, errores } = validarDatosFacturacion({
+        tipoComprobante: esFactura ? TIPO_COMPROBANTE.FACTURA : TIPO_COMPROBANTE.BOLETA,
+        numeroDocumento: documento,
+        nombreAdquirente,
+        domicilioFiscal: esFactura ? domicilioFiscal : direccionEntrega,
+        direccionEntrega,
+        total: totalActual,
+      });
+
+      if (!valido) {
+        setProcesando(false);
+        showToast(errores[0]);
+        return;
+      }
+
       const medio = MEDIO_PAGO[metodoPago] || MEDIO_PAGO.efectivo;
 
       // El backend es la fuente de verdad: se envian solo los identificadores
@@ -152,7 +201,7 @@ export default function CheckoutTienda() {
         domicilioFiscal: esFactura ? domicilioFiscal : direccionEntrega,
         direccionEntrega,
         medioPago: medio,
-        items: carrito.map((item) => ({
+        items: carritoActual.map((item) => ({
           idProducto: item.idProducto,
           cantidad: item.cantidad,
         })),

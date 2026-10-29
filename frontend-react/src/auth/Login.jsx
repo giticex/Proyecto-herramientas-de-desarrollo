@@ -21,7 +21,9 @@ export default function Login({ modo = 'unificado', volverA = '/' } = {}) {
   const [error, setError] = useState('');
   const [enviando, setEnviando] = useState(false);
   const loginAdmin = useSesion((estado) => estado.login);
+  const logoutAdmin = useSesion((estado) => estado.logout);
   const loginCliente = useClienteStore((estado) => estado.loginCliente);
+  const logoutCliente = useClienteStore((estado) => estado.logoutCliente);
   const navigate = useNavigate();
 
   function limpiarError(campo) {
@@ -52,13 +54,16 @@ export default function Login({ modo = 'unificado', volverA = '/' } = {}) {
           token: respuesta.token,
           rol: respuesta.rol,
         };
+        // Un CLIENTE siempre entra a su portal, nunca al panel interno.
+        logoutAdmin();
         loginCliente(sesion);
         showToast(`Bienvenido/a, ${sesion.nombre}`);
-        navigate('/', { replace: true });
+        navigate('/portal-cliente', { replace: true });
         return;
       }
 
       if (rol === 'VENDEDOR' || rol === 'ADMIN' || rol === 'SUPERADMIN' || rol === 'SUPER_ADMIN') {
+        logoutCliente();
         loginAdmin(respuesta.usuario ?? u, respuesta.token, rol);
         navigate(destinoSegunRol(rol), { replace: true });
         return;
