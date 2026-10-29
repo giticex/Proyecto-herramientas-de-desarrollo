@@ -69,6 +69,11 @@ CREATE TABLE medio_pago (
 
 -- Cada tienda es administrada por uno o mas usuarios (tabla usuario.id_tienda).
 -- slug: minusculas y guiones, unico (lo valida la aplicacion antes de insertar).
+-- Los datos fiscales y las series (razon_social, ruc, direccion_fiscal,
+-- telefono, serie_boleta, serie_factura) son opcionales: si estan vacios los
+-- comprobantes usan los parametros globales del emisor (tabla parametro).
+-- serie_boleta y serie_factura son las que numera el punto de venta y la
+-- emision electronica (tabla correlativo).
 CREATE TABLE tienda (
     id_tienda        INT          NOT NULL AUTO_INCREMENT,
     nombre           VARCHAR(100) NOT NULL,
@@ -77,6 +82,12 @@ CREATE TABLE tienda (
     color_primario   VARCHAR(7)   NOT NULL DEFAULT '#0071e3',
     color_secundario VARCHAR(7)   NOT NULL DEFAULT '#1d1d1f',
     logo_url         VARCHAR(255),
+    razon_social     VARCHAR(150),
+    ruc              VARCHAR(11),
+    direccion_fiscal VARCHAR(200),
+    telefono         VARCHAR(30),
+    serie_boleta     VARCHAR(4),
+    serie_factura    VARCHAR(4),
     PRIMARY KEY (id_tienda),
     UNIQUE KEY uk_tienda_slug (slug)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -224,6 +235,8 @@ CREATE TABLE venta (
     cdR_summary             VARCHAR(500) NULL,
     leyendas                TEXT         NULL,
     observacion             VARCHAR(500) NOT NULL DEFAULT '',
+    vendedor_usuario        VARCHAR(50)  NULL,
+    vendedor_nombre         VARCHAR(150) NULL,
     PRIMARY KEY (id_venta),
     UNIQUE KEY uk_venta_serie_correlativo (serie, correlativo),
     KEY idx_venta_id_cliente (id_cliente),

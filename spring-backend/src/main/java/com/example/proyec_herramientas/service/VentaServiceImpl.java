@@ -3,6 +3,7 @@ package com.example.proyec_herramientas.service;
 import com.example.proyec_herramientas.exception.RecursoNoEncontradoException;
 import com.example.proyec_herramientas.exception.StockInsuficienteException;
 import com.example.proyec_herramientas.exception.ValidacionComprobanteException;
+import com.example.proyec_herramientas.facturacion.model.ComprobanteRequestDTO;
 import com.example.proyec_herramientas.facturacion.service.EmisorService;
 import com.example.proyec_herramientas.model.CarritoRequestDTO;
 import com.example.proyec_herramientas.model.ClienteDTO;
@@ -18,6 +19,7 @@ import com.example.proyec_herramientas.repository.PersonaRepository;
 import com.example.proyec_herramientas.repository.ProductoRepository;
 import com.example.proyec_herramientas.repository.TipoDocumentoRepository;
 import com.example.proyec_herramientas.repository.VentaRepository;
+import com.example.proyec_herramientas.security.Vendedor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,8 +47,6 @@ public class VentaServiceImpl implements VentaService {
     private static final String TIPO_FACTURA_ID = "TD002";
     private static final String MEDIO_PAGO_EFECTIVO = "Efectivo";
     private static final String MEDIO_PAGO_EFECTIVO_ID = "MP001";
-    private static final String PREFIJO_BOLETA = "BOL";
-    private static final String PREFIJO_FACTURA = "FAC";
     private static final String CONDICION_OPERACION = "01";
     private static final String FORMA_PAGO = "01";
     private static final String TIPO_DOCUMENTO_SIN_DOCUMENTO = "0";
@@ -72,6 +73,7 @@ public class VentaServiceImpl implements VentaService {
     private final MedioPagoRepository medioPagoRepository;
     private final EmisorService emisorService;
     private final CreditoService creditoService;
+    private final CorrelativoService correlativoService;
 
     public VentaServiceImpl(VentaRepository ventaRepository,
                             ProductoRepository productoRepository,
@@ -80,7 +82,8 @@ public class VentaServiceImpl implements VentaService {
                             TipoDocumentoRepository tipoDocumentoRepository,
                             MedioPagoRepository medioPagoRepository,
                             EmisorService emisorService,
-                            CreditoService creditoService) {
+                            CreditoService creditoService,
+                            CorrelativoService correlativoService) {
         this.ventaRepository = ventaRepository;
         this.productoRepository = productoRepository;
         this.clienteService = clienteService;
@@ -89,11 +92,12 @@ public class VentaServiceImpl implements VentaService {
         this.medioPagoRepository = medioPagoRepository;
         this.emisorService = emisorService;
         this.creditoService = creditoService;
+        this.correlativoService = correlativoService;
     }
 
     @Override
     @Transactional
-    public Venta registrarVenta(String idCliente, CarritoRequestDTO carrito) {
+    public Venta registrarVenta(String idCliente, CarritoRequestDTO carrito, Vendedor vendedor) {
         String tipoDocumento = conValor(carrito.getTipoDocumento(), TIPO_BOLETA);
         String medioPago = conValor(carrito.getMedioPago(), MEDIO_PAGO_EFECTIVO);
 
@@ -114,23 +118,24 @@ public class VentaServiceImpl implements VentaService {
                         "El cliente " + idClienteVenta + " no tiene una persona asociada"));
 
         Venta venta = new Venta();
-        String prefijo = prefijo(tipoDocumento);
-        int correlativo = siguienteCorrelativo(prefijo);
         venta.setId(UUID.randomUUID().toString());
         venta.setIdCliente(idClienteVenta);
         venta.setIdPersona(idPersona);
-        venta.setIdTipoDocumento(resolverTipoDocumento(tipoDocumento));
-        venta.setNumeroDocumento(prefijo + "-" + String.format("%06d", correlativo));
+        String idTipoDocumentoVenta = resolverTipoDocumento(tipoDocumento);
+        venta.setIdTipoDocumento(idTipoDocumentoVenta);
         venta.setIdMedioPago(resolverMedioPago(medioPago));
         venta.setFechaEmision(new Date());
-        venta.setSerie(prefijo);
-        venta.setCorrelativo(correlativo);
         venta.setMoneda(emisorService.obtenerMoneda());
         venta.setCondicionOperacion(CONDICION_OPERACION);
         venta.setFormaPago(FORMA_PAGO);
         venta.setEstado(ESTADO_LEGACY);
         venta.setObservacion("");
+        if (vendedor != null) {
+            venta.setVendedorUsuario(vendedor.usuario());
+            venta.setVendedorNombre(vendedor.nombre());
+        }
 
+        Set<Integer> tiendas = new LinkedHashSet<>();
         for (CarritoRequestDTO.Item item : carrito.getItems()) {
             Producto producto = productoRepository.findByIdForUpdate(item.getIdProducto())
                     .orElseThrow(() -> new RecursoNoEncontradoException(
@@ -141,12 +146,28 @@ public class VentaServiceImpl implements VentaService {
                         "Stock insuficiente para " + producto.getNombre()
                                 + " (disponible: " + producto.getStock() + ")");
             }
+            if (producto.getIdTienda() != null) {
+                tiendas.add(producto.getIdTienda());
+            }
 
             producto.setStock(producto.getStock() - item.getCantidad());
             productoRepository.save(producto);
 
             venta.agregarDetalle(detalle(producto, item.getCantidad()));
         }
+        if (tiendas.size() > 1) {
+            throw new ValidacionComprobanteException(
+                    "Todos los productos de la venta deben pertenecer a la misma tienda.");
+        }
+
+        // La serie sale de la configuracion de la tienda (B001/F001 y las que
+        // defina el administrador); el correlativo se comparte con la emision
+        // electronica para no duplicar numeros de la misma serie.
+        String serie = serieDeTienda(tiendas.stream().findFirst().orElse(null), tipoDocumento);
+        int correlativo = correlativoService.siguiente(serie, idTipoDocumentoVenta);
+        venta.setSerie(serie);
+        venta.setCorrelativo(correlativo);
+        venta.setNumeroDocumento(serie + "-" + String.format("%06d", correlativo));
 
         aplicarDatosFiscales(venta, cliente, carrito, tipoDocumento);
         aplicarCredito(venta, carrito);
@@ -269,15 +290,13 @@ public class VentaServiceImpl implements VentaService {
                 .orElse(MEDIO_PAGO_EFECTIVO_ID);
     }
 
-    private String prefijo(String tipoDocumento) {
-        return TIPO_BOLETA.equalsIgnoreCase(tipoDocumento) ? PREFIJO_BOLETA : PREFIJO_FACTURA;
-    }
-
-    // La serie no tiene tabla de correlativos: se toma el maximo ya emitido en
-    // esa serie. Contar todas las ventas reutilizaria numeros que ya existen
-    // (por ejemplo, la serie legacy B001 frente a la serie BOL).
-    private synchronized int siguienteCorrelativo(String serie) {
-        return ventaRepository.maxCorrelativoPorSerie(serie) + 1;
+    /** Serie configurada por la tienda; sin tienda, la serie global. */
+    private String serieDeTienda(Integer idTienda, String tipoDocumento) {
+        String tipoComprobante = TIPO_BOLETA.equalsIgnoreCase(tipoDocumento)
+                ? ComprobanteRequestDTO.TIPO_BOLETA : ComprobanteRequestDTO.TIPO_FACTURA;
+        return idTienda == null
+                ? emisorService.obtenerSerie(tipoComprobante)
+                : emisorService.obtenerSerie(idTienda, tipoComprobante);
     }
 
     private DetalleVenta detalle(Producto producto, int cantidad) {
@@ -300,7 +319,9 @@ public class VentaServiceImpl implements VentaService {
     private void aplicarDatosFiscales(Venta venta, ClienteDTO cliente, CarritoRequestDTO carrito,
                                       String tipoDocumento) {
         BigDecimal igvPorcentaje = emisorService.obtenerIgvPorcentaje();
-        BigDecimal factor = BigDecimal.ONE.add(igvPorcentaje.movePointRight(2));
+        // IGV_PORCENTAJE se guarda como 18.00 (porcentaje), no como 0.18.
+        BigDecimal factor = BigDecimal.ONE.add(
+                igvPorcentaje.divide(new BigDecimal("100"), 10, RoundingMode.HALF_UP));
 
         BigDecimal totalVenta = BigDecimal.ZERO;
         BigDecimal totalGravada = BigDecimal.ZERO;

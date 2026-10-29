@@ -41,6 +41,27 @@ public class Tienda {
     @Column(name = "logo_url", length = 255)
     private String logoUrl;
 
+    // Datos fiscales y de facturacion propios de la empresa. Son opcionales:
+    // si la tienda aun no los configuro, los comprobantes usan los parametros
+    // globales de `parametro` (comportamiento historico).
+    @Column(name = "razon_social", length = 150)
+    private String razonSocial;
+
+    @Column(name = "ruc", length = 11)
+    private String ruc;
+
+    @Column(name = "direccion_fiscal", length = 200)
+    private String direccionFiscal;
+
+    @Column(name = "telefono", length = 30)
+    private String telefono;
+
+    @Column(name = "serie_boleta", length = 4)
+    private String serieBoleta;
+
+    @Column(name = "serie_factura", length = 4)
+    private String serieFactura;
+
     // Estado administrativo que controla el SUPER_ADMIN. Los DEFAULT aseguran
     // que ddl-auto=update pueda agregar las columnas a una tienda ya poblada
     // sin dejar filas en NULL.
@@ -117,6 +138,54 @@ public class Tienda {
 
     public void setLogoUrl(String logoUrl) {
         this.logoUrl = logoUrl;
+    }
+
+    public String getRazonSocial() {
+        return razonSocial;
+    }
+
+    public void setRazonSocial(String razonSocial) {
+        this.razonSocial = razonSocial;
+    }
+
+    public String getRuc() {
+        return ruc;
+    }
+
+    public void setRuc(String ruc) {
+        this.ruc = ruc;
+    }
+
+    public String getDireccionFiscal() {
+        return direccionFiscal;
+    }
+
+    public void setDireccionFiscal(String direccionFiscal) {
+        this.direccionFiscal = direccionFiscal;
+    }
+
+    public String getTelefono() {
+        return telefono;
+    }
+
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+
+    public String getSerieBoleta() {
+        return serieBoleta;
+    }
+
+    public void setSerieBoleta(String serieBoleta) {
+        this.serieBoleta = serieBoleta;
+    }
+
+    public String getSerieFactura() {
+        return serieFactura;
+    }
+
+    public void setSerieFactura(String serieFactura) {
+        this.serieFactura = serieFactura;
     }
 
     public String getEstadoAcceso() {

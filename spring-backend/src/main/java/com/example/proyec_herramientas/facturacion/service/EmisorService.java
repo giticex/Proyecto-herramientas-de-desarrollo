@@ -10,6 +10,13 @@ public interface EmisorService {
 
     EmisorDTO obtenerEmisor();
 
+    /**
+     * Datos del emisor para una tienda: usa su razon social, RUC, direccion y
+     * telefono configurados y completa lo que falte con los parametros
+     * globales. El nombre comercial es el nombre de la tienda.
+     */
+    EmisorDTO obtenerEmisor(int idTienda);
+
     /** Tasa de IGV vigente en porcentaje (18.00). */
     java.math.BigDecimal obtenerIgvPorcentaje();
 
@@ -18,6 +25,12 @@ public interface EmisorService {
 
     /** Serie configurada para el tipo de comprobante (B001 / F001). */
     String obtenerSerie(String tipoComprobante);
+
+    /**
+     * Serie configurada por la tienda para el tipo de comprobante. Si la
+     * tienda aun no la definio se usa la serie global.
+     */
+    String obtenerSerie(int idTienda, String tipoComprobante);
 
     /** Id de `tipo_documento` para el tipo de comprobante (TD001 / TD002). */
     String obtenerIdTipoDocumento(String tipoComprobante);

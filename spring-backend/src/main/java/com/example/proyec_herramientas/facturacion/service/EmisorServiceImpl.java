@@ -3,7 +3,9 @@ package com.example.proyec_herramientas.facturacion.service;
 import com.example.proyec_herramientas.facturacion.model.ComprobanteRequestDTO;
 import com.example.proyec_herramientas.facturacion.model.EmisorDTO;
 import com.example.proyec_herramientas.persistence.Parametro;
+import com.example.proyec_herramientas.persistence.Tienda;
 import com.example.proyec_herramientas.repository.ParametroRepository;
+import com.example.proyec_herramientas.repository.TiendaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,9 +35,12 @@ public class EmisorServiceImpl implements EmisorService {
     private static final String PERSONA_MOSTRADOR = "PERSONA_MOSTRADOR";
 
     private final ParametroRepository parametroRepository;
+    private final TiendaRepository tiendaRepository;
 
-    public EmisorServiceImpl(ParametroRepository parametroRepository) {
+    public EmisorServiceImpl(ParametroRepository parametroRepository,
+                             TiendaRepository tiendaRepository) {
         this.parametroRepository = parametroRepository;
+        this.tiendaRepository = tiendaRepository;
     }
 
     @Override
@@ -53,6 +58,22 @@ public class EmisorServiceImpl implements EmisorService {
         emisor.setPais(valor(PAIS_EMISOR, "PE"));
         emisor.setEmail(valor(EMAIL_EMISOR, "facturacion@techzone.pe"));
         emisor.setTelefono(valor(TELEFONO_EMISOR, "5115551234"));
+        return emisor;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EmisorDTO obtenerEmisor(int idTienda) {
+        EmisorDTO emisor = obtenerEmisor();
+        Tienda tienda = tiendaRepository.findById(idTienda).orElse(null);
+        if (tienda == null) {
+            return emisor;
+        }
+        emisor.setNombreComercial(conValor(tienda.getNombre(), emisor.getNombreComercial()));
+        emisor.setRazonSocial(conValor(tienda.getRazonSocial(), emisor.getRazonSocial()));
+        emisor.setRuc(conValor(tienda.getRuc(), emisor.getRuc()));
+        emisor.setDomicilioFiscal(conValor(tienda.getDireccionFiscal(), emisor.getDomicilioFiscal()));
+        emisor.setTelefono(conValor(tienda.getTelefono(), emisor.getTelefono()));
         return emisor;
     }
 
@@ -79,6 +100,19 @@ public class EmisorServiceImpl implements EmisorService {
             return valor(SERIE_FACTURA, "F001");
         }
         return valor(SERIE_BOLETA, "B001");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String obtenerSerie(int idTienda, String tipoComprobante) {
+        String serie = tiendaRepository.findById(idTienda)
+                .map(tienda -> ComprobanteRequestDTO.TIPO_FACTURA.equals(tipoComprobante)
+                        ? tienda.getSerieFactura() : tienda.getSerieBoleta())
+                .orElse(null);
+        if (serie == null || serie.isBlank()) {
+            return obtenerSerie(tipoComprobante);
+        }
+        return serie.trim().toUpperCase();
     }
 
     @Override
@@ -125,5 +159,9 @@ public class EmisorServiceImpl implements EmisorService {
                 .map(Parametro::getValor)
                 .filter(valor -> !valor.isBlank())
                 .orElse(porDefecto);
+    }
+
+    private String conValor(String propio, String porDefecto) {
+        return propio == null || propio.isBlank() ? porDefecto : propio.trim();
     }
 }

@@ -20,6 +20,7 @@ public class AuditoriaEvento {
     public static final String TIPO_TIENDA_SUSPENDIDA = "TIENDA_SUSPENDIDA";
     public static final String TIPO_TIENDA_ACTIVADA = "TIENDA_ACTIVADA";
     public static final String TIPO_PLAN_ACTUALIZADO = "PLAN_ACTUALIZADO";
+    public static final String TIPO_CONFIGURACION_ACTUALIZADA = "CONFIGURACION_ACTUALIZADA";
     public static final String TIPO_ADMIN_PASSWORD_RESTABLECIDO = "ADMIN_PASSWORD_RESTABLECIDO";
     public static final String TIPO_USUARIO_CREADO = "USUARIO_CREADO";
     public static final String TIPO_USUARIO_ACTUALIZADO = "USUARIO_ACTUALIZADO";

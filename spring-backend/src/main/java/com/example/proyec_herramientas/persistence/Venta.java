@@ -153,6 +153,14 @@ public class Venta {
     @Column(name = "observacion", length = 500, nullable = false)
     private String observacion;
 
+    // Cuenta del panel que atendio la venta, congelada al emitir. Las ventas
+    // historicas y las autocompras del CLIENTE no tienen vendedor.
+    @Column(name = "vendedor_usuario", length = 50)
+    private String vendedorUsuario;
+
+    @Column(name = "vendedor_nombre", length = 150)
+    private String vendedorNombre;
+
     @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("idDetalle")
     private List<DetalleVenta> detalles = new ArrayList<>();
@@ -498,6 +506,22 @@ public class Venta {
 
     public void setObservacion(String observacion) {
         this.observacion = observacion;
+    }
+
+    public String getVendedorUsuario() {
+        return vendedorUsuario;
+    }
+
+    public void setVendedorUsuario(String vendedorUsuario) {
+        this.vendedorUsuario = vendedorUsuario;
+    }
+
+    public String getVendedorNombre() {
+        return vendedorNombre;
+    }
+
+    public void setVendedorNombre(String vendedorNombre) {
+        this.vendedorNombre = vendedorNombre;
     }
 
     public List<DetalleVenta> getDetalles() {

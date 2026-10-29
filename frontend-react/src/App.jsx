@@ -4,6 +4,9 @@ import RegistroTienda from './admin/RegistroTienda';
 import DashboardAdmin from './admin/DashboardAdmin';
 import MarcaPanel from './admin/MarcaPanel';
 import ProductosPanel from './admin/ProductosPanel';
+import PersonalPanel from './admin/PersonalPanel';
+import ConfiguracionPanel from './admin/ConfiguracionPanel';
+import ArqueoCajaPanel from './admin/ArqueoCajaPanel';
 import HistorialVentas from './admin/HistorialVentas';
 import GestionCreditos from './admin/GestionCreditos';
 import PuntoDeVenta from './admin/PuntoDeVenta';
@@ -93,6 +96,9 @@ export default function App() {
           <Route path="/admin" element={<DashboardAdmin />} />
           <Route path="/admin/marca" element={<MarcaPanel />} />
           <Route path="/admin/productos" element={<ProductosPanel />} />
+          <Route path="/admin/personal" element={<PersonalPanel />} />
+          <Route path="/admin/configuracion" element={<ConfiguracionPanel />} />
+          <Route path="/admin/arqueo" element={<ArqueoCajaPanel />} />
         </Route>
         {/* Operación de tienda: ADMIN y VENDEDOR. */}
         <Route element={<RutaProtegida roles={['ADMIN', 'VENDEDOR']} />}>

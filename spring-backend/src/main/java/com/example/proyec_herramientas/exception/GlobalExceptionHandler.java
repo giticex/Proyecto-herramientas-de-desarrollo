@@ -56,6 +56,11 @@ public class GlobalExceptionHandler {
         return construir(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
+    @ExceptionHandler(ValidacionSolicitudException.class)
+    public ResponseEntity<Map<String, Object>> solicitud(ValidacionSolicitudException e) {
+        return construir(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> validacion(MethodArgumentNotValidException e) {
         String mensaje = e.getBindingResult().getFieldErrors().stream()

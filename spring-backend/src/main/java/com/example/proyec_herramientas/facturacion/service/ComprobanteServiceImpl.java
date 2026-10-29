@@ -13,12 +13,10 @@ import com.example.proyec_herramientas.facturacion.model.LeyendaDTO;
 import com.example.proyec_herramientas.facturacion.model.MedioPagoDTO;
 import com.example.proyec_herramientas.facturacion.model.ReceptorDTO;
 import com.example.proyec_herramientas.facturacion.model.TotalesDTO;
-import com.example.proyec_herramientas.persistence.Correlativo;
 import com.example.proyec_herramientas.persistence.DetalleVenta;
 import com.example.proyec_herramientas.persistence.Producto;
 import com.example.proyec_herramientas.persistence.Venta;
 import com.example.proyec_herramientas.repository.ClienteRepository;
-import com.example.proyec_herramientas.repository.CorrelativoRepository;
 import com.example.proyec_herramientas.repository.PersonaRepository;
 import com.example.proyec_herramientas.repository.ProductoRepository;
 import com.example.proyec_herramientas.repository.TiendaRepository;
@@ -26,6 +24,8 @@ import com.example.proyec_herramientas.repository.VentaRepository;
 import com.example.proyec_herramientas.reportes.ComprobantePdfGenerator;
 import com.example.proyec_herramientas.reportes.ComprobanteTicketPdfGenerator;
 import com.example.proyec_herramientas.reportes.MarcaComprobante;
+import com.example.proyec_herramientas.security.Vendedor;
+import com.example.proyec_herramientas.service.CorrelativoService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -114,7 +114,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
     private final VentaRepository ventaRepository;
     private final ProductoRepository productoRepository;
     private final TiendaRepository tiendaRepository;
-    private final CorrelativoRepository correlativoRepository;
+    private final CorrelativoService correlativoService;
     private final ClienteRepository clienteRepository;
     private final PersonaRepository personaRepository;
     private final EmisorService emisorService;
@@ -127,7 +127,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
     public ComprobanteServiceImpl(VentaRepository ventaRepository,
                                   ProductoRepository productoRepository,
                                   TiendaRepository tiendaRepository,
-                                  CorrelativoRepository correlativoRepository,
+                                  CorrelativoService correlativoService,
                                   ClienteRepository clienteRepository,
                                   PersonaRepository personaRepository,
                                   EmisorService emisorService,
@@ -139,7 +139,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         this.ventaRepository = ventaRepository;
         this.productoRepository = productoRepository;
         this.tiendaRepository = tiendaRepository;
-        this.correlativoRepository = correlativoRepository;
+        this.correlativoService = correlativoService;
         this.clienteRepository = clienteRepository;
         this.personaRepository = personaRepository;
         this.emisorService = emisorService;
@@ -152,7 +152,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
 
     @Override
     @Transactional
-    public ComprobanteRespuestaDTO emitir(ComprobanteRequestDTO request) {
+    public ComprobanteRespuestaDTO emitir(ComprobanteRequestDTO request, Vendedor vendedor) {
         if (request == null) {
             throw new ValidacionComprobanteException("No se recibió la solicitud de emisión.");
         }
@@ -161,14 +161,18 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         }
 
         ReceptorDTO receptor = validarReceptor(request.getReceptor());
+        String tipoComprobante = normalizarTipoComprobante(request.getTipoComprobante());
 
-        EmisorDTO emisor = emisorService.obtenerEmisor();
+        // Los productos determinan la tienda emisora: un comprobante no puede
+        // mezclar articulos de dos empresas.
+        DetallesConstruidos construccion = construirDetalles(request);
+        List<DetalleComprobanteDTO> detalles = construccion.detalles();
+
+        EmisorDTO emisor = emisorService.obtenerEmisor(construccion.idTienda());
         BigDecimal igvPorcentaje = emisorService.obtenerIgvPorcentaje();
         String moneda = emisorService.obtenerMoneda();
-        String tipoComprobante = normalizarTipoComprobante(request.getTipoComprobante());
-        String serie = resolverSerie(request.getSerie(), tipoComprobante);
+        String serie = resolverSerie(request.getSerie(), tipoComprobante, construccion.idTienda());
 
-        List<DetalleComprobanteDTO> detalles = construirDetalles(request);
         TotalesDTO totales = totalesCalculator.calcular(detalles, igvPorcentaje);
         totales.setTotalEnLetras(NumerosALetras.convertir(totales.getMontoTotalPagar()));
         validarTipoComprobante(tipoComprobante, receptor, totales);
@@ -176,11 +180,9 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         List<MedioPagoDTO> mediosPago = construirMediosPago(request, totales);
         List<LeyendaDTO> leyendas = construirLeyendas(emisor, totales, tipoComprobante);
 
-        // Correlativo correlativo y sin saltos: se bloquea la fila de la serie.
-        Correlativo correlativo = correlativoRepository.findBySerieForUpdate(serie)
-                .orElseGet(() -> new Correlativo(serie, emisorService.obtenerIdTipoDocumento(tipoComprobante), 0));
-        int numero = correlativo.siguienteNumero();
-        correlativoRepository.save(correlativo);
+        // Numeracion correlativa y sin saltos: se bloquea la fila de la serie.
+        int numero = correlativoService.siguiente(serie,
+                emisorService.obtenerIdTipoDocumento(tipoComprobante));
 
         LocalDateTime emision = LocalDateTime.now();
         ComprobanteRespuestaDTO comprobante = new ComprobanteRespuestaDTO();
@@ -220,7 +222,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         comprobante.setEstado(ESTADO_EMITIDO);
         comprobante.setEstadoSunat(ESTADO_SUNAT_GENERADO);
 
-        persistir(comprobante, request, detalles, emision);
+        persistir(comprobante, request, detalles, emision, vendedor);
         return comprobante;
     }
 
@@ -283,9 +285,9 @@ public class ComprobanteServiceImpl implements ComprobanteService {
     }
 
     /**
-     * Colores de la tienda duena de la venta. Se resuelven desde el primer
-     * producto del detalle; si la venta no permite identificarla se usa la
-     * paleta corporativa por defecto.
+     * Marca (colores y logo) de la tienda duena de la venta. Se resuelve desde
+     * el primer producto del detalle; si la venta no permite identificarla se
+     * usa la paleta corporativa por defecto.
      */
     private MarcaComprobante resolverMarca(String idVenta) {
         return ventaRepository.findById(idVenta)
@@ -295,8 +297,25 @@ public class ComprobanteServiceImpl implements ComprobanteService {
                 .flatMap(productoRepository::findById)
                 .map(Producto::getIdTienda)
                 .flatMap(tiendaRepository::findById)
-                .map(tienda -> new MarcaComprobante(tienda.getColorPrimario(), tienda.getColorSecundario()))
+                .map(tienda -> new MarcaComprobante(tienda.getColorPrimario(), tienda.getColorSecundario(),
+                        tienda.getLogoUrl()))
                 .orElseGet(MarcaComprobante::porDefecto);
+    }
+
+    /**
+     * Tienda duena de la venta. `venta` no guarda la tienda: se resuelve por el
+     * primer producto del detalle (la emision rechaza carritos multi-tienda).
+     */
+    private Integer tiendaDeVenta(Venta venta) {
+        if (venta == null || venta.getDetalles() == null || venta.getDetalles().isEmpty()) {
+            return null;
+        }
+        return venta.getDetalles().stream()
+                .findFirst()
+                .map(DetalleVenta::getIdProducto)
+                .flatMap(productoRepository::findById)
+                .map(Producto::getIdTienda)
+                .orElse(null);
     }
 
     // ------------------------------------------------------------------
@@ -355,9 +374,10 @@ public class ComprobanteServiceImpl implements ComprobanteService {
     // Items
     // ------------------------------------------------------------------
 
-    private List<DetalleComprobanteDTO> construirDetalles(ComprobanteRequestDTO request) {
+    private DetallesConstruidos construirDetalles(ComprobanteRequestDTO request) {
         List<DetalleComprobanteDTO> detalles = new ArrayList<>();
         int numero = 0;
+        Integer idTienda = null;
 
         for (ItemComprobanteDTO item : request.getItems()) {
             if (item == null || item.getIdProducto() == null) {
@@ -366,6 +386,16 @@ public class ComprobanteServiceImpl implements ComprobanteService {
             Producto producto = productoRepository.findByIdForUpdate(item.getIdProducto())
                     .orElseThrow(() -> new ValidacionComprobanteException(
                             "El producto " + item.getIdProducto() + " no existe en el catalogo."));
+            if (producto.getIdTienda() == null) {
+                throw new ValidacionComprobanteException(
+                        "El producto " + producto.getNombre() + " no tiene una tienda asignada.");
+            }
+            if (idTienda == null) {
+                idTienda = producto.getIdTienda();
+            } else if (!idTienda.equals(producto.getIdTienda())) {
+                throw new ValidacionComprobanteException(
+                        "Todos los productos del comprobante deben pertenecer a la misma tienda.");
+            }
 
             int cantidad = item.getCantidad() == null ? 0 : item.getCantidad().intValue();
             if (cantidad <= 0) {
@@ -401,7 +431,10 @@ public class ComprobanteServiceImpl implements ComprobanteService {
             producto.setStock(producto.getStock() - cantidad);
             productoRepository.save(producto);
         }
-        return detalles;
+        return new DetallesConstruidos(detalles, idTienda);
+    }
+
+    private record DetallesConstruidos(List<DetalleComprobanteDTO> detalles, int idTienda) {
     }
 
     // ------------------------------------------------------------------
@@ -486,7 +519,8 @@ public class ComprobanteServiceImpl implements ComprobanteService {
     // ------------------------------------------------------------------
 
     private void persistir(ComprobanteRespuestaDTO comprobante, ComprobanteRequestDTO request,
-                            List<DetalleComprobanteDTO> detalles, LocalDateTime emision) {
+                            List<DetalleComprobanteDTO> detalles, LocalDateTime emision,
+                            Vendedor vendedor) {
         Venta venta = new Venta();
         venta.setId(comprobante.getIdVenta());
         venta.setIdCliente(resolverIdCliente(request.getIdCliente()));
@@ -551,6 +585,10 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         venta.setEstadoSunat(comprobante.getEstadoSunat());
         venta.setLeyendas(serializarLeyendas(comprobante.getLeyendas()));
         venta.setObservacion(valor(request.getObservacion()));
+        if (vendedor != null) {
+            venta.setVendedorUsuario(vendedor.usuario());
+            venta.setVendedorNombre(vendedor.nombre());
+        }
 
         for (DetalleComprobanteDTO detalle : detalles) {
             DetalleVenta item = new DetalleVenta();
@@ -615,8 +653,11 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         comprobante.setMoneda(venta.getMoneda());
         comprobante.setCondicionOperacion(venta.getCondicionOperacion());
         comprobante.setFormaPago(venta.getFormaPago());
-        comprobante.setNombreComercio(emisorService.obtenerEmisor().getNombreComercial());
-        comprobante.setEmisor(emisorService.obtenerEmisor());
+        Integer idTienda = tiendaDeVenta(venta);
+        EmisorDTO emisor = idTienda == null
+                ? emisorService.obtenerEmisor() : emisorService.obtenerEmisor(idTienda);
+        comprobante.setNombreComercio(emisor.getNombreComercial());
+        comprobante.setEmisor(emisor);
         comprobante.setEstado(venta.getEstado());
         comprobante.setEstadoSunat(venta.getEstadoSunat());
         comprobante.setObservacion(venta.getObservacion());
@@ -727,9 +768,9 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         throw new ValidacionComprobanteException("El tipo de comprobante debe ser 01 (factura) o 03 (boleta).");
     }
 
-    private String resolverSerie(String serieSolicitada, String tipoComprobante) {
+    private String resolverSerie(String serieSolicitada, String tipoComprobante, int idTienda) {
         String serie = serieSolicitada == null || serieSolicitada.isBlank()
-                ? emisorService.obtenerSerie(tipoComprobante) : serieSolicitada.trim().toUpperCase();
+                ? emisorService.obtenerSerie(idTienda, tipoComprobante) : serieSolicitada.trim().toUpperCase();
         if (!serie.matches("[A-Z0-9]{4}")) {
             throw new ValidacionComprobanteException("La serie del comprobante debe tener 4 caracteres alfanumericos.");
         }

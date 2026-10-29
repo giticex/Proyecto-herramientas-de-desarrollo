@@ -73,6 +73,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/ventas")
                         .hasAnyRole("CLIENTE", "ADMIN", "VENDEDOR")
                         .requestMatchers("/api/dashboard/**").hasRole("ADMIN")
+                        // El personal de la tienda lo gestiona solo su ADMIN; la
+                        // empresa se resuelve del token, no de la peticion.
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // El SUPER_ADMIN solo consulta comprobantes (PDF/XML); no
                         // emite ni opera caja.
                         .requestMatchers(HttpMethod.GET, "/api/comprobantes/**")

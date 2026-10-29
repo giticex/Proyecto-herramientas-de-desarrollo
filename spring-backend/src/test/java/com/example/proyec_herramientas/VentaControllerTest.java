@@ -29,6 +29,7 @@ import java.math.BigDecimal;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -112,14 +113,20 @@ class VentaControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.idTipoDocumento", is("TD001")))
                 .andExpect(jsonPath("$.tipoDocumento", is("Boleta")))
-                .andExpect(jsonPath("$.numeroDocumento", is("BOL-000001")))
+                .andExpect(jsonPath("$.serie", is("B001")))
+                .andExpect(jsonPath("$.numeroDocumento", matchesPattern("^B001-\\d{6}$")))
                 .andExpect(jsonPath("$.idMedioPago", is("MP004")))
                 .andExpect(jsonPath("$.medioPago", is("Yape")))
                 .andExpect(jsonPath("$.cliente", is("Juan Pérez")))
                 .andExpect(jsonPath("$.total", is(220.0)))
+                // El IGV se calcula sobre el porcentaje configurado (18%): el
+                // precio unitario incluye impuesto y la base es precio / 1.18.
+                .andExpect(jsonPath("$.totalGravada", is(186.44)))
+                .andExpect(jsonPath("$.totalIgv", is(33.56)))
                 .andExpect(jsonPath("$.detalles", hasSize(2)))
                 .andExpect(jsonPath("$.detalles[0].producto", is("Mouse Gamer")))
-                .andExpect(jsonPath("$.detalles[0].subtotal", is(100.0)));
+                .andExpect(jsonPath("$.detalles[0].subtotal", is(100.0)))
+                .andExpect(jsonPath("$.detalles[0].igvItem", is(15.25)));
     }
 
     @Test

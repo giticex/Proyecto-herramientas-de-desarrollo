@@ -170,8 +170,16 @@ public final class ComprobanteTicketPdfGenerator {
         celda.setPaddingLeft(6);
         celda.setPaddingRight(6);
 
-        celda.addElement(centrado(texto(emisor.getNombreComercial(), emisor.getRazonSocial()),
-                fuente(12.5f, true, marca.secundario()), 0));
+        Image logo = LogoComprobante.cargar(marca.logoUrl());
+        if (logo != null) {
+            escalarLogo(logo, 30f);
+            logo.setAlignment(Element.ALIGN_CENTER);
+            celda.addElement(logo);
+        }
+
+        Paragraph titulo = centrado(texto(emisor.getNombreComercial(), emisor.getRazonSocial()),
+                fuente(12.5f, true, marca.secundario()), logo == null ? 0 : 4);
+        celda.addElement(titulo);
 
         if (!vacio(emisor.getNombreComercial())
                 && !emisor.getNombreComercial().equalsIgnoreCase(emisor.getRazonSocial())) {
@@ -571,6 +579,14 @@ public final class ComprobanteTicketPdfGenerator {
 
     private static Font fuente(float tamano, boolean negrita, BaseColor color) {
         return new Font(negrita ? FUENTE_NEGRITA : FUENTE_NORMAL, tamano, Font.NORMAL, color);
+    }
+
+    /** Ajusta el logo al ancho util del ticket conservando su proporcion. */
+    private static void escalarLogo(Image logo, float altoMaximo) {
+        float anchoOriginal = logo.getWidth();
+        float altoOriginal = logo.getHeight();
+        float escala = Math.min(altoMaximo / altoOriginal, 120f / anchoOriginal);
+        logo.scaleAbsolute(anchoOriginal * escala, altoOriginal * escala);
     }
 
     private static Image leerImagen(String base64) throws IOException {

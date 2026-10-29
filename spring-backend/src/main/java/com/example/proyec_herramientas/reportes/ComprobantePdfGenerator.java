@@ -108,9 +108,19 @@ public class ComprobantePdfGenerator {
         marcaCelda.setPadding(18);
         marcaCelda.setMinimumHeight(104);
 
+        Image logo = LogoComprobante.cargar(marca.logoUrl());
+        if (logo != null) {
+            escalarLogo(logo, 34f);
+            logo.setAlignment(Element.ALIGN_LEFT);
+            marcaCelda.addElement(logo);
+        }
+
         String nombrePrincipal = texto(emisor.getNombreComercial(), emisor.getRazonSocial());
         Paragraph titulo = new Paragraph(nombrePrincipal, fuente(17, true, marca.textoPrimario()));
         titulo.setLeading(20);
+        if (logo != null) {
+            titulo.setSpacingBefore(8);
+        }
         marcaCelda.addElement(titulo);
 
         if (!vacio(emisor.getNombreComercial()) && !emisor.getNombreComercial().equalsIgnoreCase(emisor.getRazonSocial())) {
@@ -630,6 +640,14 @@ public class ComprobantePdfGenerator {
 
     private static Font fuente(float tamano, boolean negrita, BaseColor color) {
         return new Font(negrita ? FUENTE_NEGRITA : FUENTE_NORMAL, tamano, Font.NORMAL, color);
+    }
+
+    /** Ajusta el logo a la cabecera conservando su proporcion. */
+    private static void escalarLogo(Image logo, float altoMaximo) {
+        float anchoOriginal = logo.getWidth();
+        float altoOriginal = logo.getHeight();
+        float escala = Math.min(altoMaximo / altoOriginal, 150f / anchoOriginal);
+        logo.scaleAbsolute(anchoOriginal * escala, altoOriginal * escala);
     }
 
     private static Image leerImagen(String base64) throws IOException {

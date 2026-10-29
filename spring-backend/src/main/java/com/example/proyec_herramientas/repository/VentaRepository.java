@@ -41,6 +41,24 @@ public interface VentaRepository extends JpaRepository<Venta, String> {
             @Param("fin") Date fin,
             @Param("idTienda") int idTienda);
 
+    // Ventas de la tienda en el rango [inicio, fin) para el corte de caja. La
+    // pertenencia se resuelve por los productos del detalle, igual que el resto
+    // de consultas del panel.
+    @Query("""
+            SELECT v
+            FROM Venta v
+            WHERE v.fechaEmision >= :inicio AND v.fechaEmision < :fin
+              AND EXISTS (
+                  SELECT 1
+                  FROM DetalleVenta d, Producto p
+                  WHERE d.venta = v AND p.idProducto = d.idProducto AND p.idTienda = :idTienda
+              )
+            ORDER BY v.fechaEmision DESC
+            """)
+    List<Venta> ventasPorTiendaEntre(@Param("inicio") Date inicio,
+            @Param("fin") Date fin,
+            @Param("idTienda") int idTienda);
+
     // Total historico y cantidad de comprobantes de la tienda. La consola del
     // SUPER_ADMIN los usa para el estado de cada empresa.
     @Query("""

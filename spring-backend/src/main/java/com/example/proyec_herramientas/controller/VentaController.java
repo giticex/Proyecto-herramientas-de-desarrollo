@@ -6,6 +6,7 @@ import com.example.proyec_herramientas.persistence.Venta;
 import com.example.proyec_herramientas.persistence.Rol;
 import com.example.proyec_herramientas.security.AccesoService;
 import com.example.proyec_herramientas.security.SesionPrincipal;
+import com.example.proyec_herramientas.security.VendedorResolver;
 import com.example.proyec_herramientas.service.VentaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -27,10 +28,13 @@ public class VentaController {
 
     private final VentaService ventaService;
     private final AccesoService accesoService;
+    private final VendedorResolver vendedorResolver;
 
-    public VentaController(VentaService ventaService, AccesoService accesoService) {
+    public VentaController(VentaService ventaService, AccesoService accesoService,
+            VendedorResolver vendedorResolver) {
         this.ventaService = ventaService;
         this.accesoService = accesoService;
+        this.vendedorResolver = vendedorResolver;
     }
 
     // El CLIENTE compra siempre a su propio nombre: el idCliente sale del token
@@ -57,7 +61,8 @@ public class VentaController {
             accesoService.validarProductos(carrito.getItems().stream()
                     .map(CarritoRequestDTO.Item::getIdProducto).toList(), authentication);
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(ventaService.registrarVenta(idCliente, carrito));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ventaService.registrarVenta(idCliente, carrito, vendedorResolver.resolver(principal)));
     }
 
     // GET /ventas -> historial paginado de la tienda del ADMIN autenticado.

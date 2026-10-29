@@ -3,14 +3,19 @@ package com.example.proyec_herramientas.reportes;
 import com.itextpdf.text.BaseColor;
 
 /**
- * Colores de la tienda usados en la representacion impresa. El color primario
+ * Marca de la tienda usada en la representacion impresa. El color primario
  * pinta la cabecera y los totales; el secundario, los titulos. Si la tienda no
- * tiene colores validos se usa una paleta corporativa neutra.
+ * tiene colores validos se usa una paleta corporativa neutra. El logo es
+ * opcional: si no se puede leer, el comprobante se imprime sin el.
  */
-public record MarcaComprobante(String colorPrimario, String colorSecundario) {
+public record MarcaComprobante(String colorPrimario, String colorSecundario, String logoUrl) {
 
     private static final String PRIMARIO_DEFECTO = "#0B4A6F";
     private static final String SECUNDARIO_DEFECTO = "#0F172A";
+
+    public MarcaComprobante(String colorPrimario, String colorSecundario) {
+        this(colorPrimario, colorSecundario, null);
+    }
 
     public static MarcaComprobante porDefecto() {
         return new MarcaComprobante(PRIMARIO_DEFECTO, SECUNDARIO_DEFECTO);

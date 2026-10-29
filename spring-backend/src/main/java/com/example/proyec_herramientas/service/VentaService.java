@@ -3,13 +3,15 @@ package com.example.proyec_herramientas.service;
 import com.example.proyec_herramientas.model.CarritoRequestDTO;
 import com.example.proyec_herramientas.model.PaginaVentasDTO;
 import com.example.proyec_herramientas.persistence.Venta;
+import com.example.proyec_herramientas.security.Vendedor;
 
 import java.util.List;
 
 public interface VentaService {
 
     // idCliente siempre viene del token del CLIENTE autenticado, nunca del body.
-    Venta registrarVenta(String idCliente, CarritoRequestDTO carrito);
+    // El vendedor tambien sale del token: es null en las autocompras.
+    Venta registrarVenta(String idCliente, CarritoRequestDTO carrito, Vendedor vendedor);
 
     Venta obtenerVentaPorId(String idVenta);
 

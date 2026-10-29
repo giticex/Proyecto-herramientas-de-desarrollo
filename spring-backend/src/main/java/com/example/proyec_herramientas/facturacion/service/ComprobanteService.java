@@ -2,6 +2,7 @@ package com.example.proyec_herramientas.facturacion.service;
 
 import com.example.proyec_herramientas.facturacion.model.ComprobanteRequestDTO;
 import com.example.proyec_herramientas.facturacion.model.ComprobanteRespuestaDTO;
+import com.example.proyec_herramientas.security.Vendedor;
 
 import java.util.List;
 
@@ -14,9 +15,10 @@ public interface ComprobanteService {
     /**
      * Emite un comprobante: valida los datos, recalcula los importes desde el
      * catalogo, reserva el correlativo, genera el XML UBL 2.1, calcula el hash
-     * y el codigo QR, y lo persiste.
+     * y el codigo QR, y lo persiste. El vendedor sale del token y queda
+     * congelado en el comprobante; es null en las autocompras del CLIENTE.
      */
-    ComprobanteRespuestaDTO emitir(ComprobanteRequestDTO request);
+    ComprobanteRespuestaDTO emitir(ComprobanteRequestDTO request, Vendedor vendedor);
 
     /** Recupera un comprobante ya emitido por su identificador. */
     ComprobanteRespuestaDTO obtenerPorId(String idVenta);

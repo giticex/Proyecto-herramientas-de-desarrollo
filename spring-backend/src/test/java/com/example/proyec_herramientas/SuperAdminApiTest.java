@@ -233,7 +233,7 @@ class SuperAdminApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElementos", is(1)))
                 .andExpect(jsonPath("$.contenido", hasSize(1)))
-                .andExpect(jsonPath("$.contenido[0].numeroDocumento", startsWith("BOL-")))
+                .andExpect(jsonPath("$.contenido[0].numeroDocumento", startsWith("B001-")))
                 .andExpect(jsonPath("$.contenido[0].total", is(100.0)));
 
         mockMvc.perform(get("/api/super-admin/empresas/" + tiendaB.getIdTienda() + "/comprobantes")

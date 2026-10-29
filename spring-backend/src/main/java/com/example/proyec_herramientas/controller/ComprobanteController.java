@@ -5,6 +5,7 @@ import com.example.proyec_herramientas.facturacion.model.ComprobanteRespuestaDTO
 import com.example.proyec_herramientas.facturacion.service.ComprobanteService;
 import com.example.proyec_herramientas.security.AccesoService;
 import com.example.proyec_herramientas.security.SesionPrincipal;
+import com.example.proyec_herramientas.security.VendedorResolver;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -31,17 +32,22 @@ public class ComprobanteController {
 
     private final ComprobanteService comprobanteService;
     private final AccesoService accesoService;
+    private final VendedorResolver vendedorResolver;
 
-    public ComprobanteController(ComprobanteService comprobanteService, AccesoService accesoService) {
+    public ComprobanteController(ComprobanteService comprobanteService, AccesoService accesoService,
+            VendedorResolver vendedorResolver) {
         this.comprobanteService = comprobanteService;
         this.accesoService = accesoService;
+        this.vendedorResolver = vendedorResolver;
     }
 
     @PostMapping
     public ResponseEntity<ComprobanteRespuestaDTO> emitir(@RequestBody ComprobanteRequestDTO request,
             Authentication authentication) {
         accesoService.prepararEmision(request, authentication);
-        return ResponseEntity.status(HttpStatus.CREATED).body(comprobanteService.emitir(request));
+        SesionPrincipal sesion = accesoService.principal(authentication);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(comprobanteService.emitir(request, vendedorResolver.resolver(sesion)));
     }
 
     @GetMapping("/{idVenta}")
