@@ -7,8 +7,9 @@ import { showToast } from '../components/toastBus';
 import './Login.css';
 
 function destinoSegunRol(rol) {
+  if (rol === 'SUPER_ADMIN' || rol === 'SUPERADMIN') return '/super-admin/dashboard';
   if (rol === 'VENDEDOR') return '/admin/pos';
-  if (rol === 'ADMIN' || rol === 'SUPERADMIN' || rol === 'SUPER_ADMIN') return '/admin';
+  if (rol === 'ADMIN') return '/admin';
   if (rol === 'CLIENTE') return null;
   return '/admin';
 }

@@ -33,6 +33,7 @@ INSERT INTO parametro (id_parametro, valor, descripcion) VALUES
 -- Roles del sistema. Las pruebas de seguridad usan estas cuentas para
 -- comprobar que ADMIN entra al panel, VENDEDOR entra al POS y CLIENTE no.
 INSERT INTO rol (id_rol, nombre, descripcion) VALUES
+    ('SUPER_ADMIN', 'Super Administrador', 'Supervisa todas las empresas de la plataforma'),
     ('ADMIN', 'Administrador', 'Gestiona productos, historial general, clientes y alertas de stock'),
     ('VENDEDOR', 'Vendedor', 'Opera el punto de venta: consulta catalogo, clientes y registra ventas de su tienda'),
     ('CLIENTE', 'Cliente', 'Compra en la tienda, ve su carrito y sus compras');

@@ -37,6 +37,52 @@ public interface VentaRepository extends JpaRepository<Venta, String> {
             @Param("fin") Date fin,
             @Param("idTienda") int idTienda);
 
+    // Total historico y cantidad de comprobantes de la tienda. La consola del
+    // SUPER_ADMIN los usa para el estado de cada empresa.
+    @Query("""
+            SELECT COALESCE(SUM(v.totalVenta), 0)
+            FROM Venta v
+            WHERE EXISTS (
+                SELECT 1
+                FROM DetalleVenta d, Producto p
+                WHERE d.venta = v AND p.idProducto = d.idProducto AND p.idTienda = :idTienda
+            )
+            """)
+    BigDecimal sumarTotalPorTienda(@Param("idTienda") int idTienda);
+
+    @Query("""
+            SELECT COUNT(v)
+            FROM Venta v
+            WHERE EXISTS (
+                SELECT 1
+                FROM DetalleVenta d, Producto p
+                WHERE d.venta = v AND p.idProducto = d.idProducto AND p.idTienda = :idTienda
+            )
+            """)
+    long contarVentasPorTienda(@Param("idTienda") int idTienda);
+
+    @Query("""
+            SELECT MAX(v.fechaEmision)
+            FROM Venta v
+            WHERE EXISTS (
+                SELECT 1
+                FROM DetalleVenta d, Producto p
+                WHERE d.venta = v AND p.idProducto = d.idProducto AND p.idTienda = :idTienda
+            )
+            """)
+    Date ultimaVentaPorTienda(@Param("idTienda") int idTienda);
+
+    // Totales de toda la plataforma (sin acotar por tienda): alimentan los KPI
+    // globales de la consola del SUPER_ADMIN.
+    @Query("SELECT COALESCE(SUM(v.totalVenta), 0) FROM Venta v WHERE v.fechaEmision >= :inicio AND v.fechaEmision < :fin")
+    BigDecimal sumarTotalGlobalEntre(@Param("inicio") Date inicio, @Param("fin") Date fin);
+
+    @Query("SELECT COALESCE(SUM(v.totalVenta), 0) FROM Venta v")
+    BigDecimal sumarTotalGlobal();
+
+    @Query("SELECT COUNT(v) FROM Venta v")
+    long contarVentasGlobal();
+
     // Historial paginado de la tienda. Igual que en el dashboard, la venta se
     // asocia a la tienda por los productos de sus detalles. El filtro busca por
     // numero de comprobante, documento del cliente o razon social.

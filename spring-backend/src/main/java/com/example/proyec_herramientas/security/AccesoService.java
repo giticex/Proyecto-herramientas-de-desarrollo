@@ -54,13 +54,17 @@ public class AccesoService {
     }
 
     // Un CLIENTE solo accede a sus propias ventas; el personal solo a las ventas
-    // que incluyen productos de su tienda.
+    // que incluyen productos de su tienda. El SUPER_ADMIN supervisa la plataforma
+    // completa, asi que puede consultar cualquier comprobante.
     @Transactional(readOnly = true)
     public void validarVenta(String idVenta, Authentication autenticacion) {
         SesionPrincipal sesion = principal(autenticacion);
         Venta venta = ventaRepository.findById(idVenta)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Comprobante " + idVenta + " no encontrado"));
+        if (Rol.SUPER_ADMIN.equals(sesion.rol())) {
+            return;
+        }
         if (esCliente(sesion)) {
             if (sesion.idCliente() == null || !Objects.equals(venta.getIdCliente(), sesion.idCliente())) {
                 throw new AccessDeniedException("La venta no pertenece al cliente autenticado");

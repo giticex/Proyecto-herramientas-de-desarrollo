@@ -1,4 +1,4 @@
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route, Link, Navigate } from 'react-router-dom';
 import Login from './auth/Login';
 import RegistroTienda from './admin/RegistroTienda';
 import DashboardAdmin from './admin/DashboardAdmin';
@@ -17,6 +17,7 @@ import CheckoutTienda from './tienda/CheckoutTienda';
 import ConfirmacionCompra from './tienda/ConfirmacionCompra';
 import MisCompras from './tienda/MisCompras';
 import RutaProtegidaCliente from './tienda/RutaProtegidaCliente';
+import SuperAdminPanel from './superadmin/SuperAdminPanel';
 
 
 function PaginaNoEncontrada() {
@@ -49,7 +50,13 @@ export default function App() {
           <Route path="/tienda/:slug/mis-compras" element={<MisCompras />} />
         </Route>
 
-        {/* === 4. MÓDULO ADMINISTRADOR Y ONBOARDING (Kiara) === */}
+        {/* === 4. CONSOLA GLOBAL DE LA PLATAFORMA (solo SUPER_ADMIN) === */}
+        <Route element={<RutaProtegida roles={['SUPER_ADMIN']} />}>
+          <Route path="/super-admin/dashboard" element={<SuperAdminPanel />} />
+        </Route>
+        <Route path="/super-admin" element={<Navigate to="/super-admin/dashboard" replace />} />
+
+        {/* === 5. MÓDULO ADMINISTRADOR Y ONBOARDING (Kiara) === */}
         <Route path="/login" element={<Login />} />
         <Route path="/admin/login" element={<Login />} />
         <Route path="/registro-tienda" element={<RegistroTienda />} />

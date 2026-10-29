@@ -37,10 +37,13 @@ final class CuentasTest {
     static final String CORREO_VENDEDOR = "vendedor@prueba.com";
     static final String USUARIO_CLIENTE = "comprador";
     static final String CORREO_CLIENTE = "comprador@prueba.com";
+    static final String USUARIO_SUPER = "superadmin";
+    static final String CORREO_SUPER = "superadmin@prueba.com";
     static final String ID_CLIENTE = "CLI-PRUEBA";
     static final String ID_PERSONA_ADMIN = "PER-PRUEBA-ADM";
     static final String ID_PERSONA_VENDEDOR = "PER-PRUEBA-VEN";
     static final String ID_PERSONA_CLIENTE = "PER-PRUEBA-CLI";
+    static final String ID_PERSONA_SUPER = "PER-PRUEBA-SUP";
 
     // Tienda de la que es dueno el ADMIN de las pruebas.
     static final String SLUG_TIENDA = "tienda-prueba";
@@ -96,6 +99,22 @@ final class CuentasTest {
         usuario.setContrasena(HASH_123456);
         usuario.setIdPersona(persona.getIdPersona());
         usuario.setIdRol(Rol.CLIENTE);
+        usuario.setIdTienda(tienda.getIdTienda());
+        return usuarios.save(usuario);
+    }
+
+    // Cuenta global: su idTienda solo cumple el NOT NULL del esquema; el login
+    // del SUPER_ADMIN no la incluye en el token.
+    static Usuario crearSuperAdmin(UsuarioRepository usuarios, PersonaRepository personas,
+            TiendaRepository tiendas) {
+        Tienda tienda = crearTienda(tiendas);
+        Persona persona = persona(personas, ID_PERSONA_SUPER, "Super", "Administrador", CORREO_SUPER,
+                USUARIO_SUPER);
+        Usuario usuario = usuarios.findByUsuario(USUARIO_SUPER).orElseGet(() -> new Usuario());
+        usuario.setUsuario(USUARIO_SUPER);
+        usuario.setContrasena(HASH_123456);
+        usuario.setIdPersona(persona.getIdPersona());
+        usuario.setIdRol(Rol.SUPER_ADMIN);
         usuario.setIdTienda(tienda.getIdTienda());
         return usuarios.save(usuario);
     }

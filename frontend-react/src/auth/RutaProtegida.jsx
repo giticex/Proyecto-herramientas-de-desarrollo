@@ -19,6 +19,12 @@ export default function RutaProtegida({ roles = ['ADMIN', 'VENDEDOR'] }) {
     return <Outlet />;
   }
 
+  // El SUPER_ADMIN solo tiene su consola global: si intenta abrir una vista
+  // de tienda vuelve a su panel en lugar de ver un error.
+  if (rol === 'SUPER_ADMIN' || rol === 'SUPERADMIN') {
+    return <Navigate to="/super-admin/dashboard" replace />;
+  }
+
   // Un vendedor que intenta abrir una vista solo de ADMIN (dashboard, marca,
   // productos) vuelve a su pantalla de trabajo en lugar de ver un error.
   if (rol === 'VENDEDOR') {

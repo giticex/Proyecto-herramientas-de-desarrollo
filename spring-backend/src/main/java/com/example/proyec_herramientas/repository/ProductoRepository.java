@@ -17,6 +17,10 @@ public interface ProductoRepository extends JpaRepository<Producto, Integer> {
     // Listar por tienda
     List<Producto> findByIdTienda(Integer idTienda);
 
+    long countByIdTienda(Integer idTienda);
+
+    long countByIdTiendaAndStockLessThanEqual(Integer idTienda, int stock);
+
     Optional<Producto> findByCodigo(String codigo);
 
     // Bloquea la fila del producto mientras dura la transaccion de venta: dos

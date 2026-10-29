@@ -69,7 +69,12 @@ public class AuthServiceImpl implements AuthService {
             Usuario usuario = cuenta.get();
             Persona persona = personaRepository.findById(usuario.getIdPersona()).orElse(null);
             String correo = persona != null ? persona.getCorreo() : null;
-            Tienda tienda = usuario.getIdTienda() != null
+            // El SUPER_ADMIN es una cuenta global: no pertenece a ninguna tienda.
+            // Aunque usuario.id_tienda sea NOT NULL, su tienda se omite del token
+            // y de la respuesta para que ninguna operacion quede acotada a un
+            // tenant por accidente.
+            boolean superAdmin = Rol.SUPER_ADMIN.equalsIgnoreCase(usuario.getIdRol());
+            Tienda tienda = !superAdmin && usuario.getIdTienda() != null
                     ? tiendaRepository.findById(usuario.getIdTienda()).orElse(null)
                     : null;
             return respuesta(usuario.getUsuario(), usuario.getIdRol(), idClienteDe(correo),

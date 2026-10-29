@@ -23,16 +23,18 @@ class RolControllerTest {
     private MockMvc mockMvc;
 
     @Test
-    void listarRolesDevuelveAdminClienteYVendedor() throws Exception {
+    void listarRolesDevuelveTodosLosRolesDelSistema() throws Exception {
         mockMvc.perform(get("/api/roles"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(3)))
+                .andExpect(jsonPath("$", hasSize(4)))
                 .andExpect(jsonPath("$[0].idRol", is("ADMIN")))
                 .andExpect(jsonPath("$[0].nombre", is("Administrador")))
                 .andExpect(jsonPath("$[1].idRol", is("CLIENTE")))
                 .andExpect(jsonPath("$[1].nombre", is("Cliente")))
-                .andExpect(jsonPath("$[2].idRol", is("VENDEDOR")))
-                .andExpect(jsonPath("$[2].nombre", is("Vendedor")));
+                .andExpect(jsonPath("$[2].idRol", is("SUPER_ADMIN")))
+                .andExpect(jsonPath("$[2].nombre", is("Super Administrador")))
+                .andExpect(jsonPath("$[3].idRol", is("VENDEDOR")))
+                .andExpect(jsonPath("$[3].nombre", is("Vendedor")));
     }
 
     @Test

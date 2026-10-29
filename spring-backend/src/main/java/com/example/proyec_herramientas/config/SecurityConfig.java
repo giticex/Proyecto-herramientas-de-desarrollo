@@ -56,6 +56,10 @@ public class SecurityConfig {
                         // prefijo se eliminaron para que no evadan estas reglas.
                         .requestMatchers("/api/auth/**", "/api/roles", "/error").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/sunat/**").permitAll()
+                        // Consola global de la plataforma: exclusiva del SUPER_ADMIN.
+                        // Va antes que las reglas de staff para que ningun otro rol
+                        // pueda alcanzar los endpoints de supervision global.
+                        .requestMatchers("/api/super-admin/**").hasRole("SUPER_ADMIN")
                         // Catalogo publico por slug (y portada de la tienda demo).
                         .requestMatchers(HttpMethod.GET, "/api/tiendas/mi-tienda",
                                 "/api/tiendas/*", "/api/tiendas/*/productos").permitAll()
@@ -64,6 +68,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/ventas")
                         .hasAnyRole("CLIENTE", "ADMIN", "VENDEDOR")
                         .requestMatchers("/api/dashboard/**").hasRole("ADMIN")
+                        // El SUPER_ADMIN solo consulta comprobantes (PDF/XML); no
+                        // emite ni opera caja.
+                        .requestMatchers(HttpMethod.GET, "/api/comprobantes/**")
+                        .hasAnyRole("ADMIN", "VENDEDOR", "CLIENTE", "SUPER_ADMIN")
                         .requestMatchers("/api/comprobantes/**")
                         .hasAnyRole("ADMIN", "VENDEDOR", "CLIENTE")
                         // Las devoluciones y los créditos los gestiona el personal de la tienda.

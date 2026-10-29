@@ -310,6 +310,7 @@ INSERT INTO parametro (id_parametro, valor, descripcion) VALUES
 
 -- Los roles del sistema. El codigo lee esta tabla, nunca los escribe a mano.
 INSERT INTO rol (id_rol, nombre, descripcion) VALUES
+('SUPER_ADMIN', 'Super Administrador', 'Supervisa todas las empresas de la plataforma'),
 ('ADMIN', 'Administrador', 'Gestiona productos, historial general, clientes y alertas de stock'),
 ('VENDEDOR', 'Vendedor', 'Opera el punto de venta: consulta catalogo, clientes y registra ventas de su tienda'),
 ('CLIENTE', 'Cliente', 'Compra en la tienda, ve su carrito y sus compras');
@@ -358,7 +359,8 @@ INSERT INTO persona VALUES
 ('PER014', 'Sofía', 'Herrera', '2001-05-19', 'sofia@gmail.com', '987654334', 'sofiah'),
 ('PER015', 'Fernando', 'Lozano', '1995-08-11', 'fernando@gmail.com', '987654335', 'fernandol'),
 ('PERADM', 'Administrador', 'General', '1995-01-01', 'admin@softplex.com', '999999999', 'admin'),
-('PERVEN', 'Vendedor', 'Demo', '1999-04-15', 'vendedor@softplex.com', '999999998', 'vendedor');
+('PERVEN', 'Vendedor', 'Demo', '1999-04-15', 'vendedor@softplex.com', '999999998', 'vendedor'),
+('PERSUP', 'Super', 'Administrador', NULL, 'superadm@gmail.com', '999999997', 'superadm');
 
 -- Las personas son las RELACIONES (empleados/registrados). Quien compra es
 -- cliente, y su cuenta vive en la tabla cliente.
@@ -401,7 +403,10 @@ INSERT INTO usuario (usuario, contrasena, id_persona, id_rol, id_tienda) VALUES
 ('sofiah', @HASH_123456, 'PER014', 'ADMIN', 1),
 ('fernandol', @HASH_123456, 'PER015', 'ADMIN', 1),
 ('admin', @HASH_123456, 'PERADM', 'ADMIN', 1),
-('vendedor', @HASH_123456, 'PERVEN', 'VENDEDOR', 1);
+('vendedor', @HASH_123456, 'PERVEN', 'VENDEDOR', 1),
+-- Cuenta global: id_tienda solo cumple el NOT NULL, el token del SUPER_ADMIN
+-- no lleva tienda. Clave: Sup3rAdm!n2026#
+('superadm', '$2a$10$hkSAKFQF8rVHGeYhM/mBw.nWrEsXKqKcxx5hxPSZr4B6wJK1OUvYG', 'PERSUP', 'SUPER_ADMIN', 1);
 
 -- Catalogo de productos. id_producto no es AUTO_INCREMENT: la pantalla de
 -- gestion de productos lo pide explicitamente al agregar. Todos de la tienda

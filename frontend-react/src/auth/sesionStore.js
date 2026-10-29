@@ -33,7 +33,8 @@ export const useSesion = create((set) => ({
 }));
 
 // Personal con acceso al panel: ADMIN administra todo; VENDEDOR opera caja
-// (POS) e historial de ventas.
+// (POS) e historial de ventas. SUPER_ADMIN es la capa global de la plataforma
+// y no entra a las vistas de tienda.
 export function esAdmin(sesion) {
   return sesion?.rol === 'ADMIN';
 }
