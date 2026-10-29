@@ -1,12 +1,18 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useLocation, Link, Navigate } from 'react-router-dom';
 import PlantillaTienda from '../components/PlantillaTienda';
 import './ConfirmacionCompra.css';
 
 export default function ConfirmacionCompra() {
   const { slug } = useParams();
-  
-  // Generamos un número de pedido aleatorio para simular la compra
-  const numeroPedido = Math.floor(100000 + Math.random() * 900000);
+  const { state } = useLocation();
+
+  // Sin los datos de la compra recién emitida (recarga o entrada directa por
+  // URL) no hay comprobante real que mostrar: se vuelve al catálogo.
+  if (!state?.numeroDocumento) {
+    return <Navigate to={`/tienda/${slug}`} replace />;
+  }
+
+  const etiqueta = state.tipoComprobante === 'factura' ? 'Factura' : 'Boleta';
 
   return (
     <PlantillaTienda>
@@ -16,10 +22,13 @@ export default function ConfirmacionCompra() {
           <h2>¡Compra exitosa!</h2>
           <p>Tu pedido ha sido procesado correctamente.</p>
           <p>Te hemos enviado un correo con los detalles de tu comprobante.</p>
-          
+
           <div className="numero-pedido">
-            Pedido #{numeroPedido}
+            {etiqueta} {state.numeroDocumento}
           </div>
+          {Number.isFinite(state.total) && (
+            <p className="confirmacion-total">Total: S/ {state.total.toFixed(2)}</p>
+          )}
 
           <div className="confirmacion-acciones">
             <Link to={`/tienda/${slug}/mis-compras`} className="btn">

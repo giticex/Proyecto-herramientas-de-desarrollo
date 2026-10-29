@@ -242,7 +242,16 @@ export default function CheckoutTienda() {
       showToast(
         `¡${tipoComprobante === 'boleta' ? 'Boleta' : 'Factura'} ${nuevaOrden.numeroComprobante} emitida!`
       );
-      navigate(`/tienda/${slug}/confirmacion`);
+      // La confirmación muestra el número real del comprobante emitido; sin
+      // este estado solo podría inventar un pedido.
+      navigate(`/tienda/${slug}/confirmacion`, {
+        state: {
+          idVenta: nuevaOrden.idOrden,
+          numeroDocumento: nuevaOrden.numeroComprobante,
+          tipoComprobante,
+          total: nuevaOrden.total,
+        },
+      });
     } catch (error) {
       setProcesando(false);
       if (error?.status === 401 || error?.status === 403) {

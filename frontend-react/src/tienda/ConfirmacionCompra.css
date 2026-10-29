@@ -46,6 +46,13 @@
   border-radius: 12px;
 }
 
+.confirmacion-total {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text, #1d1d1f);
+  margin-top: -8px;
+}
+
 .confirmacion-acciones {
   display: flex;
   gap: 16px;
