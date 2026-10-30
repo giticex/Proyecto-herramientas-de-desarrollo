@@ -31,6 +31,23 @@ public class Cliente {
     @Column(name = "correo", length = 100)
     private String correo;
 
+    // Documento fiscal con el que el POS identifica al comprador. Catalogo 01
+    // de SUNAT: 1 = DNI, 6 = RUC. Solo lo tienen las fichas creadas desde el
+    // punto de venta; las cuentas del portal se identifican por correo.
+    @Column(name = "tipo_documento", length = 1)
+    private String tipoDocumento;
+
+    @Column(name = "numero_documento", length = 15)
+    private String numeroDocumento;
+
+    @Column(name = "direccion", length = 200)
+    private String direccion;
+
+    // Tienda que registro la ficha rapida. Las cuentas del portal no tienen
+    // tienda (null) y no se exponen en la busqueda del punto de venta.
+    @Column(name = "id_tienda")
+    private Integer idTienda;
+
     // FK a la tabla rol. El comprador es CLIENTE por defecto: es el rol con
     // menos permisos, asi que una cuenta creada sin rol explicito no abre
     // puertas de mas.
@@ -94,6 +111,38 @@ public class Cliente {
 
     public void setCorreo(String correo) {
         this.correo = correo;
+    }
+
+    public String getTipoDocumento() {
+        return tipoDocumento;
+    }
+
+    public void setTipoDocumento(String tipoDocumento) {
+        this.tipoDocumento = tipoDocumento;
+    }
+
+    public String getNumeroDocumento() {
+        return numeroDocumento;
+    }
+
+    public void setNumeroDocumento(String numeroDocumento) {
+        this.numeroDocumento = numeroDocumento;
+    }
+
+    public String getDireccion() {
+        return direccion;
+    }
+
+    public void setDireccion(String direccion) {
+        this.direccion = direccion;
+    }
+
+    public Integer getIdTienda() {
+        return idTienda;
+    }
+
+    public void setIdTienda(Integer idTienda) {
+        this.idTienda = idTienda;
     }
 
     public String getIdRol() {

@@ -28,6 +28,10 @@ public class CarritoRequestDTO {
 
     private String razonSocial;
 
+    // Direccion fiscal del comprador que trae el autocompletado del POS. Se
+    // congela en el comprobante; si no viene queda vacia.
+    private String direccionCliente;
+
     // Codigo BOL-CR-XXXXXX del credito a favor que se aplica al total. Si el
     // saldo no cubre todo, el resto se cobra con el medio de pago elegido.
     private String creditoCodigo;
@@ -74,6 +78,14 @@ public class CarritoRequestDTO {
 
     public void setRazonSocial(String razonSocial) {
         this.razonSocial = razonSocial;
+    }
+
+    public String getDireccionCliente() {
+        return direccionCliente;
+    }
+
+    public void setDireccionCliente(String direccionCliente) {
+        this.direccionCliente = direccionCliente;
     }
 
     public String getCreditoCodigo() {

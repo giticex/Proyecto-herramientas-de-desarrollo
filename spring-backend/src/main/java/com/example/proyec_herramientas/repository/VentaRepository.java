@@ -59,6 +59,46 @@ public interface VentaRepository extends JpaRepository<Venta, String> {
             @Param("fin") Date fin,
             @Param("idTienda") int idTienda);
 
+    // Ventas del vendedor autenticado en el rango [inicio, fin): base del
+    // resumen y del efectivo esperado del arqueo de caja del POS. La venta se
+    // atribuye por el snapshot vendedor_usuario y se acota a la tienda del
+    // token por los productos del detalle. El extremo superior es inclusivo
+    // para no perder ventas del mismo segundo, porque las columnas de fecha
+    // guardan segundos y MySQL redondea los milisegundos al insertar.
+    @Query("""
+            SELECT v
+            FROM Venta v
+            WHERE v.vendedorUsuario = :usuario
+              AND v.fechaEmision >= :inicio AND v.fechaEmision <= :fin
+              AND EXISTS (
+                  SELECT 1
+                  FROM DetalleVenta d, Producto p
+                  WHERE d.venta = v AND p.idProducto = d.idProducto AND p.idTienda = :idTienda
+              )
+            ORDER BY v.fechaEmision ASC
+            """)
+    List<Venta> ventasDeVendedorEntre(@Param("usuario") String usuario,
+            @Param("inicio") Date inicio,
+            @Param("fin") Date fin,
+            @Param("idTienda") int idTienda);
+
+    // Comprobantes de la tienda emitidos a un documento. El POS los usa para
+    // autocompletar nombre y direccion de un comprador que ya compro aunque su
+    // ficha no exista en la tabla cliente.
+    @Query("""
+            SELECT v
+            FROM Venta v
+            WHERE v.receptorNumDocumento = :documento
+              AND EXISTS (
+                  SELECT 1
+                  FROM DetalleVenta d, Producto p
+                  WHERE d.venta = v AND p.idProducto = d.idProducto AND p.idTienda = :idTienda
+              )
+            ORDER BY v.fechaEmision DESC
+            """)
+    List<Venta> ventasPorDocumentoReceptor(@Param("documento") String documento,
+            @Param("idTienda") int idTienda, Pageable limite);
+
     // Total historico y cantidad de comprobantes de la tienda. La consola del
     // SUPER_ADMIN los usa para el estado de cada empresa.
     @Query("""

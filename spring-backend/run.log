@@ -1,0 +1,454 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.3)
+
+2026-10-28T11:06:52.286-05:00  INFO 33504 --- [proyec_herramientas] [           main] c.e.p.ProyecHerramientasApplication      : Starting ProyecHerramientasApplication v0.0.1-SNAPSHOT using Java 24.0.1 with PID 33504 (C:\Users\LOQ\OneDrive\Documentos\Herramientas de desarrollo\proyecto_herramientas\spring-backend\target\proyec_herramientas-0.0.1-SNAPSHOT.jar started by LOQ in C:\Users\LOQ\OneDrive\Documentos\Herramientas de desarrollo\proyecto_herramientas\spring-backend)
+2026-10-28T11:06:52.289-05:00  INFO 33504 --- [proyec_herramientas] [           main] c.e.p.ProyecHerramientasApplication      : No active profile set, falling back to 1 default profile: "default"
+2026-10-28T11:06:53.537-05:00  INFO 33504 --- [proyec_herramientas] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-28T11:06:53.665-05:00  INFO 33504 --- [proyec_herramientas] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 115 ms. Found 12 JPA repository interfaces.
+2026-10-28T11:06:54.941-05:00  INFO 33504 --- [proyec_herramientas] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-10-28T11:06:54.969-05:00  INFO 33504 --- [proyec_herramientas] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-28T11:06:54.969-05:00  INFO 33504 --- [proyec_herramientas] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.42]
+2026-10-28T11:06:55.031-05:00  INFO 33504 --- [proyec_herramientas] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-10-28T11:06:55.033-05:00  INFO 33504 --- [proyec_herramientas] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2663 ms
+2026-10-28T11:06:55.545-05:00  INFO 33504 --- [proyec_herramientas] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-10-28T11:06:55.691-05:00  INFO 33504 --- [proyec_herramientas] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.18.Final
+2026-10-28T11:06:55.779-05:00  INFO 33504 --- [proyec_herramientas] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-10-28T11:06:56.407-05:00  INFO 33504 --- [proyec_herramientas] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-28T11:06:56.459-05:00  INFO 33504 --- [proyec_herramientas] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-28T11:06:56.819-05:00  INFO 33504 --- [proyec_herramientas] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@4de91056
+2026-10-28T11:06:56.822-05:00  INFO 33504 --- [proyec_herramientas] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-28T11:06:56.943-05:00  INFO 33504 --- [proyec_herramientas] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 8.0.46
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-10-28T11:06:58.698-05:00  INFO 33504 --- [proyec_herramientas] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-28T11:06:58.843-05:00  INFO 33504 --- [proyec_herramientas] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-28T11:06:59.437-05:00  INFO 33504 --- [proyec_herramientas] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-10-28T11:07:02.894-05:00  INFO 33504 --- [proyec_herramientas] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
+2026-10-28T11:07:03.797-05:00  INFO 33504 --- [proyec_herramientas] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/'
+2026-10-28T11:07:03.831-05:00  INFO 33504 --- [proyec_herramientas] [           main] c.e.p.ProyecHerramientasApplication      : Started ProyecHerramientasApplication in 12.281 seconds (process running for 13.119)
+Hibernate: select count(*) from producto p1_0
+Productos ya existentes en BD, no se insertan datos de prueba.
+2026-10-28T11:07:11.717-05:00  INFO 33504 --- [proyec_herramientas] [nio-8080-exec-2] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-28T11:07:11.717-05:00  INFO 33504 --- [proyec_herramientas] [nio-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-28T11:07:11.718-05:00  INFO 33504 --- [proyec_herramientas] [nio-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+Hibernate: select u1_0.id_usuario,u1_0.contrasena,u1_0.id_persona,u1_0.id_rol,u1_0.id_tienda,u1_0.usuario from usuario u1_0 where u1_0.usuario=?
+Hibernate: select p1_0.id_persona,p1_0.apellido,p1_0.correo,p1_0.fecha_nacimiento,p1_0.nombre,p1_0.telefono,p1_0.usuario from persona p1_0 where p1_0.id_persona=?
+Hibernate: select t1_0.id_tienda,t1_0.color_primario,t1_0.color_secundario,t1_0.logo_url,t1_0.nombre,t1_0.rubro,t1_0.slug from tienda t1_0 where t1_0.id_tienda=?
+Hibernate: select c1_0.id_cliente,c1_0.apellido,c1_0.contrasena,c1_0.correo,c1_0.id_rol,c1_0.nombre,c1_0.telefono from cliente c1_0 where c1_0.correo=?
+Hibernate: select r1_0.id_rol,r1_0.descripcion,r1_0.nombre from rol r1_0 where r1_0.id_rol=?
+Hibernate: select t1_0.id_tienda,t1_0.color_primario,t1_0.color_secundario,t1_0.logo_url,t1_0.nombre,t1_0.rubro,t1_0.slug from tienda t1_0 where t1_0.slug=?
+Hibernate: select t1_0.id_tienda,t1_0.color_primario,t1_0.color_secundario,t1_0.logo_url,t1_0.nombre,t1_0.rubro,t1_0.slug from tienda t1_0 where t1_0.slug=?
+Hibernate: select u1_0.id_usuario,u1_0.contrasena,u1_0.id_persona,u1_0.id_rol,u1_0.id_tienda,u1_0.usuario from usuario u1_0 where u1_0.usuario=?
+Hibernate: select p1_0.id_persona,p1_0.apellido,p1_0.correo,p1_0.fecha_nacimiento,p1_0.nombre,p1_0.telefono,p1_0.usuario from persona p1_0 where p1_0.id_persona=?
+Hibernate: select t1_0.id_tienda,t1_0.color_primario,t1_0.color_secundario,t1_0.logo_url,t1_0.nombre,t1_0.rubro,t1_0.slug from tienda t1_0 where t1_0.id_tienda=?
+Hibernate: select c1_0.id_cliente,c1_0.apellido,c1_0.contrasena,c1_0.correo,c1_0.id_rol,c1_0.nombre,c1_0.telefono from cliente c1_0 where c1_0.correo=?
+Hibernate: select r1_0.id_rol,r1_0.descripcion,r1_0.nombre from rol r1_0 where r1_0.id_rol=?
+Hibernate: select u1_0.id_usuario,u1_0.contrasena,u1_0.id_persona,u1_0.id_rol,u1_0.id_tienda,u1_0.usuario from usuario u1_0 where u1_0.usuario=?
+Hibernate: select p1_0.id_persona,p1_0.apellido,p1_0.correo,p1_0.fecha_nacimiento,p1_0.nombre,p1_0.telefono,p1_0.usuario from persona p1_0 where p1_0.id_persona=?
+Hibernate: select t1_0.id_tienda,t1_0.color_primario,t1_0.color_secundario,t1_0.logo_url,t1_0.nombre,t1_0.rubro,t1_0.slug from tienda t1_0 where t1_0.id_tienda=?
+Hibernate: select c1_0.id_cliente,c1_0.apellido,c1_0.contrasena,c1_0.correo,c1_0.id_rol,c1_0.nombre,c1_0.telefono from cliente c1_0 where c1_0.correo=?
+Hibernate: select r1_0.id_rol,r1_0.descripcion,r1_0.nombre from rol r1_0 where r1_0.id_rol=?
+Hibernate: select p1_0.id_producto,p1_0.afectacion_igv,p1_0.atributos,p1_0.categoria,p1_0.codigo,p1_0.id_tienda,p1_0.nombre,p1_0.precio,p1_0.stock,p1_0.unidad_medida from producto p1_0 where p1_0.id_tienda=?
+Hibernate: select u1_0.id_usuario,u1_0.contrasena,u1_0.id_persona,u1_0.id_rol,u1_0.id_tienda,u1_0.usuario from usuario u1_0 where u1_0.usuario=?
+Hibernate: select p1_0.id_persona,p1_0.apellido,p1_0.correo,p1_0.fecha_nacimiento,p1_0.nombre,p1_0.telefono,p1_0.usuario from persona p1_0 where p1_0.correo=?
+Hibernate: select u1_0.id_usuario,u1_0.contrasena,u1_0.id_persona,u1_0.id_rol,u1_0.id_tienda,u1_0.usuario from usuario u1_0 where u1_0.id_persona=?
+Hibernate: select t1_0.id_tienda,t1_0.color_primario,t1_0.color_secundario,t1_0.logo_url,t1_0.nombre,t1_0.rubro,t1_0.slug from tienda t1_0 where t1_0.id_tienda=?
+Hibernate: select c1_0.id_cliente,c1_0.apellido,c1_0.contrasena,c1_0.correo,c1_0.id_rol,c1_0.nombre,c1_0.telefono from cliente c1_0 where c1_0.correo=?
+Hibernate: select r1_0.id_rol,r1_0.descripcion,r1_0.nombre from rol r1_0 where r1_0.id_rol=?
+Hibernate: update usuario set contrasena=?,id_persona=?,id_rol=?,id_tienda=?,usuario=? where id_usuario=?
+Hibernate: select c1_0.id_cliente,c1_0.apellido,c1_0.contrasena,c1_0.correo,c1_0.id_rol,c1_0.nombre,c1_0.telefono from cliente c1_0
+Hibernate: select c1_0.id_cliente,c1_0.apellido,c1_0.contrasena,c1_0.correo,c1_0.id_rol,c1_0.nombre,c1_0.telefono from cliente c1_0
+Hibernate: select v1_0.id_venta,v1_0.cdr_summary,v1_0.codigo_qr,v1_0.condicion_operacion,v1_0.correlativo,v1_0.email_contacto,v1_0.entrega_direccion,v1_0.entrega_ubigeo,v1_0.estado,v1_0.estado_sunat,v1_0.fecha_emision,v1_0.forma_pago,v1_0.hash_comprobante,v1_0.id_cliente,v1_0.id_medio_pago,v1_0.id_persona,v1_0.id_tipo_documento,v1_0.leyendas,v1_0.moneda,v1_0.monto_total_credito,v1_0.numero_documento,v1_0.observacion,v1_0.receptor_departamento,v1_0.receptor_direccion,v1_0.receptor_distrito,v1_0.receptor_num_documento,v1_0.receptor_pais,v1_0.receptor_provincia,v1_0.receptor_razon_social,v1_0.receptor_tipo_documento,v1_0.receptor_ubigeo,v1_0.serie,v1_0.total_descuentos,v1_0.total_exonerada,v1_0.total_gratuita,v1_0.total_gravada,v1_0.total_igv,v1_0.total_inafecta,v1_0.total_venta,v1_0.xml_name from venta v1_0 order by v1_0.fecha_emision desc
+Hibernate: select td1_0.id_documento,td1_0.nombre from tipo_documento td1_0
+Hibernate: select mp1_0.id_medio_pago,mp1_0.descripcion from medio_pago mp1_0
+Hibernate: select c1_0.id_cliente,c1_0.apellido,c1_0.contrasena,c1_0.correo,c1_0.id_rol,c1_0.nombre,c1_0.telefono from cliente c1_0
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select p1_0.id_producto,p1_0.afectacion_igv,p1_0.atributos,p1_0.categoria,p1_0.codigo,p1_0.id_tienda,p1_0.nombre,p1_0.precio,p1_0.stock,p1_0.unidad_medida from producto p1_0 where p1_0.id_producto in (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+Hibernate: select v1_0.id_venta,v1_0.cdr_summary,v1_0.codigo_qr,v1_0.condicion_operacion,v1_0.correlativo,v1_0.email_contacto,v1_0.entrega_direccion,v1_0.entrega_ubigeo,v1_0.estado,v1_0.estado_sunat,v1_0.fecha_emision,v1_0.forma_pago,v1_0.hash_comprobante,v1_0.id_cliente,v1_0.id_medio_pago,v1_0.id_persona,v1_0.id_tipo_documento,v1_0.leyendas,v1_0.moneda,v1_0.monto_total_credito,v1_0.numero_documento,v1_0.observacion,v1_0.receptor_departamento,v1_0.receptor_direccion,v1_0.receptor_distrito,v1_0.receptor_num_documento,v1_0.receptor_pais,v1_0.receptor_provincia,v1_0.receptor_razon_social,v1_0.receptor_tipo_documento,v1_0.receptor_ubigeo,v1_0.serie,v1_0.total_descuentos,v1_0.total_exonerada,v1_0.total_gratuita,v1_0.total_gravada,v1_0.total_igv,v1_0.total_inafecta,v1_0.total_venta,v1_0.xml_name from venta v1_0 order by v1_0.fecha_emision desc
+Hibernate: select td1_0.id_documento,td1_0.nombre from tipo_documento td1_0
+Hibernate: select mp1_0.id_medio_pago,mp1_0.descripcion from medio_pago mp1_0
+Hibernate: select c1_0.id_cliente,c1_0.apellido,c1_0.contrasena,c1_0.correo,c1_0.id_rol,c1_0.nombre,c1_0.telefono from cliente c1_0
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select p1_0.id_producto,p1_0.afectacion_igv,p1_0.atributos,p1_0.categoria,p1_0.codigo,p1_0.id_tienda,p1_0.nombre,p1_0.precio,p1_0.stock,p1_0.unidad_medida from producto p1_0 where p1_0.id_producto in (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+Hibernate: select td1_0.id_documento,td1_0.nombre from tipo_documento td1_0 where upper(td1_0.nombre)=upper(?)
+Hibernate: select v1_0.id_venta,v1_0.cdr_summary,v1_0.codigo_qr,v1_0.condicion_operacion,v1_0.correlativo,v1_0.email_contacto,v1_0.entrega_direccion,v1_0.entrega_ubigeo,v1_0.estado,v1_0.estado_sunat,v1_0.fecha_emision,v1_0.forma_pago,v1_0.hash_comprobante,v1_0.id_cliente,v1_0.id_medio_pago,v1_0.id_persona,v1_0.id_tipo_documento,v1_0.leyendas,v1_0.moneda,v1_0.monto_total_credito,v1_0.numero_documento,v1_0.observacion,v1_0.receptor_departamento,v1_0.receptor_direccion,v1_0.receptor_distrito,v1_0.receptor_num_documento,v1_0.receptor_pais,v1_0.receptor_provincia,v1_0.receptor_razon_social,v1_0.receptor_tipo_documento,v1_0.receptor_ubigeo,v1_0.serie,v1_0.total_descuentos,v1_0.total_exonerada,v1_0.total_gratuita,v1_0.total_gravada,v1_0.total_igv,v1_0.total_inafecta,v1_0.total_venta,v1_0.xml_name from venta v1_0 where v1_0.id_tipo_documento=? order by v1_0.fecha_emision desc
+Hibernate: select td1_0.id_documento,td1_0.nombre from tipo_documento td1_0
+Hibernate: select mp1_0.id_medio_pago,mp1_0.descripcion from medio_pago mp1_0
+Hibernate: select c1_0.id_cliente,c1_0.apellido,c1_0.contrasena,c1_0.correo,c1_0.id_rol,c1_0.nombre,c1_0.telefono from cliente c1_0
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select p1_0.id_producto,p1_0.afectacion_igv,p1_0.atributos,p1_0.categoria,p1_0.codigo,p1_0.id_tienda,p1_0.nombre,p1_0.precio,p1_0.stock,p1_0.unidad_medida from producto p1_0 where p1_0.id_producto in (?,?,?,?,?,?,?,?,?,?)
+Hibernate: select td1_0.id_documento,td1_0.nombre from tipo_documento td1_0 where upper(td1_0.nombre)=upper(?)
+Hibernate: select v1_0.id_venta,v1_0.cdr_summary,v1_0.codigo_qr,v1_0.condicion_operacion,v1_0.correlativo,v1_0.email_contacto,v1_0.entrega_direccion,v1_0.entrega_ubigeo,v1_0.estado,v1_0.estado_sunat,v1_0.fecha_emision,v1_0.forma_pago,v1_0.hash_comprobante,v1_0.id_cliente,v1_0.id_medio_pago,v1_0.id_persona,v1_0.id_tipo_documento,v1_0.leyendas,v1_0.moneda,v1_0.monto_total_credito,v1_0.numero_documento,v1_0.observacion,v1_0.receptor_departamento,v1_0.receptor_direccion,v1_0.receptor_distrito,v1_0.receptor_num_documento,v1_0.receptor_pais,v1_0.receptor_provincia,v1_0.receptor_razon_social,v1_0.receptor_tipo_documento,v1_0.receptor_ubigeo,v1_0.serie,v1_0.total_descuentos,v1_0.total_exonerada,v1_0.total_gratuita,v1_0.total_gravada,v1_0.total_igv,v1_0.total_inafecta,v1_0.total_venta,v1_0.xml_name from venta v1_0 where v1_0.id_tipo_documento=? order by v1_0.fecha_emision desc
+Hibernate: select td1_0.id_documento,td1_0.nombre from tipo_documento td1_0
+Hibernate: select mp1_0.id_medio_pago,mp1_0.descripcion from medio_pago mp1_0
+Hibernate: select c1_0.id_cliente,c1_0.apellido,c1_0.contrasena,c1_0.correo,c1_0.id_rol,c1_0.nombre,c1_0.telefono from cliente c1_0
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select p1_0.id_producto,p1_0.afectacion_igv,p1_0.atributos,p1_0.categoria,p1_0.codigo,p1_0.id_tienda,p1_0.nombre,p1_0.precio,p1_0.stock,p1_0.unidad_medida from producto p1_0 where p1_0.id_producto in (?,?,?,?,?,?,?,?,?,?)
+Hibernate: select v1_0.id_venta,v1_0.cdr_summary,v1_0.codigo_qr,v1_0.condicion_operacion,v1_0.correlativo,v1_0.email_contacto,v1_0.entrega_direccion,v1_0.entrega_ubigeo,v1_0.estado,v1_0.estado_sunat,v1_0.fecha_emision,v1_0.forma_pago,v1_0.hash_comprobante,v1_0.id_cliente,v1_0.id_medio_pago,v1_0.id_persona,v1_0.id_tipo_documento,v1_0.leyendas,v1_0.moneda,v1_0.monto_total_credito,v1_0.numero_documento,v1_0.observacion,v1_0.receptor_departamento,v1_0.receptor_direccion,v1_0.receptor_distrito,v1_0.receptor_num_documento,v1_0.receptor_pais,v1_0.receptor_provincia,v1_0.receptor_razon_social,v1_0.receptor_tipo_documento,v1_0.receptor_ubigeo,v1_0.serie,v1_0.total_descuentos,v1_0.total_exonerada,v1_0.total_gratuita,v1_0.total_gravada,v1_0.total_igv,v1_0.total_inafecta,v1_0.total_venta,v1_0.xml_name from venta v1_0 where v1_0.id_venta=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select v1_0.id_venta,v1_0.cdr_summary,v1_0.codigo_qr,v1_0.condicion_operacion,v1_0.correlativo,v1_0.email_contacto,v1_0.entrega_direccion,v1_0.entrega_ubigeo,v1_0.estado,v1_0.estado_sunat,v1_0.fecha_emision,v1_0.forma_pago,v1_0.hash_comprobante,v1_0.id_cliente,v1_0.id_medio_pago,v1_0.id_persona,v1_0.id_tipo_documento,v1_0.leyendas,v1_0.moneda,v1_0.monto_total_credito,v1_0.numero_documento,v1_0.observacion,v1_0.receptor_departamento,v1_0.receptor_direccion,v1_0.receptor_distrito,v1_0.receptor_num_documento,v1_0.receptor_pais,v1_0.receptor_provincia,v1_0.receptor_razon_social,v1_0.receptor_tipo_documento,v1_0.receptor_ubigeo,v1_0.serie,v1_0.total_descuentos,v1_0.total_exonerada,v1_0.total_gratuita,v1_0.total_gravada,v1_0.total_igv,v1_0.total_inafecta,v1_0.total_venta,v1_0.xml_name from venta v1_0 where v1_0.id_venta=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select v1_0.id_venta,v1_0.cdr_summary,v1_0.codigo_qr,v1_0.condicion_operacion,v1_0.correlativo,v1_0.email_contacto,v1_0.entrega_direccion,v1_0.entrega_ubigeo,v1_0.estado,v1_0.estado_sunat,v1_0.fecha_emision,v1_0.forma_pago,v1_0.hash_comprobante,v1_0.id_cliente,v1_0.id_medio_pago,v1_0.id_persona,v1_0.id_tipo_documento,v1_0.leyendas,v1_0.moneda,v1_0.monto_total_credito,v1_0.numero_documento,v1_0.observacion,v1_0.receptor_departamento,v1_0.receptor_direccion,v1_0.receptor_distrito,v1_0.receptor_num_documento,v1_0.receptor_pais,v1_0.receptor_provincia,v1_0.receptor_razon_social,v1_0.receptor_tipo_documento,v1_0.receptor_ubigeo,v1_0.serie,v1_0.total_descuentos,v1_0.total_exonerada,v1_0.total_gratuita,v1_0.total_gravada,v1_0.total_igv,v1_0.total_inafecta,v1_0.total_venta,v1_0.xml_name from venta v1_0 where v1_0.id_venta=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select v1_0.id_venta,v1_0.cdr_summary,v1_0.codigo_qr,v1_0.condicion_operacion,v1_0.correlativo,v1_0.email_contacto,v1_0.entrega_direccion,v1_0.entrega_ubigeo,v1_0.estado,v1_0.estado_sunat,v1_0.fecha_emision,v1_0.forma_pago,v1_0.hash_comprobante,v1_0.id_cliente,v1_0.id_medio_pago,v1_0.id_persona,v1_0.id_tipo_documento,v1_0.leyendas,v1_0.moneda,v1_0.monto_total_credito,v1_0.numero_documento,v1_0.observacion,v1_0.receptor_departamento,v1_0.receptor_direccion,v1_0.receptor_distrito,v1_0.receptor_num_documento,v1_0.receptor_pais,v1_0.receptor_provincia,v1_0.receptor_razon_social,v1_0.receptor_tipo_documento,v1_0.receptor_ubigeo,v1_0.serie,v1_0.total_descuentos,v1_0.total_exonerada,v1_0.total_gratuita,v1_0.total_gravada,v1_0.total_igv,v1_0.total_inafecta,v1_0.total_venta,v1_0.xml_name from venta v1_0 where v1_0.id_cliente=? order by v1_0.fecha_emision desc
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select u1_0.id_usuario,u1_0.contrasena,u1_0.id_persona,u1_0.id_rol,u1_0.id_tienda,u1_0.usuario from usuario u1_0 where u1_0.usuario=?
+Hibernate: select p1_0.id_persona,p1_0.apellido,p1_0.correo,p1_0.fecha_nacimiento,p1_0.nombre,p1_0.telefono,p1_0.usuario from persona p1_0 where p1_0.correo=?
+Hibernate: select u1_0.id_usuario,u1_0.contrasena,u1_0.id_persona,u1_0.id_rol,u1_0.id_tienda,u1_0.usuario from usuario u1_0 where u1_0.id_persona=?
+Hibernate: select t1_0.id_tienda,t1_0.color_primario,t1_0.color_secundario,t1_0.logo_url,t1_0.nombre,t1_0.rubro,t1_0.slug from tienda t1_0 where t1_0.id_tienda=?
+Hibernate: select c1_0.id_cliente,c1_0.apellido,c1_0.contrasena,c1_0.correo,c1_0.id_rol,c1_0.nombre,c1_0.telefono from cliente c1_0 where c1_0.correo=?
+Hibernate: select r1_0.id_rol,r1_0.descripcion,r1_0.nombre from rol r1_0 where r1_0.id_rol=?
+Hibernate: select c1_0.id_cliente,c1_0.apellido,c1_0.contrasena,c1_0.correo,c1_0.id_rol,c1_0.nombre,c1_0.telefono from cliente c1_0
+Hibernate: select v1_0.id_venta,v1_0.cdr_summary,v1_0.codigo_qr,v1_0.condicion_operacion,v1_0.correlativo,v1_0.email_contacto,v1_0.entrega_direccion,v1_0.entrega_ubigeo,v1_0.estado,v1_0.estado_sunat,v1_0.fecha_emision,v1_0.forma_pago,v1_0.hash_comprobante,v1_0.id_cliente,v1_0.id_medio_pago,v1_0.id_persona,v1_0.id_tipo_documento,v1_0.leyendas,v1_0.moneda,v1_0.monto_total_credito,v1_0.numero_documento,v1_0.observacion,v1_0.receptor_departamento,v1_0.receptor_direccion,v1_0.receptor_distrito,v1_0.receptor_num_documento,v1_0.receptor_pais,v1_0.receptor_provincia,v1_0.receptor_razon_social,v1_0.receptor_tipo_documento,v1_0.receptor_ubigeo,v1_0.serie,v1_0.total_descuentos,v1_0.total_exonerada,v1_0.total_gratuita,v1_0.total_gravada,v1_0.total_igv,v1_0.total_inafecta,v1_0.total_venta,v1_0.xml_name from venta v1_0 order by v1_0.fecha_emision desc
+Hibernate: select td1_0.id_documento,td1_0.nombre from tipo_documento td1_0
+Hibernate: select mp1_0.id_medio_pago,mp1_0.descripcion from medio_pago mp1_0
+Hibernate: select c1_0.id_cliente,c1_0.apellido,c1_0.contrasena,c1_0.correo,c1_0.id_rol,c1_0.nombre,c1_0.telefono from cliente c1_0
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select p1_0.id_producto,p1_0.afectacion_igv,p1_0.atributos,p1_0.categoria,p1_0.codigo,p1_0.id_tienda,p1_0.nombre,p1_0.precio,p1_0.stock,p1_0.unidad_medida from producto p1_0 where p1_0.id_producto in (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+Hibernate: select td1_0.id_documento,td1_0.nombre from tipo_documento td1_0 where upper(td1_0.nombre)=upper(?)
+Hibernate: select v1_0.id_venta,v1_0.cdr_summary,v1_0.codigo_qr,v1_0.condicion_operacion,v1_0.correlativo,v1_0.email_contacto,v1_0.entrega_direccion,v1_0.entrega_ubigeo,v1_0.estado,v1_0.estado_sunat,v1_0.fecha_emision,v1_0.forma_pago,v1_0.hash_comprobante,v1_0.id_cliente,v1_0.id_medio_pago,v1_0.id_persona,v1_0.id_tipo_documento,v1_0.leyendas,v1_0.moneda,v1_0.monto_total_credito,v1_0.numero_documento,v1_0.observacion,v1_0.receptor_departamento,v1_0.receptor_direccion,v1_0.receptor_distrito,v1_0.receptor_num_documento,v1_0.receptor_pais,v1_0.receptor_provincia,v1_0.receptor_razon_social,v1_0.receptor_tipo_documento,v1_0.receptor_ubigeo,v1_0.serie,v1_0.total_descuentos,v1_0.total_exonerada,v1_0.total_gratuita,v1_0.total_gravada,v1_0.total_igv,v1_0.total_inafecta,v1_0.total_venta,v1_0.xml_name from venta v1_0 where v1_0.id_tipo_documento=? order by v1_0.fecha_emision desc
+Hibernate: select td1_0.id_documento,td1_0.nombre from tipo_documento td1_0
+Hibernate: select mp1_0.id_medio_pago,mp1_0.descripcion from medio_pago mp1_0
+Hibernate: select c1_0.id_cliente,c1_0.apellido,c1_0.contrasena,c1_0.correo,c1_0.id_rol,c1_0.nombre,c1_0.telefono from cliente c1_0
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select p1_0.id_producto,p1_0.afectacion_igv,p1_0.atributos,p1_0.categoria,p1_0.codigo,p1_0.id_tienda,p1_0.nombre,p1_0.precio,p1_0.stock,p1_0.unidad_medida from producto p1_0 where p1_0.id_producto in (?,?,?,?,?,?,?,?,?,?)
+Hibernate: select v1_0.id_venta,v1_0.cdr_summary,v1_0.codigo_qr,v1_0.condicion_operacion,v1_0.correlativo,v1_0.email_contacto,v1_0.entrega_direccion,v1_0.entrega_ubigeo,v1_0.estado,v1_0.estado_sunat,v1_0.fecha_emision,v1_0.forma_pago,v1_0.hash_comprobante,v1_0.id_cliente,v1_0.id_medio_pago,v1_0.id_persona,v1_0.id_tipo_documento,v1_0.leyendas,v1_0.moneda,v1_0.monto_total_credito,v1_0.numero_documento,v1_0.observacion,v1_0.receptor_departamento,v1_0.receptor_direccion,v1_0.receptor_distrito,v1_0.receptor_num_documento,v1_0.receptor_pais,v1_0.receptor_provincia,v1_0.receptor_razon_social,v1_0.receptor_tipo_documento,v1_0.receptor_ubigeo,v1_0.serie,v1_0.total_descuentos,v1_0.total_exonerada,v1_0.total_gratuita,v1_0.total_gravada,v1_0.total_igv,v1_0.total_inafecta,v1_0.total_venta,v1_0.xml_name from venta v1_0 where v1_0.id_venta=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select v1_0.id_venta,v1_0.cdr_summary,v1_0.codigo_qr,v1_0.condicion_operacion,v1_0.correlativo,v1_0.email_contacto,v1_0.entrega_direccion,v1_0.entrega_ubigeo,v1_0.estado,v1_0.estado_sunat,v1_0.fecha_emision,v1_0.forma_pago,v1_0.hash_comprobante,v1_0.id_cliente,v1_0.id_medio_pago,v1_0.id_persona,v1_0.id_tipo_documento,v1_0.leyendas,v1_0.moneda,v1_0.monto_total_credito,v1_0.numero_documento,v1_0.observacion,v1_0.receptor_departamento,v1_0.receptor_direccion,v1_0.receptor_distrito,v1_0.receptor_num_documento,v1_0.receptor_pais,v1_0.receptor_provincia,v1_0.receptor_razon_social,v1_0.receptor_tipo_documento,v1_0.receptor_ubigeo,v1_0.serie,v1_0.total_descuentos,v1_0.total_exonerada,v1_0.total_gratuita,v1_0.total_gravada,v1_0.total_igv,v1_0.total_inafecta,v1_0.total_venta,v1_0.xml_name from venta v1_0 where v1_0.id_venta=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select v1_0.id_venta,v1_0.cdr_summary,v1_0.codigo_qr,v1_0.condicion_operacion,v1_0.correlativo,v1_0.email_contacto,v1_0.entrega_direccion,v1_0.entrega_ubigeo,v1_0.estado,v1_0.estado_sunat,v1_0.fecha_emision,v1_0.forma_pago,v1_0.hash_comprobante,v1_0.id_cliente,v1_0.id_medio_pago,v1_0.id_persona,v1_0.id_tipo_documento,v1_0.leyendas,v1_0.moneda,v1_0.monto_total_credito,v1_0.numero_documento,v1_0.observacion,v1_0.receptor_departamento,v1_0.receptor_direccion,v1_0.receptor_distrito,v1_0.receptor_num_documento,v1_0.receptor_pais,v1_0.receptor_provincia,v1_0.receptor_razon_social,v1_0.receptor_tipo_documento,v1_0.receptor_ubigeo,v1_0.serie,v1_0.total_descuentos,v1_0.total_exonerada,v1_0.total_gratuita,v1_0.total_gravada,v1_0.total_igv,v1_0.total_inafecta,v1_0.total_venta,v1_0.xml_name from venta v1_0 where v1_0.id_venta=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select v1_0.id_venta,v1_0.cdr_summary,v1_0.codigo_qr,v1_0.condicion_operacion,v1_0.correlativo,v1_0.email_contacto,v1_0.entrega_direccion,v1_0.entrega_ubigeo,v1_0.estado,v1_0.estado_sunat,v1_0.fecha_emision,v1_0.forma_pago,v1_0.hash_comprobante,v1_0.id_cliente,v1_0.id_medio_pago,v1_0.id_persona,v1_0.id_tipo_documento,v1_0.leyendas,v1_0.moneda,v1_0.monto_total_credito,v1_0.numero_documento,v1_0.observacion,v1_0.receptor_departamento,v1_0.receptor_direccion,v1_0.receptor_distrito,v1_0.receptor_num_documento,v1_0.receptor_pais,v1_0.receptor_provincia,v1_0.receptor_razon_social,v1_0.receptor_tipo_documento,v1_0.receptor_ubigeo,v1_0.serie,v1_0.total_descuentos,v1_0.total_exonerada,v1_0.total_gratuita,v1_0.total_gravada,v1_0.total_igv,v1_0.total_inafecta,v1_0.total_venta,v1_0.xml_name from venta v1_0 where v1_0.id_cliente=? order by v1_0.fecha_emision desc
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select p1_0.id_parametro,p1_0.descripcion,p1_0.valor from parametro p1_0 where p1_0.id_parametro=?
+Hibernate: select d1_0.id_venta,d1_0.id_detalle,d1_0.afectacion_igv,d1_0.cantidad,d1_0.codigo_item,d1_0.descripcion,d1_0.descuento,d1_0.id_producto,d1_0.igv_item,d1_0.precio_unitario,d1_0.subtotal,d1_0.unidad_medida,d1_0.valor_unitario from detalle_venta d1_0 where d1_0.id_venta=? order by d1_0.id_detalle
+Hibernate: select u1_0.id_usuario,u1_0.contrasena,u1_0.id_persona,u1_0.id_rol,u1_0.id_tienda,u1_0.usuario from usuario u1_0 where u1_0.usuario=?
+Hibernate: select p1_0.id_persona,p1_0.apellido,p1_0.correo,p1_0.fecha_nacimiento,p1_0.nombre,p1_0.telefono,p1_0.usuario from persona p1_0 where p1_0.id_persona=?
+Hibernate: select t1_0.id_tienda,t1_0.color_primario,t1_0.color_secundario,t1_0.logo_url,t1_0.nombre,t1_0.rubro,t1_0.slug from tienda t1_0 where t1_0.id_tienda=?
+Hibernate: select c1_0.id_cliente,c1_0.apellido,c1_0.contrasena,c1_0.correo,c1_0.id_rol,c1_0.nombre,c1_0.telefono from cliente c1_0 where c1_0.correo=?
+Hibernate: select r1_0.id_rol,r1_0.descripcion,r1_0.nombre from rol r1_0 where r1_0.id_rol=?
+Hibernate: select p1_0.id_producto,p1_0.afectacion_igv,p1_0.atributos,p1_0.categoria,p1_0.codigo,p1_0.id_tienda,p1_0.nombre,p1_0.precio,p1_0.stock,p1_0.unidad_medida from producto p1_0 where p1_0.codigo=?
+Hibernate: select p1_0.id_producto,p1_0.afectacion_igv,p1_0.atributos,p1_0.categoria,p1_0.codigo,p1_0.id_tienda,p1_0.nombre,p1_0.precio,p1_0.stock,p1_0.unidad_medida from producto p1_0 where p1_0.id_producto=?
+Hibernate: insert into producto (afectacion_igv,atributos,categoria,codigo,id_tienda,nombre,precio,stock,unidad_medida,id_producto) values (?,cast(? as json),?,?,?,?,?,?,?,?)
+Hibernate: select p1_0.id_producto,p1_0.afectacion_igv,p1_0.atributos,p1_0.categoria,p1_0.codigo,p1_0.id_tienda,p1_0.nombre,p1_0.precio,p1_0.stock,p1_0.unidad_medida from producto p1_0 where p1_0.codigo=?
+Hibernate: select p1_0.id_producto,p1_0.afectacion_igv,p1_0.atributos,p1_0.categoria,p1_0.codigo,p1_0.id_tienda,p1_0.nombre,p1_0.precio,p1_0.stock,p1_0.unidad_medida from producto p1_0 where p1_0.id_producto=?
+Hibernate: update producto set afectacion_igv=?,atributos=cast(? as json),categoria=?,codigo=?,id_tienda=?,nombre=?,precio=?,stock=?,unidad_medida=? where id_producto=?
+Hibernate: select p1_0.id_producto,p1_0.afectacion_igv,p1_0.atributos,p1_0.categoria,p1_0.codigo,p1_0.id_tienda,p1_0.nombre,p1_0.precio,p1_0.stock,p1_0.unidad_medida from producto p1_0 where p1_0.id_producto=?
+Hibernate: select p1_0.id_producto,p1_0.afectacion_igv,p1_0.atributos,p1_0.categoria,p1_0.codigo,p1_0.id_tienda,p1_0.nombre,p1_0.precio,p1_0.stock,p1_0.unidad_medida from producto p1_0 where p1_0.id_producto=?
+Hibernate: delete from producto where id_producto=?
+Hibernate: select t1_0.id_tienda,t1_0.color_primario,t1_0.color_secundario,t1_0.logo_url,t1_0.nombre,t1_0.rubro,t1_0.slug from tienda t1_0 where t1_0.slug=?
+Hibernate: select p1_0.id_producto,p1_0.afectacion_igv,p1_0.atributos,p1_0.categoria,p1_0.codigo,p1_0.id_tienda,p1_0.nombre,p1_0.precio,p1_0.stock,p1_0.unidad_medida from producto p1_0 where p1_0.id_tienda=?
+Hibernate: select p1_0.id_producto,p1_0.afectacion_igv,p1_0.atributos,p1_0.categoria,p1_0.codigo,p1_0.id_tienda,p1_0.nombre,p1_0.precio,p1_0.stock,p1_0.unidad_medida from producto p1_0 where p1_0.id_tienda=?
+Hibernate: select t1_0.id_tienda,t1_0.color_primario,t1_0.color_secundario,t1_0.logo_url,t1_0.nombre,t1_0.rubro,t1_0.slug from tienda t1_0 where t1_0.slug=?
+Hibernate: select p1_0.id_producto,p1_0.afectacion_igv,p1_0.atributos,p1_0.categoria,p1_0.codigo,p1_0.id_tienda,p1_0.nombre,p1_0.precio,p1_0.stock,p1_0.unidad_medida from producto p1_0 where p1_0.id_tienda=?
+Hibernate: select t1_0.id_tienda,t1_0.color_primario,t1_0.color_secundario,t1_0.logo_url,t1_0.nombre,t1_0.rubro,t1_0.slug from tienda t1_0 where t1_0.slug=?

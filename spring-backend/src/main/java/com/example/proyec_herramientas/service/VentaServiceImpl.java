@@ -389,7 +389,7 @@ public class VentaServiceImpl implements VentaService {
             venta.setReceptorNumDocumento("");
             venta.setReceptorRazonSocial(nombreCliente);
         }
-        venta.setReceptorDireccion("");
+        venta.setReceptorDireccion(texto(carrito.getDireccionCliente()));
         venta.setReceptorUbigeo("");
         venta.setReceptorDistrito("");
         venta.setReceptorProvincia("");

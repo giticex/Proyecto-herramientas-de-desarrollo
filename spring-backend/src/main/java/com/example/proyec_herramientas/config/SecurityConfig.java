@@ -69,6 +69,12 @@ public class SecurityConfig {
                         // se los traguen con hasAnyRole("ADMIN", "VENDEDOR").
                         .requestMatchers(HttpMethod.GET, "/api/creditos/mios").hasRole("CLIENTE")
                         .requestMatchers(HttpMethod.GET, "/api/clientes/mi-perfil").hasRole("CLIENTE")
+                        // POS: el personal busca compradores por DNI/RUC y los
+                        // registra rapido. El CLIENTE no administra fichas.
+                        .requestMatchers(HttpMethod.GET, "/api/clientes/buscar")
+                        .hasAnyRole("ADMIN", "VENDEDOR")
+                        .requestMatchers(HttpMethod.POST, "/api/clientes")
+                        .hasAnyRole("ADMIN", "VENDEDOR")
                         .requestMatchers(HttpMethod.GET, "/api/ventas").hasAnyRole("ADMIN", "VENDEDOR")
                         .requestMatchers(HttpMethod.POST, "/api/ventas")
                         .hasAnyRole("CLIENTE", "ADMIN", "VENDEDOR")
@@ -86,6 +92,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/devoluciones", "/api/devoluciones/**")
                         .hasAnyRole("ADMIN", "VENDEDOR")
                         .requestMatchers("/api/creditos", "/api/creditos/**")
+                        .hasAnyRole("ADMIN", "VENDEDOR")
+                        // Turnos de caja del POS: apertura, resumen y cierre. El
+                        // CLIENTE y el SUPER_ADMIN no operan la caja de la tienda.
+                        .requestMatchers("/api/caja", "/api/caja/**")
                         .hasAnyRole("ADMIN", "VENDEDOR")
                         // El POS consulta el catalogo; solo el ADMIN lo modifica.
                         .requestMatchers(HttpMethod.GET, "/api/productos", "/api/productos/**")

@@ -8,4 +8,8 @@ import java.util.Optional;
 public interface ClienteRepository extends JpaRepository<Cliente, String> {
 
     Optional<Cliente> findByCorreo(String correo);
+
+    // Ficha registrada por el punto de venta de esa tienda. La busqueda del POS
+    // nunca cruza tiendas: un ADMIN no ve los clientes de otra empresa.
+    Optional<Cliente> findFirstByNumeroDocumentoAndIdTienda(String numeroDocumento, Integer idTienda);
 }
