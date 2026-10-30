@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   Banknote,
+  Calculator,
   CheckCircle2,
   CreditCard,
   FileText,
   History,
   LoaderCircle,
+  Lock,
   LogOut,
   Minus,
   Plus,
@@ -18,6 +20,7 @@ import {
   ShoppingCart,
   Smartphone,
   Trash2,
+  Unlock,
   UserPlus,
   Wallet,
 } from 'lucide-react';
@@ -31,6 +34,8 @@ import {
   registrarVenta,
 } from '../api/ventasApi';
 import { buscarCredito } from '../api/creditosApi';
+import { buscarClientePorDocumento, registrarClienteRapido } from '../api/clientesApi';
+import { abrirCaja, cerrarCaja, obtenerCaja } from '../api/cajaApi';
 import { descargarArchivoSeguro } from '../utils/descargas';
 import './PuntoDeVenta.css';
 
@@ -82,10 +87,19 @@ export default function PuntoDeVenta() {
   const [cargando, setCargando] = useState(true);
   const [procesando, setProcesando] = useState(false);
   const [ventaExitosa, setVentaExitosa] = useState(null);
-  const [imprimiendo, setImprimiendo] = useState(false);
+  const [accionArchivo, setAccionArchivo] = useState(null);
   const [dniCliente, setDniCliente] = useState('');
   const [rucCliente, setRucCliente] = useState('');
   const [razonSocialCliente, setRazonSocialCliente] = useState('');
+  const [documentoCliente, setDocumentoCliente] = useState('');
+  const [clienteEncontrado, setClienteEncontrado] = useState(null);
+  const [estadoCliente, setEstadoCliente] = useState('');
+  const [buscandoCliente, setBuscandoCliente] = useState(false);
+  const [clienteError, setClienteError] = useState('');
+  const [direccionCliente, setDireccionCliente] = useState('');
+  const [registroRapido, setRegistroRapido] = useState(false);
+  const [nuevoCliente, setNuevoCliente] = useState({ nombre: '', direccion: '', telefono: '' });
+  const [registrandoCliente, setRegistrandoCliente] = useState(false);
   const [montoRecibido, setMontoRecibido] = useState('');
   const [creditoCodigo, setCreditoCodigo] = useState('');
   const [creditoValidando, setCreditoValidando] = useState(false);
@@ -101,11 +115,36 @@ export default function PuntoDeVenta() {
   const [motivoDevolucion, setMotivoDevolucion] = useState('');
   const [procesandoDevolucion, setProcesandoDevolucion] = useState(false);
   const [devolucionExitosa, setDevolucionExitosa] = useState(null);
+  const [caja, setCaja] = useState(null);
+  const [cajaCargando, setCajaCargando] = useState(true);
+  const [cajaError, setCajaError] = useState('');
+  const [montoApertura, setMontoApertura] = useState('');
+  const [abriendoCaja, setAbriendoCaja] = useState(false);
+  const [modalCierre, setModalCierre] = useState(false);
+  const [efectivoContado, setEfectivoContado] = useState('');
+  const [observacionCierre, setObservacionCierre] = useState('');
+  const [cerrandoCaja, setCerrandoCaja] = useState(false);
+  const [cierreResultado, setCierreResultado] = useState(null);
   const buscadorRef = useRef(null);
+  const ultimoDocumentoBuscado = useRef('');
+
+  const turnoAbierto = Boolean(caja?.turnoAbierto);
+
+  const cargarCaja = useCallback(async () => {
+    try {
+      const estado = await obtenerCaja();
+      setCaja(estado ?? null);
+      setCajaError('');
+    } catch (error) {
+      setCajaError(error?.message || 'No se pudo consultar el turno de caja.');
+    } finally {
+      setCajaCargando(false);
+    }
+  }, []);
 
   useEffect(() => {
     let vigente = true;
-    Promise.allSettled([listProductos(), getTienda('mi-tienda')]).finally(() => {
+    Promise.allSettled([listProductos(), getTienda('mi-tienda'), cargarCaja()]).finally(() => {
       if (vigente) {
         setCargando(false);
         buscadorRef.current?.focus();
@@ -114,7 +153,79 @@ export default function PuntoDeVenta() {
     return () => {
       vigente = false;
     };
-  }, [listProductos, getTienda]);
+  }, [listProductos, getTienda, cargarCaja]);
+
+  // La caja abierta es requisito para vender: al enfocar el buscador solo se
+  // suelta el foco cuando el turno esta registrado.
+  useEffect(() => {
+    if (turnoAbierto) buscadorRef.current?.focus();
+  }, [turnoAbierto]);
+
+  // Búsqueda de comprador por DNI/RUC en la tienda del token. Al aplicar
+  // una ficha se sincronizan el tipo de comprobante, el documento y la
+  // dirección que viajan en la venta.
+  const aplicarCliente = useCallback((cliente) => {
+    const documento = String(cliente?.numeroDocumento || '');
+    setClienteEncontrado(cliente);
+    setEstadoCliente('encontrado');
+    setDocumentoCliente(documento);
+    setDireccionCliente(cliente?.direccion || '');
+    setClienteError('');
+    ultimoDocumentoBuscado.current = documento;
+    if (documento.length === 11) {
+      setTipoComprobante('Factura');
+      setRucCliente(documento);
+      setDniCliente('');
+    } else {
+      setTipoComprobante('Boleta');
+      setDniCliente(documento);
+      setRucCliente('');
+    }
+    setRazonSocialCliente(cliente?.nombre || '');
+  }, []);
+
+  const consultarCliente = useCallback(async (documento) => {
+    const limpio = String(documento || '').replace(/\D/g, '');
+    if (limpio.length !== 8 && limpio.length !== 11) {
+      setEstadoCliente('');
+      setClienteError('Ingresa un DNI de 8 dígitos o un RUC de 11 dígitos.');
+      return;
+    }
+    setBuscandoCliente(true);
+    setClienteError('');
+    setEstadoCliente('buscando');
+    try {
+      const cliente = await buscarClientePorDocumento(limpio);
+      ultimoDocumentoBuscado.current = limpio;
+      if (cliente?.encontrado) {
+        aplicarCliente(cliente);
+      } else {
+        setClienteEncontrado(null);
+        setDireccionCliente('');
+        setRazonSocialCliente('');
+        setEstadoCliente('no-encontrado');
+        setNuevoCliente({ nombre: '', direccion: '', telefono: '' });
+      }
+    } catch (error) {
+      setClienteEncontrado(null);
+      setEstadoCliente('error');
+      setClienteError(error?.message || 'No se pudo buscar el cliente.');
+    } finally {
+      setBuscandoCliente(false);
+    }
+  }, [aplicarCliente]);
+
+  // Autocompletado: con 8 (DNI) u 11 (RUC) dígitos se consulta sola tras una
+  // pausa; el botón Buscar permite forzarla de inmediato.
+  useEffect(() => {
+    const limpio = documentoCliente.replace(/\D/g, '');
+    if ((limpio.length !== 8 && limpio.length !== 11)
+        || limpio === ultimoDocumentoBuscado.current) {
+      return undefined;
+    }
+    const temporizador = setTimeout(() => consultarCliente(limpio), 600);
+    return () => clearTimeout(temporizador);
+  }, [documentoCliente, consultarCliente]);
 
   const termino = busqueda.trim().toLowerCase();
   const sugerencias = useMemo(() => {
@@ -233,6 +344,99 @@ export default function PuntoDeVenta() {
     }
   }
 
+  function cambiarDocumentoCliente(valor) {
+    const limpio = valor.replace(/\D/g, '').slice(0, 11);
+    setDocumentoCliente(limpio);
+    setClienteError('');
+    // Al corregir el documento se descarta la ficha aplicada y sus datos en
+    // el comprobante, para no emitir con el DNI/RUC de otro cliente.
+    if (clienteEncontrado && limpio !== clienteEncontrado.numeroDocumento) {
+      setClienteEncontrado(null);
+      setDireccionCliente('');
+      setDniCliente('');
+      setRucCliente('');
+      setRazonSocialCliente('');
+    }
+    if (limpio.length !== 8 && limpio.length !== 11) {
+      setEstadoCliente('');
+      setRegistroRapido(false);
+    } else if (!clienteEncontrado && limpio === ultimoDocumentoBuscado.current) {
+      // Volver al mismo documento ya consultado (p. ej. tras corregir un
+      // dígito) no dispara el debounce: se repite la consulta aquí.
+      consultarCliente(limpio);
+    }
+  }
+
+  function buscarClienteManual(evento) {
+    evento.preventDefault();
+    if (buscandoCliente) return;
+    consultarCliente(documentoCliente);
+  }
+
+  function quitarClienteEncontrado() {
+    setClienteEncontrado(null);
+    setDireccionCliente('');
+    setDniCliente('');
+    setRucCliente('');
+    setRazonSocialCliente('');
+    setEstadoCliente('');
+    setRegistroRapido(false);
+    setNuevoCliente({ nombre: '', direccion: '', telefono: '' });
+    // Se conserva el documento escrito: si se dejara vacío el marcador, el
+    // autocompletado volvería a buscar y a mostrar la ficha recién quitada.
+    ultimoDocumentoBuscado.current = documentoCliente;
+  }
+
+  async function guardarClienteRapido(evento) {
+    evento.preventDefault();
+    const limpio = documentoCliente.replace(/\D/g, '');
+    if (limpio.length !== 8 && limpio.length !== 11) {
+      setClienteError('El documento debe tener 8 (DNI) u 11 (RUC) dígitos.');
+      return;
+    }
+    const nombre = nuevoCliente.nombre.trim();
+    if (!nombre) {
+      setClienteError('Indica el nombre o la razón social.');
+      return;
+    }
+    if (registrandoCliente) return;
+    setRegistrandoCliente(true);
+    setClienteError('');
+    try {
+      const cliente = await registrarClienteRapido({
+        documento: limpio,
+        nombre,
+        direccion: nuevoCliente.direccion.trim(),
+        telefono: nuevoCliente.telefono.trim(),
+      });
+      aplicarCliente(cliente);
+      setRegistroRapido(false);
+      showToast('Cliente registrado. Sus datos quedaron asociados a la venta.');
+    } catch (error) {
+      setClienteError(error?.message || 'No se pudo registrar el cliente.');
+    } finally {
+      setRegistrandoCliente(false);
+    }
+  }
+
+  function cambiarDniCliente(valor) {
+    setDniCliente(valor.replace(/\D/g, ''));
+    if (clienteEncontrado) {
+      setClienteEncontrado(null);
+      setDireccionCliente('');
+      setRazonSocialCliente('');
+    }
+  }
+
+  function cambiarRucCliente(valor) {
+    setRucCliente(valor.replace(/\D/g, ''));
+    if (clienteEncontrado) {
+      setClienteEncontrado(null);
+      setDireccionCliente('');
+      setRazonSocialCliente('');
+    }
+  }
+
   async function generarComprobante() {
     if (lineas.length === 0) {
       showToast('Agrega al menos un producto para generar el comprobante.');
@@ -277,11 +481,22 @@ export default function PuntoDeVenta() {
         medioPago: pagoConCredito && restantePorCobrar > 0 ? metodoPagoResto : metodoPago,
         items,
       };
+      // Ficha elegida en la búsqueda: la venta queda asociada a ese cliente de
+      // la tienda y guarda la dirección fiscal autocompletada.
+      if (clienteEncontrado?.idCliente) {
+        payload.idCliente = clienteEncontrado.idCliente;
+      }
+      if (direccionCliente.trim()) {
+        payload.direccionCliente = direccionCliente.trim();
+      }
       if (pagoConCredito && creditoAplicado) {
         payload.creditoCodigo = creditoAplicado.codigo;
       }
       if (tipoComprobante === 'Boleta' && dniCliente.trim()) {
         payload.documentoCliente = dniCliente.trim();
+        if (razonSocialCliente.trim()) {
+          payload.razonSocial = razonSocialCliente.trim();
+        }
       }
       if (tipoComprobante === 'Factura') {
         payload.documentoCliente = rucCliente.trim();
@@ -321,6 +536,7 @@ export default function PuntoDeVenta() {
       setCreditoAplicado(null);
       setCreditoError('');
       listProductos();
+      cargarCaja();
     } catch (error) {
       showToast(error?.message || 'No se pudo registrar la venta.');
     } finally {
@@ -328,26 +544,26 @@ export default function PuntoDeVenta() {
     }
   }
 
-  async function abrirComprobante(idVenta, nombre, formato) {
+  async function abrirComprobante(idVenta, nombre, formato, abrir = true) {
     if (!idVenta) {
       showToast(formato === 'ticket'
         ? 'No se encontró el ID de la venta para imprimir el ticket.'
         : 'No se encontró el ID de la venta para descargar el comprobante.');
       return;
     }
-    if (imprimiendo) return;
-    setImprimiendo(true);
+    if (accionArchivo) return;
+    setAccionArchivo(formato);
     try {
       await descargarArchivoSeguro(
         `/comprobantes/${idVenta}/${formato}`,
         'PDF',
         nombre || `venta-${idVenta}`,
-        { abrir: true }
+        { abrir }
       );
     } catch (error) {
       showToast(error?.message || 'No se pudo obtener el comprobante PDF.');
     } finally {
-      setImprimiendo(false);
+      setAccionArchivo(null);
     }
   }
 
@@ -356,9 +572,14 @@ export default function PuntoDeVenta() {
     await abrirComprobante(idVenta, `ticket-${ventaExitosa?.nroComprobante || idVenta}`, 'ticket');
   }
 
-  async function verDescargarPdf() {
+  async function descargarPdf() {
     const idVenta = ventaExitosa?.idVenta;
-    await abrirComprobante(idVenta, ventaExitosa?.nroComprobante || `venta-${idVenta}`, 'pdf');
+    await abrirComprobante(
+      idVenta,
+      ventaExitosa?.nroComprobante || `venta-${idVenta}`,
+      'pdf',
+      false
+    );
   }
 
   function siguienteCliente() {
@@ -369,6 +590,14 @@ export default function PuntoDeVenta() {
     setDniCliente('');
     setRucCliente('');
     setRazonSocialCliente('');
+    setDocumentoCliente('');
+    setClienteEncontrado(null);
+    setEstadoCliente('');
+    setClienteError('');
+    setDireccionCliente('');
+    setRegistroRapido(false);
+    setNuevoCliente({ nombre: '', direccion: '', telefono: '' });
+    ultimoDocumentoBuscado.current = '';
     setMontoRecibido('');
     setCreditoCodigo('');
     setCreditoAplicado(null);
@@ -444,6 +673,80 @@ export default function PuntoDeVenta() {
     if (procesandoDevolucion) return;
     setModalDevoluciones(false);
     setDevolucionExitosa(null);
+  }
+
+  // ------------------------------------------------------------------
+  // Apertura y cierre de caja
+  // ------------------------------------------------------------------
+
+  async function registrarApertura(evento) {
+    evento?.preventDefault();
+    const monto = Number(montoApertura);
+    if (!String(montoApertura).trim() || Number.isNaN(monto) || monto < 0) {
+      showToast('Ingresa el monto de apertura en efectivo (puede ser 0.00).');
+      return;
+    }
+    if (abriendoCaja) return;
+    setAbriendoCaja(true);
+    try {
+      const estado = await abrirCaja(redondear(monto));
+      setCaja(estado);
+      setMontoApertura('');
+      showToast('Caja abierta. Ya puedes registrar ventas.');
+    } catch (error) {
+      showToast(error?.message || 'No se pudo abrir la caja.');
+      await cargarCaja();
+    } finally {
+      setAbriendoCaja(false);
+    }
+  }
+
+  function abrirModalCierre() {
+    if (!turnoAbierto) {
+      showToast('Abre la caja antes de realizar el cierre.');
+      return;
+    }
+    setModalCierre(true);
+    setEfectivoContado('');
+    setObservacionCierre('');
+    setCierreResultado(null);
+    cargarCaja();
+  }
+
+  function cerrarModalCierre() {
+    if (cerrandoCaja) return;
+    setModalCierre(false);
+    setCierreResultado(null);
+  }
+
+  function prepararNuevaApertura() {
+    setModalCierre(false);
+    setCierreResultado(null);
+    setMontoApertura('');
+  }
+
+  async function confirmarCierre(evento) {
+    evento?.preventDefault();
+    const contado = Number(efectivoContado);
+    if (!String(efectivoContado).trim() || Number.isNaN(contado) || contado < 0) {
+      showToast('Ingresa el efectivo contado en caja.');
+      return;
+    }
+    if (cerrandoCaja) return;
+    setCerrandoCaja(true);
+    try {
+      const estado = await cerrarCaja({
+        efectivoContado: redondear(contado),
+        observacion: observacionCierre.trim(),
+      });
+      setCaja(estado);
+      setCierreResultado(estado);
+    } catch (error) {
+      showToast(error?.message || 'No se pudo cerrar la caja.');
+      await cargarCaja();
+    } finally {
+      setCerrandoCaja(false);
+    }
   }
 
   async function buscarVentasDevolucion(evento) {
@@ -529,6 +832,21 @@ export default function PuntoDeVenta() {
   }
 
   const inicial = (tienda.nombre || '?').charAt(0).toUpperCase();
+  const gruposCaja = Array.isArray(caja?.metodosPago) ? caja.metodosPago : [];
+  const efectivoEsperado = Number(caja?.efectivoEsperado) || 0;
+  const contadoNumero = Number(efectivoContado);
+  const diferenciaArqueo = String(efectivoContado).trim() && !Number.isNaN(contadoNumero)
+      ? redondear(contadoNumero - efectivoEsperado)
+      : null;
+  const claseDiferencia = diferenciaArqueo === null
+      ? ''
+      : diferenciaArqueo === 0 ? 'cuadra' : diferenciaArqueo < 0 ? 'faltante' : 'sobrante';
+  const etiquetaDiferencia = diferenciaArqueo === null
+      ? ''
+      : diferenciaArqueo === 0 ? 'Cuadra' : diferenciaArqueo < 0 ? 'Faltante' : 'Sobrante';
+  const periodoCaja = caja?.desde && caja?.hasta
+      ? `${caja.desde} — ${caja.hasta}`
+      : '';
 
   return (
       <div className="pos">
@@ -543,6 +861,25 @@ export default function PuntoDeVenta() {
             </div>
           </div>
           <div className="pos-topbar-acciones">
+            <span
+                className={`pos-caja-chip${turnoAbierto ? ' abierta' : ' cerrada'}`}
+                title={turnoAbierto
+                    ? `Turno abierto por ${caja.nombreVendedor || 'el vendedor'} a las ${caja.fechaApertura}`
+                    : 'Sin turno de caja abierto'}
+            >
+              {turnoAbierto
+                  ? `Caja abierta · ${dinero.format(Number(caja.montoApertura) || 0)}`
+                  : 'Caja cerrada'}
+            </span>
+            <button
+                className="pos-enlace"
+                type="button"
+                onClick={abrirModalCierre}
+                disabled={!turnoAbierto}
+            >
+              <Calculator size={18} aria-hidden="true" />
+              Cierre de caja
+            </button>
             <Link className="pos-enlace" to="/admin/ventas">
               <History size={18} aria-hidden="true" />
               Historial
@@ -859,6 +1196,152 @@ export default function PuntoDeVenta() {
               )}
             </div>
 
+            <div className="pos-bloque pos-bloque-cliente">
+              <span className="pos-etiqueta">Cliente</span>
+              <form className="pos-cliente-busqueda" onSubmit={buscarClienteManual}>
+                <div className="pos-cliente-busqueda-campo">
+                  <Search size={18} aria-hidden="true" />
+                  <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      maxLength={11}
+                      value={documentoCliente}
+                      onChange={(evento) => cambiarDocumentoCliente(evento.target.value)}
+                      placeholder="DNI (8) o RUC (11)"
+                      aria-label="Buscar cliente por DNI o RUC"
+                  />
+                </div>
+                <button className="pos-cliente-buscar" type="submit" disabled={buscandoCliente}>
+                  {buscandoCliente
+                      ? <LoaderCircle size={16} className="pos-girando" aria-hidden="true" />
+                      : <Search size={16} aria-hidden="true" />}
+                  {buscandoCliente ? 'Buscando...' : 'Buscar'}
+                </button>
+              </form>
+              <small className="pos-cliente-ayuda">
+                Se autocompleta al escribir 8 (DNI) u 11 (RUC) dígitos.
+              </small>
+
+              {clienteEncontrado && (
+                  <div className="pos-cliente-ficha">
+                    <div className="pos-cliente-ficha-fila">
+                      <div className="pos-cliente-ficha-datos">
+                        <strong>{clienteEncontrado.nombre || 'Cliente'}</strong>
+                        <span>
+                          {clienteEncontrado.tipoDocumento} {clienteEncontrado.numeroDocumento}
+                          {clienteEncontrado.origen === 'HISTORIAL'
+                              && ' · según comprobantes de la tienda'}
+                        </span>
+                      </div>
+                      <button className="pos-cliente-quitar" type="button" onClick={quitarClienteEncontrado}>
+                        Quitar
+                      </button>
+                    </div>
+                    <label className="pos-cliente-label" htmlFor="direccion-cliente">
+                      Dirección fiscal (opcional)
+                    </label>
+                    <input
+                        id="direccion-cliente"
+                        className="pos-cliente-input"
+                        type="text"
+                        maxLength={200}
+                        value={direccionCliente}
+                        onChange={(evento) => setDireccionCliente(evento.target.value)}
+                        placeholder="Se imprime en el comprobante"
+                    />
+                  </div>
+              )}
+
+              {!clienteEncontrado && estadoCliente === 'no-encontrado' && (
+                  <div className="pos-cliente-nuevo">
+                    <p>No está registrado en esta tienda.</p>
+                    {!registroRapido ? (
+                        <button
+                            className="pos-cliente-registrar"
+                            type="button"
+                            onClick={() => {
+                              setRegistroRapido(true);
+                              setClienteError('');
+                            }}
+                        >
+                          <UserPlus size={16} aria-hidden="true" />
+                          Registrar cliente rápido
+                        </button>
+                    ) : (
+                        <form className="pos-cliente-form" onSubmit={guardarClienteRapido}>
+                          <label className="pos-cliente-label" htmlFor="nuevo-cliente-nombre">
+                            Nombre o razón social *
+                          </label>
+                          <input
+                              id="nuevo-cliente-nombre"
+                              className="pos-cliente-input"
+                              type="text"
+                              maxLength={50}
+                              value={nuevoCliente.nombre}
+                              onChange={(evento) => setNuevoCliente((previo) => ({
+                                ...previo,
+                                nombre: evento.target.value,
+                              }))}
+                              placeholder="Ej. Comercial Andina SAC"
+                          />
+                          <label className="pos-cliente-label" htmlFor="nuevo-cliente-direccion">
+                            Dirección (opcional)
+                          </label>
+                          <input
+                              id="nuevo-cliente-direccion"
+                              className="pos-cliente-input"
+                              type="text"
+                              maxLength={200}
+                              value={nuevoCliente.direccion}
+                              onChange={(evento) => setNuevoCliente((previo) => ({
+                                ...previo,
+                                direccion: evento.target.value,
+                              }))}
+                              placeholder="Av. Los Álamos 123"
+                          />
+                          <label className="pos-cliente-label" htmlFor="nuevo-cliente-telefono">
+                            Teléfono (opcional)
+                          </label>
+                          <input
+                              id="nuevo-cliente-telefono"
+                              className="pos-cliente-input"
+                              type="tel"
+                              maxLength={15}
+                              value={nuevoCliente.telefono}
+                              onChange={(evento) => setNuevoCliente((previo) => ({
+                                ...previo,
+                                telefono: evento.target.value,
+                              }))}
+                              placeholder="987654321"
+                          />
+                          <div className="pos-cliente-acciones">
+                            <button
+                                className="pos-cliente-registrar"
+                                type="submit"
+                                disabled={registrandoCliente}
+                            >
+                              {registrandoCliente
+                                  ? <LoaderCircle size={16} className="pos-girando" aria-hidden="true" />
+                                  : <UserPlus size={16} aria-hidden="true" />}
+                              {registrandoCliente ? 'Registrando...' : 'Guardar cliente'}
+                            </button>
+                            <button
+                                className="pos-cliente-cancelar"
+                                type="button"
+                                onClick={() => setRegistroRapido(false)}
+                                disabled={registrandoCliente}
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </form>
+                    )}
+                  </div>
+              )}
+              {clienteError && <span className="pos-error" role="alert">{clienteError}</span>}
+            </div>
+
             <div className="pos-bloque">
               <span className="pos-etiqueta">Comprobante</span>
               <div className="pos-comprobantes">
@@ -884,7 +1367,7 @@ export default function PuntoDeVenta() {
                         inputMode="numeric"
                         maxLength={8}
                         value={dniCliente}
-                        onChange={(e) => setDniCliente(e.target.value.replace(/\D/g, ''))}
+                        onChange={(e) => cambiarDniCliente(e.target.value)}
                         placeholder="12345678"
                     />
                   </div>
@@ -899,7 +1382,7 @@ export default function PuntoDeVenta() {
                         inputMode="numeric"
                         maxLength={11}
                         value={rucCliente}
-                        onChange={(e) => setRucCliente(e.target.value.replace(/\D/g, ''))}
+                        onChange={(e) => cambiarRucCliente(e.target.value)}
                         placeholder="20123456789"
                     />
                     <label className="pos-cliente-label" htmlFor="razon-cliente">Razón Social *</label>
@@ -919,7 +1402,7 @@ export default function PuntoDeVenta() {
                 className="pos-generar"
                 type="button"
                 onClick={generarComprobante}
-                disabled={lineas.length === 0 || procesando || pagoInsuficiente
+                disabled={lineas.length === 0 || procesando || pagoInsuficiente || !turnoAbierto
                     || (pagoConCredito && !creditoAplicado)}
             >
               {procesando
@@ -933,6 +1416,88 @@ export default function PuntoDeVenta() {
             </p>
           </aside>
         </div>
+
+        {/* Apertura obligatoria: sin turno abierto el POS queda bloqueado. */}
+        {!turnoAbierto && !modalCierre && (
+            <div
+                className="pos-modal-overlay pos-overlay-bloqueo"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="apertura-titulo"
+            >
+              <div className="pos-modal pos-modal-caja">
+                {cajaCargando ? (
+                    <>
+                      <div className="pos-modal-icono neutro">
+                        <LoaderCircle className="pos-girando" size={44} aria-hidden="true" />
+                      </div>
+                      <h2 id="apertura-titulo" className="pos-modal-titulo">Consultando caja…</h2>
+                      <p className="pos-modal-mensaje">Verificando el turno de caja de la tienda.</p>
+                    </>
+                ) : cajaError ? (
+                    <>
+                      <div className="pos-modal-icono alerta">
+                        <Lock size={44} aria-hidden="true" />
+                      </div>
+                      <h2 id="apertura-titulo" className="pos-modal-titulo">Turno de caja no disponible</h2>
+                      <p className="pos-modal-mensaje">{cajaError}</p>
+                      <div className="pos-modal-acciones">
+                        <button className="pos-modal-btn primario" type="button" onClick={cargarCaja}>
+                          <RotateCcw size={18} aria-hidden="true" />
+                          Reintentar
+                        </button>
+                        <button className="pos-modal-btn secundario" type="button" onClick={salir}>
+                          <LogOut size={18} aria-hidden="true" />
+                          Salir
+                        </button>
+                      </div>
+                    </>
+                ) : (
+                    <>
+                      <div className="pos-modal-icono neutro">
+                        <Lock size={44} aria-hidden="true" />
+                      </div>
+                      <h2 id="apertura-titulo" className="pos-modal-titulo">Apertura de caja</h2>
+                      <p className="pos-modal-mensaje">
+                        {caja?.nombreVendedor ? `${caja.nombreVendedor}, registra` : 'Registra'}
+                        {' '}el fondo inicial en efectivo para empezar a vender.
+                      </p>
+                      <form className="pos-caja-form" onSubmit={registrarApertura}>
+                        <label className="pos-caja-label" htmlFor="monto-apertura">
+                          Monto de apertura (S/)
+                        </label>
+                        <input
+                            id="monto-apertura"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            inputMode="decimal"
+                            value={montoApertura}
+                            onChange={(evento) => setMontoApertura(evento.target.value)}
+                            placeholder="0.00"
+                            autoFocus
+                        />
+                        <div className="pos-modal-acciones">
+                          <button className="pos-modal-btn primario" type="submit" disabled={abriendoCaja}>
+                            {abriendoCaja
+                                ? <LoaderCircle className="pos-girando" size={18} aria-hidden="true" />
+                                : <Calculator size={18} aria-hidden="true" />}
+                            {abriendoCaja ? 'Abriendo caja…' : 'Registrar apertura'}
+                          </button>
+                          <button className="pos-modal-btn secundario" type="button" onClick={salir}>
+                            <LogOut size={18} aria-hidden="true" />
+                            Salir
+                          </button>
+                        </div>
+                      </form>
+                      <p className="pos-nota">
+                        Sin apertura no se pueden emitir comprobantes. El fondo puede ser S/ 0.00 si el cajón inicia vacío.
+                      </p>
+                    </>
+                )}
+              </div>
+            </div>
+        )}
 
         {modalDevoluciones && (
             <div className="pos-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="devoluciones-titulo">
@@ -1136,32 +1701,198 @@ export default function PuntoDeVenta() {
                       </>
                   )}
                   {ventaExitosa.efectivo && (
-                      <>
-                        <div>
-                          <span>Monto recibido</span>
-                          <strong>{dinero.format(Number(ventaExitosa.montoRecibido) || 0)}</strong>
-                        </div>
-                        <div>
-                          <span>Vuelto</span>
-                          <strong>{dinero.format(Number(ventaExitosa.vuelto) || 0)}</strong>
-                        </div>
-                      </>
+                      <div>
+                        <span>Monto recibido</span>
+                        <strong>{dinero.format(Number(ventaExitosa.montoRecibido) || 0)}</strong>
+                      </div>
                   )}
+                  <div className="pos-modal-vuelto">
+                    <span>Vuelto</span>
+                    <strong>{dinero.format(Number(ventaExitosa.vuelto) || 0)}</strong>
+                  </div>
                 </div>
                 <div className="pos-modal-acciones">
-                  <button className="pos-modal-btn primario" type="button" onClick={verDescargarPdf} disabled={imprimiendo || !ventaExitosa.idVenta}>
-                    {imprimiendo ? <LoaderCircle className="pos-girando" size={18} aria-hidden="true" /> : <FileText size={18} aria-hidden="true" />}
-                    {imprimiendo ? 'Abriendo...' : 'Ver / Descargar PDF'}
+                  <button
+                      className="pos-modal-btn primario"
+                      type="button"
+                      onClick={imprimirTicket}
+                      disabled={Boolean(accionArchivo) || !ventaExitosa.idVenta}
+                  >
+                    {accionArchivo === 'ticket'
+                        ? <LoaderCircle className="pos-girando" size={18} aria-hidden="true" />
+                        : <Printer size={18} aria-hidden="true" />}
+                    {accionArchivo === 'ticket' ? 'Abriendo ticket...' : 'Imprimir Ticket'}
                   </button>
-                  <button className="pos-modal-btn secundario" type="button" onClick={imprimirTicket} disabled={imprimiendo || !ventaExitosa.idVenta}>
-                    <Printer size={18} aria-hidden="true" />
-                    Imprimir Ticket
+                  <button
+                      className="pos-modal-btn secundario"
+                      type="button"
+                      onClick={descargarPdf}
+                      disabled={Boolean(accionArchivo) || !ventaExitosa.idVenta}
+                  >
+                    {accionArchivo === 'pdf'
+                        ? <LoaderCircle className="pos-girando" size={18} aria-hidden="true" />
+                        : <FileText size={18} aria-hidden="true" />}
+                    {accionArchivo === 'pdf' ? 'Descargando PDF...' : 'Descargar PDF'}
                   </button>
-                  <button className="pos-modal-btn secundario" type="button" onClick={siguienteCliente}>
-                    <UserPlus size={18} aria-hidden="true" />
-                    Siguiente Cliente
+                  <button
+                      className="pos-modal-btn secundario"
+                      type="button"
+                      onClick={siguienteCliente}
+                      disabled={Boolean(accionArchivo)}
+                  >
+                    <ShoppingCart size={18} aria-hidden="true" />
+                    Nueva Venta
                   </button>
                 </div>
+              </div>
+            </div>
+        )}
+        {modalCierre && (
+            <div className="pos-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="cierre-titulo">
+              <div className="pos-modal pos-modal-caja pos-modal-cierre">
+                {cierreResultado ? (
+                    <>
+                      <div className="pos-modal-icono">
+                        <CheckCircle2 size={48} aria-hidden="true" />
+                      </div>
+                      <h2 id="cierre-titulo" className="pos-modal-titulo">Caja cerrada</h2>
+                      <p className="pos-modal-mensaje">El turno quedó registrado con su arqueo.</p>
+                      <div className="pos-modal-detalle">
+                        <div>
+                          <span>Fondo de apertura</span>
+                          <strong>{dinero.format(Number(cierreResultado.montoApertura) || 0)}</strong>
+                        </div>
+                        <div>
+                          <span>Ventas del turno ({Number(cierreResultado.comprobantes) || 0})</span>
+                          <strong>{dinero.format(Number(cierreResultado.totalVentas) || 0)}</strong>
+                        </div>
+                        <div>
+                          <span>Efectivo esperado</span>
+                          <strong>{dinero.format(Number(cierreResultado.montoSistema) || 0)}</strong>
+                        </div>
+                        <div>
+                          <span>Efectivo contado</span>
+                          <strong>{dinero.format(Number(cierreResultado.efectivoContado) || 0)}</strong>
+                        </div>
+                      </div>
+                      <div
+                          className={`pos-arqueo-diferencia ${
+                            Number(cierreResultado.diferencia) === 0 ? 'cuadra'
+                                : Number(cierreResultado.diferencia) < 0 ? 'faltante' : 'sobrante'
+                          }`}
+                      >
+                        <span>
+                          {Number(cierreResultado.diferencia) === 0 ? 'Cuadra'
+                              : Number(cierreResultado.diferencia) < 0 ? 'Faltante' : 'Sobrante'}
+                        </span>
+                        <strong>{dinero.format(Number(cierreResultado.diferencia) || 0)}</strong>
+                      </div>
+                      {cierreResultado.observacion && (
+                          <p className="pos-cierre-observacion">{cierreResultado.observacion}</p>
+                      )}
+                      <div className="pos-modal-acciones">
+                        <button className="pos-modal-btn primario" type="button" onClick={prepararNuevaApertura}>
+                          <Unlock size={18} aria-hidden="true" />
+                          Abrir nueva caja
+                        </button>
+                        <button className="pos-modal-btn secundario" type="button" onClick={cerrarModalCierre}>
+                          Cerrar
+                        </button>
+                      </div>
+                    </>
+                ) : (
+                    <>
+                      <div className="pos-modal-icono neutro">
+                        <Calculator size={44} aria-hidden="true" />
+                      </div>
+                      <h2 id="cierre-titulo" className="pos-modal-titulo">Cierre de caja / Arqueo</h2>
+                      <p className="pos-modal-mensaje">
+                        {caja?.nombreVendedor || caja?.usuario || 'Vendedor'}
+                        {periodoCaja ? ` · ${periodoCaja}` : ''}
+                      </p>
+
+                      <div className="pos-arqueo-grupos">
+                        {gruposCaja.map((grupo) => (
+                            <div className="pos-arqueo-grupo" key={grupo.grupo}>
+                              <span>
+                                {grupo.grupo}
+                                <small>
+                                  {Number(grupo.comprobantes) === 1
+                                      ? '1 comprobante'
+                                      : `${Number(grupo.comprobantes) || 0} comprobantes`}
+                                </small>
+                              </span>
+                              <strong>{dinero.format(Number(grupo.total) || 0)}</strong>
+                            </div>
+                        ))}
+                      </div>
+
+                      <dl className="pos-arqueo-totales">
+                        <div>
+                          <dt>Fondo de apertura</dt>
+                          <dd>{dinero.format(Number(caja?.montoApertura) || 0)}</dd>
+                        </div>
+                        <div>
+                          <dt>Ventas del turno ({Number(caja?.comprobantes) || 0})</dt>
+                          <dd>{dinero.format(Number(caja?.totalVentas) || 0)}</dd>
+                        </div>
+                        <div className="pos-arqueo-esperado">
+                          <dt>Efectivo esperado en caja</dt>
+                          <dd>{dinero.format(efectivoEsperado)}</dd>
+                        </div>
+                      </dl>
+
+                      <form className="pos-caja-form" onSubmit={confirmarCierre}>
+                        <label className="pos-caja-label" htmlFor="efectivo-contado">
+                          Efectivo contado en caja *
+                        </label>
+                        <input
+                            id="efectivo-contado"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            inputMode="decimal"
+                            value={efectivoContado}
+                            onChange={(evento) => setEfectivoContado(evento.target.value)}
+                            placeholder={efectivoEsperado.toFixed(2)}
+                            autoFocus
+                        />
+                        {diferenciaArqueo !== null && (
+                            <div className={`pos-arqueo-diferencia ${claseDiferencia}`}>
+                              <span>{etiquetaDiferencia}</span>
+                              <strong>{dinero.format(diferenciaArqueo)}</strong>
+                            </div>
+                        )}
+                        <label className="pos-caja-label" htmlFor="observacion-cierre">
+                          Observación (opcional)
+                        </label>
+                        <textarea
+                            id="observacion-cierre"
+                            rows={3}
+                            maxLength={200}
+                            value={observacionCierre}
+                            onChange={(evento) => setObservacionCierre(evento.target.value)}
+                            placeholder="Ej. Falta cambio de un billete de S/ 10"
+                        />
+                        <div className="pos-modal-acciones">
+                          <button className="pos-modal-btn primario" type="submit" disabled={cerrandoCaja}>
+                            {cerrandoCaja
+                                ? <LoaderCircle className="pos-girando" size={18} aria-hidden="true" />
+                                : <Lock size={18} aria-hidden="true" />}
+                            {cerrandoCaja ? 'Cerrando caja…' : 'Confirmar cierre'}
+                          </button>
+                          <button
+                              className="pos-modal-btn secundario"
+                              type="button"
+                              onClick={cerrarModalCierre}
+                              disabled={cerrandoCaja}
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </form>
+                    </>
+                )}
               </div>
             </div>
         )}

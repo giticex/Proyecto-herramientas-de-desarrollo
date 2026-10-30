@@ -30,6 +30,7 @@ USE proyecto;
 
 -- 2. Limpieza previa (MySQL no admite "CASCADE" en DROP TABLE ni multiples tablas)
 DROP VIEW  IF EXISTS historial_compras;
+DROP TABLE IF EXISTS movimiento_caja;
 DROP TABLE IF EXISTS detalle_venta;
 DROP TABLE IF EXISTS venta;
 DROP TABLE IF EXISTS usuario;
@@ -158,10 +159,18 @@ CREATE TABLE cliente (
     telefono   VARCHAR(15),
     contrasena VARCHAR(255) NOT NULL,
     correo     VARCHAR(100),
+    -- Fichas creadas desde el POS: documento fiscal (catalogo 01 SUNAT:
+    -- 1 DNI, 6 RUC), direccion y tienda que las registro. Las cuentas del
+    -- portal dejan estas columnas en NULL y no aparecen en la busqueda.
+    tipo_documento   VARCHAR(1),
+    numero_documento VARCHAR(15),
+    direccion        VARCHAR(200),
+    id_tienda        INT,
     id_rol     VARCHAR(15)  NOT NULL DEFAULT 'CLIENTE',
     UNIQUE KEY uk_cliente_correo (correo),
     PRIMARY KEY (id_cliente),
     KEY idx_cliente_id_rol (id_rol),
+    KEY idx_cliente_documento (numero_documento, id_tienda),
     CONSTRAINT fk_cliente_rol FOREIGN KEY (id_rol)
         REFERENCES rol (id_rol)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -291,6 +300,28 @@ CREATE TABLE correlativo (
     id_tipo_documento VARCHAR(25) NOT NULL,
     ultimo_numero     INT         NOT NULL DEFAULT 0,
     PRIMARY KEY (serie)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Turnos de caja del POS: fondo inicial, cierre y arqueo fisico. Guarda el
+-- usuario como snapshot (sin FK) para que el historico sobreviva a la baja de
+-- una cuenta. El resumen por metodo de pago se calcula de las ventas del
+-- rango [fecha_apertura, fecha_cierre], no se duplica aqui.
+CREATE TABLE movimiento_caja (
+    id_caja          VARCHAR(36)    NOT NULL,
+    id_tienda        INT            NOT NULL,
+    usuario          VARCHAR(50)    NOT NULL,
+    nombre_vendedor  VARCHAR(120)   NOT NULL DEFAULT '',
+    estado           VARCHAR(12)    NOT NULL DEFAULT 'ABIERTA',
+    monto_apertura   DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    fecha_apertura   TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    monto_sistema    DECIMAL(12, 2) NULL,
+    efectivo_contado DECIMAL(12, 2) NULL,
+    diferencia       DECIMAL(12, 2) NULL,
+    observacion      VARCHAR(200)   NOT NULL DEFAULT '',
+    fecha_cierre     TIMESTAMP      NULL,
+    PRIMARY KEY (id_caja),
+    KEY idx_caja_turno (id_tienda, usuario, estado),
+    KEY idx_caja_fecha_apertura (fecha_apertura)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Las claves foraneas se reactivan antes de cargar los datos: si una clave

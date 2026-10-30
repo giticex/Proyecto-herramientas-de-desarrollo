@@ -286,13 +286,6 @@ class CajaApiTest {
         vender(tokenVendedor, "Efectivo", 1, 1);   // 10.00 en A
         vender(tokenAdminB, "Efectivo", 900, 1);   // 70.00 en B
 
-        System.out.println("DIAG caja=" + jdbcTemplate.queryForList(
-                "SELECT usuario, fecha_apertura, fecha_cierre FROM movimiento_caja"));
-        System.out.println("DIAG ventas=" + jdbcTemplate.queryForList(
-                "SELECT vendedor_usuario, fecha_emision, total_venta, id_medio_pago FROM venta"));
-        System.out.println("DIAG ahora=" + new java.util.Date());
-        System.out.println("DIAG estadoA=" + estado(tokenVendedor));
-
         importe("30.00", estado(tokenVendedor).get("efectivoEsperado"));
         importe("370.00", estado(tokenAdminB).get("efectivoEsperado"));
         assertEquals(2, jdbcTemplate.queryForObject(
