@@ -108,6 +108,8 @@ h2, h3 { font-size: var(--fs-m); font-weight: 600; letter-spacing: -0.01em; }
   transition: opacity var(--ease), transform var(--ease); z-index: 100;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast-error { background: #b3261e; }
+.toast-exito { background: #1b7f4b; }
 
 @media (max-width: 640px) {
   .page { padding-top: 120px; padding-bottom: 80px; }

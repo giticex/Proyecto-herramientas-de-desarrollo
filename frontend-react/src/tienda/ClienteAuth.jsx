@@ -5,6 +5,7 @@ import { useStore } from '../store/store';
 import { useClienteStore } from './clienteStore';
 import { loginApi } from '../auth/authApi';
 import { showToast } from '../components/toastBus';
+import { mensajeLogin, MENSAJE_SIN_ROL_CLIENTE } from '../auth/mensajesLogin';
 import './ClienteAuth.css';
 
 export default function ClienteAuth() {
@@ -42,13 +43,13 @@ export default function ClienteAuth() {
 
     // Validación básica
     if (!formData.email || !formData.password || (!isLogin && !formData.nombre)) {
-      showToast('Por favor, completa todos los campos requeridos.');
+      showToast('Por favor, completa todos los campos requeridos.', 'error');
       return;
     }
 
     // El alta de compradores todavía no tiene endpoint en el backend.
     if (!isLogin) {
-      showToast('El registro de compradores todavía no está disponible.');
+      showToast('El registro de compradores todavía no está disponible.', 'info');
       return;
     }
 
@@ -57,7 +58,7 @@ export default function ClienteAuth() {
       // El backend valida la clave y devuelve el rol de la cuenta.
       const respuesta = await loginApi(formData.email.trim(), formData.password);
       if (respuesta.rol !== 'CLIENTE') {
-        showToast('Tu cuenta no tiene el rol CLIENTE para comprar en esta tienda.');
+        showToast(MENSAJE_SIN_ROL_CLIENTE, 'error');
         return;
       }
 
@@ -71,10 +72,10 @@ export default function ClienteAuth() {
       };
 
       loginCliente(sesion);
-      showToast(`¡Bienvenida/o a ${tienda.nombre}, ${sesion.nombre}!`);
+      showToast(`¡Bienvenida/o a ${tienda.nombre}, ${sesion.nombre}!`, 'exito');
       navigate(destino, { replace: true });
     } catch (problema) {
-      showToast(problema.message || 'No se pudo iniciar sesión.');
+      showToast(mensajeLogin(problema), 'error');
     } finally {
       setEnviando(false);
     }
