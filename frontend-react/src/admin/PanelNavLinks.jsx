@@ -2,36 +2,34 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, LogOut, Package, Palette, Receipt, FileText } from 'lucide-react';
 import { useSesion } from '../auth/sesionStore';
 
-// Navegación del panel de administrador. Vive dentro de la barra lateral
-// derecha (ver PanelLayout) y no en la cabecera superior.
-export default function PanelNavLinks() {
+export default function PanelNavLinks({ abierto, cerrar }) {
   const logout = useSesion((estado) => estado.logout);
   const navigate = useNavigate();
 
   function salir() {
     logout();
-    navigate('/admin/login');
+    navigate('/admin/login', { replace: true });
   }
 
   return (
-    <nav className="panel-menu">
-      <NavLink to="/admin" end className="panel-menu-link">
+    <nav className="panel-menu" id="panel-menu" data-abierto={abierto} aria-label="Módulos de administración">
+      <NavLink to="/admin" end className="panel-menu-link" onClick={cerrar}>
         <LayoutDashboard size={18} aria-hidden="true" />
-        Dashboard
+        Resumen
       </NavLink>
-      <NavLink to="/admin/marca" className="panel-menu-link">
+      <NavLink to="/admin/marca" className="panel-menu-link" onClick={cerrar}>
         <Palette size={18} aria-hidden="true" />
         Marca
       </NavLink>
-      <NavLink to="/admin/productos" className="panel-menu-link">
+      <NavLink to="/admin/productos" className="panel-menu-link" onClick={cerrar}>
         <Package size={18} aria-hidden="true" />
         Productos
       </NavLink>
-      <NavLink to="/admin/ventas" className="panel-menu-link">
+      <NavLink to="/admin/ventas" className="panel-menu-link" onClick={cerrar}>
         <Receipt size={18} aria-hidden="true" />
         Ventas
       </NavLink>
-      <NavLink to="/admin/facturacion" className="panel-menu-link">
+      <NavLink to="/admin/facturacion" className="panel-menu-link" onClick={cerrar}>
         <FileText size={18} aria-hidden="true" />
         Facturación
       </NavLink>

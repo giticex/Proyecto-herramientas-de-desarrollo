@@ -3,7 +3,6 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { useStore } from '../store/store';
 import { showToast } from '../components/toastBus';
 import AtributosEditor, { atributosAFilas, filasAAtributos } from './AtributosEditor';
-import PanelLayout from './PanelLayout';
 import './ProductosPanel.css';
 
 const fmt = new Intl.NumberFormat('es', { style: 'currency', currency: 'USD' });
@@ -131,7 +130,7 @@ export default function ProductosPanel() {
   }
 
   return (
-    <PanelLayout>
+    <>
       <main className="page">
         <header className="head top">
           <div>
@@ -350,6 +349,6 @@ export default function ProductosPanel() {
           </div>
         </form>
       </dialog>
-    </PanelLayout>
+    </>
   );
 }

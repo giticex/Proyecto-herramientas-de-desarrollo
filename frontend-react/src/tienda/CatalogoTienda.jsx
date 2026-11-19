@@ -1,8 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { showToast } from '../components/toastBus';
+import { useMemo, useState } from 'react';
+import { useOutletContext, useParams } from 'react-router-dom';
 import { coincidenciaMarcaYPrecio, errorRangoPrecio, esAtributoMarca, opcionesDeMarca } from './filtrosCatalogo';
-import PlantillaTienda from '../components/PlantillaTienda';
 import { useStore } from '../store/store';
 import { useClienteStore } from './clienteStore';
 import { coincidenciaBusquedaCatalogo } from './busquedaCatalogo';
@@ -10,8 +8,9 @@ import './CatalogoTienda.css';
 
 export default function CatalogoTienda() {
   const { slug } = useParams();
-  const { tienda, productos, umbral, getTienda, listProductos } = useStore();
-  const { carrito, cliente, agregarAlCarrito, logoutCliente } = useClienteStore();
+  const { tienda, productos, carrito, catalogoListo, errorCatalogo } = useOutletContext();
+  const umbral = useStore((estado) => estado.umbral);
+  const agregarAlCarrito = useClienteStore((estado) => estado.agregarAlCarrito);
 
   const [busqueda, setBusqueda] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState('');
@@ -21,11 +20,6 @@ export default function CatalogoTienda() {
   const [hasta, setHasta] = useState('');
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
   const errorPrecio = errorRangoPrecio(desde, hasta);
-
-  useEffect(() => {
-    getTienda(slug);
-    listProductos(slug);
-  }, [slug, getTienda, listProductos]);
 
   // 1. Extraer categorías únicas desde los productos del store
   const categorias = useMemo(() => {
@@ -89,59 +83,8 @@ export default function CatalogoTienda() {
     setHasta('');
   };
 
-  const totalItemsCarrito = carrito.reduce((acc, item) => acc + item.cantidad, 0);
-  const slugActual = slug || tienda.slug || 'mi-tienda';
-
-  const navLinks = (
-    <>
-      <Link to="/" style={{ color: '#4a4a4a' }}>Inicio Plataforma</Link>
-      <Link to={`/tienda/${slugActual}`} aria-current="page" style={{ color: '#4a4a4a', fontWeight: 700 }}>
-        Catálogo
-      </Link>
-      {cliente && (
-        <>
-          <Link to={`/tienda/${slugActual}/mis-compras`} style={{ color: '#4a4a4a' }}>
-            Mis Compras
-          </Link>
-          <button
-            type="button"
-            onClick={() => {
-              logoutCliente();
-              showToast('Sesión cerrada correctamente');
-            }}
-            style={{
-              background: 'transparent',
-              border: '1px solid rgba(255,255,255,0.4)',
-              color: '#4a4a4a',
-              padding: '6px 12px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 500,
-              fontSize: '14px'
-            }}
-          >
-            Cerrar Sesión
-          </button>
-        </>
-      )}
-      {!cliente && (
-        <Link to={`/tienda/${slugActual}/login`} style={{ color: '#4a4a4a' }}>
-          Ingresar
-        </Link>
-      )}
-      <Link
-        to={`/tienda/${slugActual}/carrito`}
-        className="btn small"
-        style={{ background: '#4a4a4a', color: 'var(--color-primario, #0071e3)', fontWeight: 700 }}
-      >
-        🛒 Carrito
-        <span className="nav-badge-carrito">{totalItemsCarrito}</span>
-      </Link>
-    </>
-  );
-
   return (
-    <PlantillaTienda navLinks={navLinks}>
+    <>
       {/* Hero de la Tienda con los colores dinámicos del Store */}
       <header className="catalogo-hero">
         <div className="catalogo-hero-inner">
@@ -280,7 +223,11 @@ export default function CatalogoTienda() {
             </h2>
           </div>
 
-          {resultados.length === 0 ? (
+          {errorCatalogo ? (
+            <p className="portal-status" role="alert">No se pudo cargar el catálogo. Recarga la página.</p>
+          ) : !catalogoListo ? (
+            <p className="portal-status" role="status">Cargando catálogo…</p>
+          ) : resultados.length === 0 ? (
             <div
               style={{
                 padding: 48,
@@ -356,7 +303,7 @@ export default function CatalogoTienda() {
                             ? { opacity: 0.5, cursor: 'not-allowed' }
                             : undefined
                         }
-                        onClick={() => agregarAlCarrito(producto, 1)}
+                        onClick={() => agregarAlCarrito(slug, producto, 1)}
                       >
                         {agotado ? 'Sin stock' : '+ Agregar'}
                       </button>
@@ -368,6 +315,6 @@ export default function CatalogoTienda() {
           )}
         </section>
       </main>
-    </PlantillaTienda>
+    </>
   );
 }

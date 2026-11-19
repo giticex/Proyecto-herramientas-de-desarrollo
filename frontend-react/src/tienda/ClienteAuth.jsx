@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams, useLocation, Link } from 'react-router-dom';
-import PlantillaTienda from '../components/PlantillaTienda';
-import { useStore } from '../store/store';
+import { useNavigate, useParams, useLocation, useOutletContext } from 'react-router-dom';
+import { destinoCliente } from './rutasTienda';
 import { useClienteStore } from './clienteStore';
 import { loginApi } from '../auth/authApi';
 import { showToast } from '../components/toastBus';
@@ -11,11 +10,11 @@ export default function ClienteAuth() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { tienda, getTienda } = useStore();
+  const { tienda } = useOutletContext();
   const { loginCliente, cliente } = useClienteStore();
 
   // Si el checkout manda al login, vuelve a esa ruta al terminar.
-  const destino = location.state?.from || `/tienda/${slug}`;
+  const destino = destinoCliente(slug, location.state?.from);
 
   const [isLogin, setIsLogin] = useState(true);
   const [enviando, setEnviando] = useState(false);
@@ -27,11 +26,10 @@ export default function ClienteAuth() {
 
   // Si el cliente ya está logueado, lo redirigimos a donde intentaba ir.
   useEffect(() => {
-    getTienda(slug);
-    if (cliente?.rol === 'CLIENTE') {
+    if (cliente?.token && (!cliente.rol || cliente.rol === 'CLIENTE')) {
       navigate(destino, { replace: true });
     }
-  }, [slug, getTienda, cliente, navigate, destino]);
+  }, [cliente, navigate, destino]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -80,26 +78,21 @@ export default function ClienteAuth() {
     }
   };
 
-  const navLinks = (
-    <Link to={`/tienda/${slug}`}>← Volver al Catálogo</Link>
-  );
-
   return (
-    <PlantillaTienda navLinks={navLinks}>
-      <div className="auth-page">
+      <main className="auth-page">
         <div className="auth-container">
           <div className="auth-header">
-            <h2>{isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}</h2>
+            <h1>{isLogin ? 'Iniciar sesión' : 'Crear cuenta'}</h1>
             <p>Para comprar en <strong>{tienda.nombre || 'nuestra tienda'}</strong></p>
           </div>
 
           <form className="auth-form" onSubmit={handleSubmit}>
             {!isLogin && (
               <div className="field">
-                <label>Nombre completo</label>
+                <label htmlFor="cliente-nombre">Nombre completo</label>
                 <input
                   type="text"
-                  name="nombre"
+                  name="nombre" id="cliente-nombre" autoComplete="name"
                   placeholder="Ej. Anelhi Marcos"
                   value={formData.nombre}
                   onChange={handleChange}
@@ -108,10 +101,10 @@ export default function ClienteAuth() {
             )}
 
             <div className="field">
-              <label>Correo electrónico</label>
+              <label htmlFor="cliente-email">Correo electrónico</label>
               <input
                 type="email"
-                name="email"
+                name="email" id="cliente-email" autoComplete="email"
                 placeholder="tu@email.com"
                 value={formData.email}
                 onChange={handleChange}
@@ -119,10 +112,10 @@ export default function ClienteAuth() {
             </div>
 
             <div className="field">
-              <label>Contraseña</label>
+              <label htmlFor="cliente-clave">Contraseña</label>
               <input
                 type="password"
-                name="password"
+                name="password" id="cliente-clave" autoComplete={isLogin ? "current-password" : "new-password"}
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
@@ -147,7 +140,6 @@ export default function ClienteAuth() {
             </p>
           </div>
         </div>
-      </div>
-    </PlantillaTienda>
+      </main>
   );
 }

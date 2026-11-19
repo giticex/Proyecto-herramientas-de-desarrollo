@@ -11,8 +11,8 @@ import {
   YAxis,
 } from 'recharts';
 import { obtenerResumenDashboard } from '../api/dashboardApi';
-import { useStore } from '../store/store';
-import PanelLayout from './PanelLayout';
+import { useSesion } from '../auth/sesionStore';
+import { TIENDA_DEFAULT } from '../api/tiendaApi';
 import './DashboardAdmin.css';
 
 const dinero = new Intl.NumberFormat('es-PE', {
@@ -44,7 +44,7 @@ function mensajeError(problema) {
 }
 
 export default function DashboardAdmin() {
-  const colorPrimario = useStore((estado) => estado.tienda.colorPrimario);
+  const colorPrimario = useSesion((estado) => estado.tienda?.colorPrimario) || TIENDA_DEFAULT.colorPrimario;
   const [datos, setDatos] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
@@ -84,7 +84,6 @@ export default function DashboardAdmin() {
   const acento = colorPrimario || '#db2777';
 
   return (
-    <PanelLayout>
       <main className="page">
         <header className="head top">
           <div>
@@ -200,6 +199,5 @@ export default function DashboardAdmin() {
           </>
         )}
       </main>
-    </PanelLayout>
   );
 }

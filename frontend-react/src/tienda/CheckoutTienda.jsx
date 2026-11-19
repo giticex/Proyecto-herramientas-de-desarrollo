@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import PlantillaTienda from '../components/PlantillaTienda';
+import { useOutletContext, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useClienteStore } from './clienteStore';
-import { useStore } from '../store/store';
+import { rutaTienda } from './rutasTienda';
 import { showToast } from '../components/toastBus';
 import {
   emitirComprobante,
@@ -59,8 +58,9 @@ export default function CheckoutTienda() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { carrito, cliente, vaciarCarrito } = useClienteStore();
-  const { productos, getTienda, listProductos } = useStore();
+  const { cliente, vaciarCarrito } = useClienteStore();
+  const { carrito, productos, catalogoListo, errorCatalogo, actualizarCatalogo } = useOutletContext();
+  const base = rutaTienda(slug);
 
   const [tipoComprobante, setTipoComprobante] = useState('boleta');
   const [documento, setDocumento] = useState('');
@@ -71,18 +71,12 @@ export default function CheckoutTienda() {
   const [procesando, setProcesando] = useState(false);
   const solicitudEnCurso = useRef(null);
 
-  // Proteger la ruta: si no hay carrito o cliente, regresar
+  // El enlace directo a checkout vuelve al carrito si el pedido está vacío.
   useEffect(() => {
-    getTienda(slug);
-    if (productos.length === 0) listProductos(slug);
-  }, [slug, getTienda, listProductos, productos.length]);
-
-  // Si el carrito está vacío y NO estamos procesando una compra, volver al catálogo
-  useEffect(() => {
-    if (!procesando && carrito.length === 0) {
-      navigate(`/tienda/${slug}`);
+    if (catalogoListo && !errorCatalogo && !procesando && carrito.length === 0) {
+      navigate(base + '/carrito', { replace: true });
     }
-  }, [carrito.length, procesando, navigate, slug]);
+  }, [base, carrito.length, catalogoListo, errorCatalogo, procesando, navigate]);
 
   const resumen = useMemo(() => calcularResumen(carrito, productos), [carrito, productos]);
 
@@ -93,7 +87,7 @@ export default function CheckoutTienda() {
   // guardando la ruta actual para volver aquí al terminar.
   const irAlLogin = (mensaje) => {
     showToast(mensaje);
-    navigate(`/tienda/${slug}/login`, { state: { from: location.pathname } });
+    navigate(base + '/login', { replace: true, state: { from: location.pathname + location.search + location.hash } });
   };
 
   const manejarCambioComprobante = (tipo) => {
@@ -164,13 +158,13 @@ export default function CheckoutTienda() {
         solicitudEnCurso.current = { contenido, clave: crypto.randomUUID() };
       }
       const comprobante = await emitirComprobante(payload, slug, cliente.token, solicitudEnCurso.current.clave);
-      vaciarCarrito();
+      vaciarCarrito(slug);
       // El backend descuenta el stock al emitir: se refresca el catalogo.
-      listProductos(slug);
+      actualizarCatalogo();
       showToast(
         `¡${tipoComprobante === 'boleta' ? 'Boleta' : 'Factura'} ${comprobante.numeroDocumento} emitida!`
       );
-      navigate('/tienda/' + slug + '/confirmacion?venta=' + encodeURIComponent(comprobante.idVenta));
+      navigate(base + '/confirmacion?venta=' + encodeURIComponent(comprobante.idVenta), { replace: true });
     } catch (error) {
       setProcesando(false);
       if (error?.status === 401 || error?.status === 403) {
@@ -181,22 +175,21 @@ export default function CheckoutTienda() {
     }
   };
 
-  const navLinks = (
-    <Link to={`/tienda/${slug}/carrito`} className="nav-volver">
-      <svg className="icono-flecha" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="19" y1="12" x2="5" y2="12"></line>
-        <polyline points="12 19 5 12 12 5"></polyline>
-      </svg>
-      Volver al Carrito
-    </Link>
-  );
+  if (!procesando && (!catalogoListo || errorCatalogo || !carrito.length)) {
+    return (
+      <main className="checkout-page-bg">
+        {errorCatalogo
+          ? <p className="portal-status" role="alert">No se pudo verificar el catálogo. Recarga la página.</p>
+          : <p className="portal-status" role="status">Preparando el pedido…</p>}
+      </main>
+    );
+  }
 
   return (
-    <PlantillaTienda navLinks={navLinks}>
-      <div className="checkout-page-bg">
+      <main className="checkout-page-bg">
         <div className="checkout-container">
           <div className="checkout-header">
-            <h2>Finalizar Compra y Facturación</h2>
+            <h1>Finalizar compra y facturación</h1>
             <p>Completa tus datos tributarios y de envío para emitir tu comprobante electrónico.</p>
           </div>
 
@@ -368,14 +361,13 @@ export default function CheckoutTienda() {
                 </div>
               </div>
 
-              <button type="submit" className="btn-confirmar-pago" disabled={procesando}>
+              <button type="submit" className="btn block" disabled={procesando}>
                 {procesando ? 'Emitiendo comprobante...' : `Confirmar pedido · S/ ${centavos(resumen.total)}`}
               </button>
             </div>
           </form>
         </div>
-      </div>
-    </PlantillaTienda>
+      </main>
   );
 }
 

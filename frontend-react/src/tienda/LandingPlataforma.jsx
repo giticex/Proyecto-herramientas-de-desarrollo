@@ -1,17 +1,12 @@
-import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useStore } from '../store/store';
+import { TIENDA_DEFAULT } from '../api/tiendaApi';
+import { useTiendaPublica } from './useTiendaPublica';
 import './LandingPlataforma.css';
 
 export default function LandingPlataforma() {
-  const { tienda, productos, getTienda, listProductos } = useStore();
-
-  useEffect(() => {
-    getTienda();
-    listProductos(tienda.slug);
-  }, [getTienda, listProductos, tienda.slug]);
-
-  const slugTienda = tienda?.slug || 'mi-tienda';
+  const slugTienda = TIENDA_DEFAULT.slug;
+  const { tienda: marca, productos, catalogoListo, errorCatalogo } = useTiendaPublica(slugTienda);
+  const tienda = marca || TIENDA_DEFAULT;
   const muestraProductos = productos.slice(0, 4);
 
   return (
@@ -146,7 +141,7 @@ export default function LandingPlataforma() {
                 ))
               ) : (
                 <div className="showcase-card" style={{ gridColumn: 'span 2', textAlign: 'center' }}>
-                  Cargando productos desde el Store central...
+                  {errorCatalogo ? 'Catálogo de demostración no disponible.' : catalogoListo ? 'Aún no hay productos publicados.' : 'Cargando productos…'}
                 </div>
               )}
             </div>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import PlantillaTienda from '../components/PlantillaTienda';
+import { useParams, Link } from 'react-router-dom';
 import { useClienteStore } from './clienteStore';
+import { rutaTienda } from './rutasTienda';
 import ComprobanteImpresion from './ComprobanteImpresion';
 import { listarComprobantesDeCliente } from '../api/comprobantesApi';
 import { showToast } from '../components/toastBus';
@@ -12,19 +12,10 @@ import './MisCompras.css';
 /** Normaliza las compras guardadas en el navegador (mock) al formato del backend. */
 export default function MisCompras() {
   const { slug } = useParams();
-  const navigate = useNavigate();
   const { cliente } = useClienteStore();
 
   const [comprobantes, setComprobantes] = useState(null);
   const [seleccion, setSeleccion] = useState(null);
-
-  // Protegemos la ruta
-  useEffect(() => {
-    if (!cliente) {
-      showToast('Debes iniciar sesión para ver tus compras.');
-      navigate(`/tienda/${slug}/login`);
-    }
-  }, [cliente, navigate, slug]);
 
   const idCliente = cliente?.idCliente;
   const token = cliente?.token;
@@ -52,16 +43,6 @@ export default function MisCompras() {
     }
   }
 
-  const navLinks = (
-    <Link to={`/tienda/${slug}`} className="nav-volver">
-      <svg className="icono-flecha" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="19" y1="12" x2="5" y2="12"></line>
-        <polyline points="12 19 5 12 12 5"></polyline>
-      </svg>
-      Volver a la Tienda
-    </Link>
-  );
-
   if (!cliente) return null;
 
   const resultado = comprobantes?.clave === clave ? comprobantes : null;
@@ -69,10 +50,10 @@ export default function MisCompras() {
   const seleccionado = seleccion?.clave === clave ? seleccion?.comprobante : null;
 
   return (
-    <PlantillaTienda navLinks={navLinks}>
-      <div className="mis-compras-page">
+    <>
+      <main className="mis-compras-page">
         <div className="compras-header">
-          <h2>Mis Compras y Comprobantes</h2>
+          <h1>Mis compras y comprobantes</h1>
           <p>
             Hola, <strong>{cliente.nombre}</strong>. Este es tu historial de boletas y facturas electrónicas.
           </p>
@@ -88,7 +69,7 @@ export default function MisCompras() {
           <div className="compras-vacio">
             <h3>Aún no tienes compras registradas</h3>
             <p>Explora el catálogo y realiza tu primer pedido para ver tus comprobantes aquí.</p>
-            <Link to={`/tienda/${slug}`} className="btn">
+            <Link to={rutaTienda(slug)} className="btn">
               Ir al Catálogo
             </Link>
           </div>
@@ -195,11 +176,11 @@ export default function MisCompras() {
             })}
           </div>
         )}
-      </div>
+      </main>
 
       {seleccionado && (
         <ComprobanteImpresion comprobante={seleccionado} token={token} onClose={() => setSeleccion(null)} />
       )}
-    </PlantillaTienda>
+    </>
   );
 }

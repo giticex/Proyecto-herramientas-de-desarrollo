@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { apiClient } from '../api/client';
-import PanelLayout from './PanelLayout';
 
 const ruta = '/api/facturacion/emisor';
 const vacio = {
@@ -68,7 +67,6 @@ export default function FacturacionPanel() {
   }
 
   return (
-    <PanelLayout>
       <main className="page">
         <header className="head">
           <h1>Facturación</h1>
@@ -112,6 +110,5 @@ export default function FacturacionPanel() {
           </form>
         )}
       </main>
-    </PanelLayout>
   );
 }

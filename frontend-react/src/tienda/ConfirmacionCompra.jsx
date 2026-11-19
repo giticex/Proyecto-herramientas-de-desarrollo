@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import PlantillaTienda from '../components/PlantillaTienda';
 import { obtenerComprobante } from '../api/comprobantesApi';
 import { useClienteStore } from './clienteStore';
+import { rutaTienda } from './rutasTienda';
 import ComprobanteImpresion from './ComprobanteImpresion';
 import './ConfirmacionCompra.css';
 
@@ -30,22 +30,22 @@ export default function ConfirmacionCompra() {
   const consulta = resultado?.idVenta === idVenta && resultado?.token === token ? resultado : null;
   const comprobante = consulta?.comprobante;
   return (
-    <PlantillaTienda>
-      <div className="confirmacion-page">
+    <>
+      <main className="confirmacion-page">
         <div className="confirmacion-card">
-          <h2>{comprobante ? 'Comprobante generado' : 'Confirmación de compra'}</h2>
+          <h1>{comprobante ? 'Comprobante generado' : 'Confirmación de compra'}</h1>
           {!idVenta && <p>No se indicó una compra. Puedes consultar tus pedidos anteriores.</p>}
           {idVenta && token && !consulta && <p role="status">Consultando tu comprobante…</p>}
           {consulta?.error && <p role="alert">{consulta.error}</p>}
           {comprobante && <p className="numero-pedido">{comprobante.numeroDocumento}</p>}
           <div className="confirmacion-acciones">
             {comprobante && <button type="button" className="btn" onClick={() => setMostrando(true)}>Ver comprobante</button>}
-            <Link to={'/tienda/' + slug + '/mis-compras'} className="btn">Ver mis compras</Link>
-            <Link to={'/tienda/' + slug} className="btn">Seguir comprando</Link>
+            <Link to={rutaTienda(slug) + '/mis-compras'} className="btn">Ver mis compras</Link>
+            <Link to={rutaTienda(slug)} className="btn ghost">Seguir comprando</Link>
           </div>
         </div>
-      </div>
+      </main>
       {mostrando && comprobante && <ComprobanteImpresion comprobante={comprobante} token={token} onClose={() => setMostrando(false)} />}
-    </PlantillaTienda>
+    </>
   );
 }

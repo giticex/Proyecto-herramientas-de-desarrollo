@@ -1,10 +1,9 @@
 /* ===== CATÁLOGO MODERNO CON VARIABLES DINÁMICAS DE LA TIENDA ===== */
 .catalogo-hero {
-  margin-top: 64px;
   background: linear-gradient(
     135deg,
     var(--color-primario, #0071e3) 0%,
-    var(--color-secundario, #1d1d1f) 100%
+    color-mix(in srgb, var(--color-primario) 78%, var(--color-secundario)) 100%
   );
   color: var(--on-primario, #ffffff);
   padding: clamp(48px, 6vw, 84px) clamp(20px, 5vw, 64px);
@@ -83,7 +82,7 @@
 .filtros-panel {
   background: var(--bg-soft, #f5f5f7);
   border: 1px solid var(--line, #e5e5ea);
-  border-radius: 18px;
+  border-radius: var(--radius);
   padding: 22px;
   position: sticky;
   top: 88px;
@@ -218,7 +217,7 @@
 .producto-card {
   background: #ffffff;
   border: 1px solid var(--line, #e5e5ea);
-  border-radius: 18px;
+  border-radius: var(--radius);
   padding: 20px;
   display: flex;
   flex-direction: column;

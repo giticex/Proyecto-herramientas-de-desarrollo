@@ -1,57 +1,47 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import PlantillaTienda from '../components/PlantillaTienda';
+import { useState } from 'react';
+import { useOutletContext, useParams, Link, useNavigate } from 'react-router-dom';
 import { useClienteStore } from './clienteStore';
-import { useStore } from '../store/store';
+import { rutaTienda } from './rutasTienda';
 import './CarritoTienda.css';
 
 export default function CarritoTienda() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { carrito, quitarDelCarrito, cambiarCantidad, cliente } = useClienteStore();
-  const { productos, getTienda, listProductos } = useStore();
+  const { productos, carrito, catalogoListo, errorCatalogo } = useOutletContext();
+  const { quitarDelCarrito, cambiarCantidad, cliente } = useClienteStore();
+  const base = rutaTienda(slug);
 
   // Estado para controlar nuestro nuevo modal animado
   const [modalLogin, setModalLogin] = useState(false);
-  useEffect(() => {
-    getTienda(slug);
-    if (productos.length === 0) listProductos(slug);
-  }, [slug, getTienda, listProductos, productos.length]);
 
   const total = carrito.reduce((sum, item) => sum + (Number(item.precio) * item.cantidad), 0);
 
   const irAlCheckout = () => {
-    if (!cliente) {
+    if (!cliente?.token) {
       setModalLogin(true); // Activamos el modal en lugar del toast
       return;
     }
-    navigate(`/tienda/${slug}/checkout`);
+    navigate(base + '/checkout');
   };
 
-  const navLinks = (
-    <Link to={`/tienda/${slug}`} className="nav-volver">
-      <svg className="icono-flecha" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="19" y1="12" x2="5" y2="12"></line>
-        <polyline points="12 19 5 12 12 5"></polyline>
-      </svg>
-      Seguir comprando
-    </Link>
-  );
-
   return (
-    <PlantillaTienda navLinks={navLinks}>
-      <div className="carrito-page-bg">
+    <>
+      <main className="carrito-page-bg">
         <div className="carrito-page">
           <div className="carrito-header">
-            <h2>Tu Carrito</h2>
+            <h1>Tu carrito</h1>
           </div>
 
-          {carrito.length === 0 ? (
+          {!catalogoListo ? (
+            <p className="portal-status" role="status">Cargando carrito…</p>
+          ) : errorCatalogo ? (
+            <p className="portal-status" role="alert">No se pudo cargar el catálogo de esta tienda. Recarga la página.</p>
+          ) : carrito.length === 0 ? (
             <div className="carrito-vacio-card">
               <div className="icono-vacio">🛍️</div>
               <h3>Tu carrito está vacío</h3>
               <p>Explora nuestro catálogo y añade productos increíbles.</p>
-              <Link to={`/tienda/${slug}`} className="btn-premium">
+              <Link to={base} className="btn">
                 Ver Catálogo
               </Link>
             </div>
@@ -73,7 +63,8 @@ export default function CarritoTienda() {
                           <button
                             type="button"
                             className="btn-qty"
-                            onClick={() => cambiarCantidad(item.idProducto, item.cantidad - 1, stockMax)}
+                            aria-label={`Reducir cantidad de ${item.nombre}`}
+                            onClick={() => cambiarCantidad(slug, item.idProducto, item.cantidad - 1, stockMax)}
                           >
                             −
                           </button>
@@ -81,7 +72,8 @@ export default function CarritoTienda() {
                           <button
                             type="button"
                             className="btn-qty"
-                            onClick={() => cambiarCantidad(item.idProducto, item.cantidad + 1, stockMax)}
+                            aria-label={`Aumentar cantidad de ${item.nombre}`}
+                            onClick={() => cambiarCantidad(slug, item.idProducto, item.cantidad + 1, stockMax)}
                           >
                             +
                           </button>
@@ -94,7 +86,7 @@ export default function CarritoTienda() {
                         <button
                           type="button"
                           className="btn-eliminar-minimal"
-                          onClick={() => quitarDelCarrito(item.idProducto)}
+                          onClick={() => quitarDelCarrito(slug, item.idProducto)}
                         >
                           Quitar
                         </button>
@@ -110,32 +102,33 @@ export default function CarritoTienda() {
                   <span>Total estimado</span>
                   <span>S/ {total.toFixed(2)}</span>
                 </div>
-                <button type="button" className="btn-premium w-100" onClick={irAlCheckout}>
+                <button type="button" className="btn block" onClick={irAlCheckout}>
                   Proceder al Checkout
                 </button>
               </div>
             </div>
           )}
         </div>
-      </div>
+      </main>
 
       {modalLogin && (
         <div className="modal-backdrop fade-in">
-          <div className="modal-card slide-up">
+          <div className="modal-card slide-up" role="dialog" aria-modal="true" aria-labelledby="carrito-login-titulo"
+            onKeyDown={(event) => { if (event.key === 'Escape') setModalLogin(false); }}>
             <div className="modal-icono">👋</div>
-            <h3>Inicia sesión</h3>
+            <h3 id="carrito-login-titulo">Inicia sesión</h3>
             <p>Para proteger tus datos y emitir tu comprobante electrónico, ingresa a tu cuenta.</p>
             <div className="modal-acciones">
-              <button type="button" className="btn-secundario" onClick={() => setModalLogin(false)}>
+              <button type="button" className="btn ghost" onClick={() => setModalLogin(false)}>
                 Cancelar
               </button>
-              <button type="button" className="btn-premium" onClick={() => navigate(`/tienda/${slug}/login`)}>
-                Ir a Login
+              <button type="button" className="btn" onClick={() => navigate(base + '/login', { state: { from: base + '/checkout' } })}>
+                Iniciar sesión
               </button>
             </div>
           </div>
         </div>
       )}
-    </PlantillaTienda>
+    </>
   );
 }

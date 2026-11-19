@@ -1,16 +1,17 @@
-import { Link, Navigate, Outlet } from 'react-router-dom';
+import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useSesion } from './sesionStore';
 
 // Redirige a /admin/login si no hay sesión, igual que la guarda de nav.js.
 // Con sesión pero sin rol ADMIN no entra al panel: el backend también lo
 // rechaza con 403, así que conviene avisarlo antes de llamar a la API.
 export default function RutaProtegida() {
+  const location = useLocation();
   const token = useSesion((estado) => estado.token);
   const rol = useSesion((estado) => estado.rol);
   const usuario = useSesion((estado) => estado.usuario);
 
   if (!token) {
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/admin/login" replace state={{ from: location.pathname + location.search + location.hash }} />;
   }
 
   if (rol !== 'ADMIN') {
