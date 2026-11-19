@@ -1,6 +1,7 @@
 package com.example.proyec_herramientas.service;
 
 import com.example.proyec_herramientas.exception.RecursoDuplicadoException;
+import com.example.proyec_herramientas.exception.ValidacionComprobanteException;
 import com.example.proyec_herramientas.model.LoginRequestDTO;
 import com.example.proyec_herramientas.model.LoginResponseDTO;
 import com.example.proyec_herramientas.model.TiendaDTO;
@@ -21,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Locale;
+import java.nio.charset.StandardCharsets;
 
 // Login con rol. El rol sale de la FK id_rol de la base, nunca se deduce de
 // "en que tabla esta la cuenta". La cuenta ADMIN ademas trae su tienda, que
@@ -103,25 +106,39 @@ public class AuthServiceImpl implements AuthService {
         tienda.setSlug(slug);
         tienda = tiendaRepository.save(tienda);
 
-        // El registro no pide apellido: persona.apellido es NOT NULL en el
-        // esquema historico, se deja vacio.
+        Usuario cuenta = crearCuentaPanel(correo, request.getContrasena(), request.getNombre(), "", null,
+                Rol.ADMIN, tienda.getIdTienda());
+        return respuesta(cuenta.getUsuario(), Rol.ADMIN, "", request.getNombre(), "", correo, tienda);
+    }
+
+    Usuario crearCuentaPanel(String correo, String clave, String nombre, String apellido, String telefono,
+            String rol, Integer idTienda) {
+        if (correoYaRegistrado(correo)) {
+            throw new RecursoDuplicadoException("Ese correo ya está registrado.");
+        }
+        if (clave.getBytes(StandardCharsets.UTF_8).length > 72) {
+            throw new ValidacionComprobanteException("La contraseña es demasiado larga.");
+        }
         Persona persona = new Persona();
         persona.setIdPersona(generarId("PER"));
-        persona.setNombre(request.getNombre().trim());
-        persona.setApellido("");
+        persona.setNombre(nombre.strip());
+        persona.setApellido(apellido.strip());
         persona.setCorreo(correo);
         persona.setUsuario(correo);
-        persona = personaRepository.save(persona);
+        persona.setTelefono(telefono);
+        personaRepository.saveAndFlush(persona);
 
-        Usuario usuario = new Usuario();
-        usuario.setUsuario(correo);
-        usuario.setContrasena(contrasena.hashBcrypt(request.getContrasena()));
-        usuario.setIdPersona(persona.getIdPersona());
-        usuario.setIdRol(Rol.ADMIN);
-        usuario.setIdTienda(tienda.getIdTienda());
-        usuarioRepository.save(usuario);
+        Usuario usuario = new Usuario(correo, contrasena.hashBcrypt(clave), persona.getIdPersona(), rol);
+        usuario.setIdTienda(idTienda);
+        return usuarioRepository.saveAndFlush(usuario);
+    }
 
-        return respuesta(correo, Rol.ADMIN, "", persona.getNombre(), persona.getApellido(), correo, tienda);
+    @Transactional
+    public void aprovisionarMaestro(String correoConfigurado, String clave) {
+        String correo = correoConfigurado.strip().toLowerCase(Locale.ROOT);
+        var cuenta = usuarioRepository.findByUsuario(correo);
+        if (cuenta.isPresent() && Rol.SUPER_ADMIN.equals(cuenta.get().getIdRol())) return;
+        crearCuentaPanel(correo, clave, "Administración", "NovaCommerce", null, Rol.SUPER_ADMIN, null);
     }
 
     @Override
@@ -236,6 +253,7 @@ public class AuthServiceImpl implements AuthService {
         dto.setColorPrimario(tienda.getColorPrimario());
         dto.setColorSecundario(tienda.getColorSecundario());
         dto.setLogoUrl(tienda.getLogoUrl());
+        dto.setPublicada(tienda.isPublicada());
         return dto;
     }
 }

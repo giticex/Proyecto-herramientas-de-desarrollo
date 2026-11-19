@@ -34,11 +34,15 @@ export default function AdminLogin() {
     setError('');
     try {
       const respuesta = await loginApi(u, clave);
-      if (respuesta.rol !== 'ADMIN') {
-        setError('Tu cuenta no tiene el rol ADMIN para entrar al panel.');
+      if (!['ADMIN', 'SOLICITANTE', 'SUPER_ADMIN'].includes(respuesta.rol)) {
+        setError('Esta cuenta no tiene acceso a la plataforma de negocios.');
         return;
       }
       login(respuesta.usuario ?? u, respuesta.token, respuesta.rol, respuesta.tienda);
+      if (respuesta.rol === 'SOLICITANTE' || respuesta.rol === 'SUPER_ADMIN') {
+        navigate(respuesta.rol === 'SUPER_ADMIN' ? '/maestro/solicitudes' : '/solicitud-tienda', { replace: true });
+        return;
+      }
       const ruta = typeof state?.from === 'string' ? state.from.split(/[?#]/, 1)[0].replace(/\/+$/, '') : '';
       const modulos = ['/admin', '/admin/marca', '/admin/productos', '/admin/ventas', '/admin/facturacion'];
       navigate(modulos.includes(ruta) ? state.from : '/admin', { replace: true });
@@ -56,6 +60,7 @@ export default function AdminLogin() {
           <p>Inicia sesión para administrar tu tienda.</p>
         </header>
 
+        {state?.solicitudEnviada && <p role="status">Solicitud recibida. Inicia sesión para consultar su estado.</p>}
         <form className="form" onSubmit={manejarSubmit} noValidate>
           <div className={`field ${errores.usuario ? 'invalid' : ''}`}>
             <label htmlFor="usuario">Usuario o correo</label>

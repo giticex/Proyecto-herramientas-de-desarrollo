@@ -1,6 +1,7 @@
 package com.example.proyec_herramientas.controller;
 
 import com.example.proyec_herramientas.model.RolDTO;
+import com.example.proyec_herramientas.persistence.Rol;
 import com.example.proyec_herramientas.service.RolService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,6 +23,8 @@ public class RolController {
 
     @GetMapping
     public List<RolDTO> listar() {
-        return rolService.listar();
+        return rolService.listar().stream()
+                .filter(rol -> !Rol.SUPER_ADMIN.equals(rol.getIdRol()) && !Rol.SOLICITANTE.equals(rol.getIdRol()))
+                .toList();
     }
 }

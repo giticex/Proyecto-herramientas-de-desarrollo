@@ -47,6 +47,9 @@ class ComprobanteTiendasTest {
     private static final String RUC_B = "20000000002";
     private static final String TIENDA_B = "negocio-fiscal-b";
 
+    @Autowired
+    private com.example.proyec_herramientas.service.TokenService tokens;
+
     @Autowired private MockMvc mvc;
     @Autowired private ObjectMapper json;
     @Autowired private EntityManager entityManager;
@@ -67,7 +70,8 @@ class ComprobanteTiendasTest {
         CuentasTest.crearFichaCliente(clientes);
         adminA = CuentasTest.token(mvc, json, CuentasTest.USUARIO_ADMIN, CuentasTest.CLAVE);
         comprador = CuentasTest.token(mvc, json, CuentasTest.CORREO_CLIENTE, CuentasTest.CLAVE);
-        String registro = mvc.perform(post("/auth/registro-tienda").contentType(MediaType.APPLICATION_JSON)
+        String registro = mvc.perform(post("/auth/registro-tienda")
+                        .header("Authorization", "Bearer " + tokens.generar("maestro-pruebas", "SUPER_ADMIN", "", null)).contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(Map.of("nombre", "Tienda fiscal B", "rubro", "Textil",
                                 "slug", TIENDA_B, "correo", "fiscal.b@example.com",
                                 "contrasena", CuentasTest.CLAVE.repeat(2)))))

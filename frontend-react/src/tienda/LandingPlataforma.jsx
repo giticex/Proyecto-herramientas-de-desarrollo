@@ -19,14 +19,14 @@ export default function LandingPlataforma() {
         </Link>
 
         <div className="landing-nav-actions">
-          <Link to={`/tienda/${slugTienda}`} className="btn-tech glass">
-            Explorar Tienda ({tienda.nombre})
+          <Link to="/demo" className="btn-tech glass">
+            Probar la demo
           </Link>
           <Link to="/registro-tienda" className="btn-tech glass">
             Crear mi tienda
           </Link>
           <Link to="/admin/login" className="btn-tech primary">
-            Panel Admin
+            Iniciar sesión
           </Link>
         </div>
       </header>
@@ -51,18 +51,18 @@ export default function LandingPlataforma() {
           </p>
 
           <div className="hero-cta-group">
-            <Link to={`/tienda/${slugTienda}`} className="btn-tech primary">
-              Entrar a {tienda.nombre} →
+            <Link to="/demo" className="btn-tech primary">
+              Probar la demo →
             </Link>
             <Link to="/registro-tienda" className="btn-tech glass">
-              Lanzar nueva tienda
+              Solicitar mi tienda
             </Link>
           </div>
 
           <div className="hero-stats">
             <div className="stat-item">
-              <strong>{productos.length || '100%'}</strong>
-              <span>Productos activos en Store</span>
+              <strong>Activación manual</strong>
+              <span>Solicita tu tienda en línea</span>
             </div>
             <div className="stat-item">
               <strong>DNI / RUC</strong>
@@ -162,38 +162,30 @@ export default function LandingPlataforma() {
         <div className="bento-grid">
           <div className="bento-card wide">
             <div className="bento-icon">🎨</div>
-            <h3>Marca Dinámica Instantánea</h3>
-            <p>
-              Cada tienda inyecta su propio logotipo, paleta primaria y contraste inteligente desde
-              el Store central sin recargar la aplicación.
-            </p>
+            <h3>Diseña tu tienda</h3>
+            <p>Cambia el nombre y el color de la tienda de ejemplo. Mira cómo se ve el resultado en el catálogo.</p>
+            <Link className="btn-tech glass" to="/demo?modulo=marca">Probar el diseño</Link>
           </div>
 
           <div className="bento-card">
             <div className="bento-icon">⚡</div>
-            <h3>Atributos por Rubro</h3>
-            <p>
-              Filtros inteligentes que se adaptan automáticamente a tallas, colores, marcas o
-              especificaciones técnicas.
-            </p>
+            <h3>Explora el catálogo</h3>
+            <p>Abre la vista del comprador y elige un producto para simular una compra.</p>
+            <Link className="btn-tech glass" to="/demo?modulo=catalogo">Ver catálogo demo</Link>
           </div>
 
           <div className="bento-card">
             <div className="bento-icon">🛡️</div>
-            <h3>Control de Stock Estricto</h3>
-            <p>
-              Validación en tiempo real en catálogo y carrito para impedir compras por encima del
-              inventario disponible.
-            </p>
+            <h3>Gestiona el inventario</h3>
+            <p>Agrega un producto de prueba, fija su precio y comprueba cómo se descuenta su stock cuando se vende.</p>
+            <Link className="btn-tech glass" to="/demo?modulo=productos">Probar inventario</Link>
           </div>
 
           <div className="bento-card wide">
             <div className="bento-icon">🧾</div>
-            <h3>Checkout Tributario (Boleta y Factura)</h3>
-            <p>
-              Flujo de pago preparado para emisión de comprobantes electrónicos con validación de
-              DNI (8 dígitos) y RUC (11 dígitos) conectado a Spring Boot + MySQL.
-            </p>
+            <h3>Registra una venta</h3>
+            <p>Elige una boleta o factura de demostración y revisa el comprobante de la compra simulada.</p>
+            <Link className="btn-tech glass" to="/demo?modulo=venta">Ver flujo de venta</Link>
           </div>
         </div>
       </section>
@@ -203,15 +195,14 @@ export default function LandingPlataforma() {
         <div className="footer-cta-box">
           <h2>Experimenta la tienda en vivo ahora mismo</h2>
           <p>
-            Explora el catálogo público de <strong>{tienda.nombre}</strong>, prueba los filtros
-            dinámicos y simula una compra de principio a fin.
+            Prueba el diseño, el catálogo y una compra simulada antes de solicitar tu tienda.
           </p>
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to={`/tienda/${slugTienda}`} className="btn-tech primary">
-              Ir al Catálogo de {tienda.nombre}
+            <Link to="/demo" className="btn-tech primary">
+              Abrir la demo
             </Link>
-            <Link to={`/tienda/${slugTienda}/login`} className="btn-tech glass">
-              Acceso Clientes
+            <Link to="/registro-tienda" className="btn-tech glass">
+              Solicitar mi tienda
             </Link>
           </div>
         </div>

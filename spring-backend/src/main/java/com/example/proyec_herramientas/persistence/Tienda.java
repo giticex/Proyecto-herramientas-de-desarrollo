@@ -34,6 +34,17 @@ public class Tienda {
     @Column(name = "logo_url", length = 255)
     private String logoUrl;
 
+    @Column(name = "publicada", nullable = false)
+    private boolean publicada = true;
+
+    public boolean isPublicada() {
+        return publicada;
+    }
+
+    public void setPublicada(boolean publicada) {
+        this.publicada = publicada;
+    }
+
     public Tienda() {
     }
 

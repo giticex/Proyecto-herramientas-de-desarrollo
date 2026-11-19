@@ -1,5 +1,8 @@
-import { Link, NavLink, Outlet, Routes, Route } from 'react-router-dom';
+import { Link, NavLink, Navigate, Outlet, Routes, Route } from 'react-router-dom';
 import AdminLogin from './admin/AdminLogin';
+import { useSesion } from './auth/sesionStore';
+import DemoTienda from './solicitudes/DemoTienda';
+import PanelSolicitud from './solicitudes/PanelSolicitud';
 import RegistroTienda from './admin/RegistroTienda';
 import DashboardAdmin from './admin/DashboardAdmin';
 import MarcaPanel from './admin/MarcaPanel';
@@ -24,6 +27,7 @@ import RutaProtegidaCliente from './tienda/RutaProtegidaCliente';
 function AccesoPlataforma() {
   const enlaces = (
     <>
+      <NavLink to="/demo">Probar la demo</NavLink>
       <NavLink to="/admin/login">Iniciar sesión</NavLink>
       <NavLink to="/registro-tienda">Crear tienda</NavLink>
     </>
@@ -34,6 +38,11 @@ function AccesoPlataforma() {
       <Outlet />
     </PlantillaTienda>
   );
+}
+
+function AccesoSolicitud({ rol, maestro }) {
+  const sesion = useSesion();
+  return sesion.token && sesion.rol === rol ? <PanelSolicitud key={rol} maestro={maestro} /> : <Navigate to="/admin/login" replace />;
 }
 
 export default function App() {
@@ -55,6 +64,9 @@ export default function App() {
         </Route>
 
         <Route element={<AccesoPlataforma />}>
+          <Route path="/demo" element={<DemoTienda />} />
+          <Route path="/solicitud-tienda" element={<AccesoSolicitud rol="SOLICITANTE" />} />
+          <Route path="/maestro/solicitudes" element={<AccesoSolicitud rol="SUPER_ADMIN" maestro />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/registro-tienda" element={<RegistroTienda />} />
         </Route>

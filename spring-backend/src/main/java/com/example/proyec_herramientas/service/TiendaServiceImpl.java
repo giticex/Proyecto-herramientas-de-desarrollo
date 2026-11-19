@@ -19,29 +19,49 @@ public class TiendaServiceImpl implements TiendaService {
     @Override
     @Transactional(readOnly = true)
     public TiendaDTO obtenerPorSlug(String slug) {
-        return toDTO(buscar(slug));
+        return toDTO(buscarPublicada(slug));
     }
 
     @Override
     @Transactional(readOnly = true)
     public int obtenerIdPorSlug(String slug) {
-        return buscar(slug).getIdTienda();
+        return buscarPublicada(slug).getIdTienda();
     }
 
     @Override
     @Transactional
     public TiendaDTO actualizar(String slug, TiendaDTO dto, int idTiendaAutenticado) {
-        Tienda tienda = buscar(slug);
-        if (!tienda.getIdTienda().equals(idTiendaAutenticado)) {
-            // No revela que la tienda existe pero es de otro ADMIN.
-            throw new RecursoNoEncontradoException("Tienda " + slug + " no existe");
-        }
+        Tienda tienda = buscarPropia(slug, idTiendaAutenticado);
         tienda.setNombre(dto.getNombre());
         tienda.setRubro(dto.getRubro());
         tienda.setColorPrimario(dto.getColorPrimario());
         tienda.setColorSecundario(dto.getColorSecundario());
         tienda.setLogoUrl(dto.getLogoUrl());
         return toDTO(repository.save(tienda));
+    }
+
+    @Override
+    @Transactional
+    public TiendaDTO publicar(String slug, int idTiendaAutenticado) {
+        Tienda tienda = buscarPropia(slug, idTiendaAutenticado);
+        tienda.setPublicada(true);
+        return toDTO(tienda);
+    }
+
+    private Tienda buscarPropia(String slug, int idTiendaAutenticado) {
+        Tienda tienda = buscar(slug);
+        if (!tienda.getIdTienda().equals(idTiendaAutenticado)) {
+            throw new RecursoNoEncontradoException("La tienda no existe.");
+        }
+        return tienda;
+    }
+
+    private Tienda buscarPublicada(String slug) {
+        Tienda tienda = buscar(slug);
+        if (!tienda.isPublicada()) {
+            throw new RecursoNoEncontradoException("La tienda no existe.");
+        }
+        return tienda;
     }
 
     private Tienda buscar(String slug) {
@@ -57,6 +77,7 @@ public class TiendaServiceImpl implements TiendaService {
         dto.setColorPrimario(tienda.getColorPrimario());
         dto.setColorSecundario(tienda.getColorSecundario());
         dto.setLogoUrl(tienda.getLogoUrl());
+        dto.setPublicada(tienda.isPublicada());
         return dto;
     }
 }

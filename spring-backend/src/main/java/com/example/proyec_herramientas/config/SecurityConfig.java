@@ -49,7 +49,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/registro-tienda").hasRole("SUPER_ADMIN")
                         .requestMatchers("/auth/**", "/roles", "/error").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/solicitudes").permitAll()
+                        .requestMatchers("/api/solicitudes/maestro", "/api/solicitudes/maestro/**").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/solicitudes/mia", "/api/solicitudes/mia/**").hasRole("SOLICITANTE")
                         // Catalogo publico por tienda: el comprador navega sin token.
                         .requestMatchers(HttpMethod.GET, "/tiendas/*", "/tiendas/*/productos").permitAll()
                         // El comprador ve sus propias compras; el administrador tambien.
@@ -65,7 +69,7 @@ public class SecurityConfig {
                         .requestMatchers("/productos/**", "/clientes/**", "/ventas/**",
                                 "/historial", "/historial/**", "/boletas", "/boletas/**",
                                 "/boleta/**", "/factura/**", "/tiendas/**").hasRole("ADMIN")
-                        .anyRequest().authenticated())
+                        .anyRequest().hasAnyRole("ADMIN", "CLIENTE"))
                 .exceptionHandling(excepciones -> excepciones
                         .authenticationEntryPoint((peticion, respuesta, error) ->
                                 escribirError(respuesta, HttpServletResponse.SC_UNAUTHORIZED,
