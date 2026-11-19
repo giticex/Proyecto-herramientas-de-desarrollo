@@ -9,8 +9,8 @@ import com.example.proyec_herramientas.repository.PersonaRepository;
 import com.example.proyec_herramientas.repository.ProductoRepository;
 import com.example.proyec_herramientas.repository.TiendaRepository;
 import com.example.proyec_herramientas.repository.UsuarioRepository;
-import com.example.proyec_herramientas.repository.VentaRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -39,7 +40,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Transactional
 class DashboardControllerTest {
+
+    @Autowired
+    private EntityManager entityManager;
 
     @Autowired
     private MockMvc mockMvc;
@@ -49,9 +54,6 @@ class DashboardControllerTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
-
-    @Autowired
-    private VentaRepository ventaRepository;
 
     @Autowired
     private ProductoRepository productoRepository;
@@ -71,13 +73,7 @@ class DashboardControllerTest {
     private String token;
 
     @BeforeEach
-    void limpiar() throws Exception {
-        ventaRepository.deleteAll();
-        productoRepository.deleteAll();
-        usuarioRepository.deleteAll();
-        clienteRepository.deleteAll();
-        personaRepository.deleteAll();
-
+    void prepararDatos() throws Exception {
         CuentasTest.crearAdmin(usuarioRepository, personaRepository, tiendaRepository);
         Tienda tienda = tiendaRepository.findBySlug(CuentasTest.SLUG_TIENDA).orElseThrow();
         token = CuentasTest.token(mockMvc, objectMapper, CuentasTest.USUARIO_ADMIN, CuentasTest.CLAVE);
@@ -98,6 +94,7 @@ class DashboardControllerTest {
         // Una venta del mes anterior: cuenta para el top historico, no para
         // "ventas de hoy" ni para "ingresos del mes".
         String idVieja = registrarVenta(List.of(item(1, 1)));
+        entityManager.flush();
         LocalDate mesAnterior = LocalDate.now().minusMonths(1);
         jdbcTemplate.update("UPDATE venta SET fecha_emision = ? WHERE id_venta = ?",
                 Timestamp.from(mesAnterior.atTime(12, 0).atZone(ZoneId.systemDefault()).toInstant()),

@@ -9,8 +9,8 @@ import com.example.proyec_herramientas.repository.PersonaRepository;
 import com.example.proyec_herramientas.repository.ProductoRepository;
 import com.example.proyec_herramientas.repository.TiendaRepository;
 import com.example.proyec_herramientas.repository.UsuarioRepository;
-import com.example.proyec_herramientas.repository.VentaRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +20,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.List;
@@ -38,16 +39,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Transactional
 class VentaControllerTest {
+
+    @Autowired
+    private EntityManager entityManager;
 
     @Autowired
     private MockMvc mockMvc;
 
     @Autowired
     private ProductoRepository productoRepository;
-
-    @Autowired
-    private VentaRepository ventaRepository;
 
     @Autowired
     private ClienteRepository clienteRepository;
@@ -70,13 +72,8 @@ class VentaControllerTest {
     private Tienda tienda;
 
     @BeforeEach
-    void limpiar() throws Exception {
-        ventaRepository.deleteAll();
-        productoRepository.deleteAll();
+    void prepararDatos() throws Exception {
         // Las cuentas apuntan a una persona: se borran antes que las personas.
-        usuarioRepository.deleteAll();
-        clienteRepository.deleteAll();
-        personaRepository.deleteAll();
 
         CuentasTest.crearAdmin(usuarioRepository, personaRepository, tiendaRepository);
         tienda = tiendaRepository.findBySlug(CuentasTest.SLUG_TIENDA).orElseThrow();
@@ -190,8 +187,11 @@ class VentaControllerTest {
         mockMvc.perform(post("/ventas")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(carrito("CLI-0001", "Boleta", "Yape", List.of(item(1, 2)))));
+                        .content(carrito("CLI-0001", "Boleta", "Yape", List.of(item(1, 2)))))
+                .andExpect(status().isCreated());
 
+        entityManager.flush();
+        entityManager.clear();
         mockMvc.perform(get("/productos/1").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.stock", is(6)));
