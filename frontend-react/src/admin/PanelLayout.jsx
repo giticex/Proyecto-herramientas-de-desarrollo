@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { Menu } from 'lucide-react';
+import { publicarTienda } from '../api/tiendaApi';
+import { showToast } from '../components/toastBus';
 import { useSesion } from '../auth/sesionStore';
 import PlantillaTienda from '../components/PlantillaTienda';
 import PanelNavLinks from './PanelNavLinks';
@@ -10,7 +12,25 @@ export default function PanelLayout() {
   const tienda = useSesion((estado) => estado.tienda);
   const usuario = useSesion((estado) => estado.usuario);
   const [abierto, setAbierto] = useState(false);
+  const [publicando, setPublicando] = useState(false);
+  const actualizarTienda = useSesion((estado) => estado.actualizarTienda);
+  const token = useSesion((estado) => estado.token);
   const nombre = tienda?.nombre || 'Panel de negocio';
+
+  async function publicar() {
+    setPublicando(true);
+    try {
+      const publicada = await publicarTienda(tienda.slug);
+      if (useSesion.getState().token === token) {
+        actualizarTienda(publicada);
+        showToast('Tu catálogo ya está publicado.');
+      }
+    } catch (error) {
+      showToast(error.message || 'No se pudo publicar el catálogo.');
+    } finally {
+      setPublicando(false);
+    }
+  }
 
   return (
     <PlantillaTienda tienda={tienda ?? undefined}>
@@ -33,7 +53,9 @@ export default function PanelLayout() {
         <div className="panel-contenido">
           <div className="panel-topbar">
             <span>{usuario}</span>
-            {tienda?.slug && <Link className="btn ghost small" to={'/tienda/' + encodeURIComponent(tienda.slug)}>Ver mi tienda</Link>}
+            {tienda?.slug && (tienda.publicada === false
+              ? <button className="btn small" type="button" disabled={publicando} onClick={publicar}>{publicando ? 'Publicando…' : 'Publicar mi tienda'}</button>
+              : <Link className="btn ghost small" to={'/tienda/' + encodeURIComponent(tienda.slug)}>Ver mi tienda</Link>)}
           </div>
           <Outlet />
         </div>

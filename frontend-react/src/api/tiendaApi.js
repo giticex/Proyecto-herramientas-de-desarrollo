@@ -13,6 +13,10 @@ export function getTienda(slug) {
   return apiClient.get(`/tiendas/${encodeURIComponent(slug)}`, { token: '' });
 }
 
+export function publicarTienda(slug) {
+  return apiClient.put('/tiendas/' + encodeURIComponent(slug) + '/publicacion');
+}
+
 export function saveTienda(tienda) {
   return apiClient.put(`/tiendas/${encodeURIComponent(tienda.slug)}`, tienda);
 }

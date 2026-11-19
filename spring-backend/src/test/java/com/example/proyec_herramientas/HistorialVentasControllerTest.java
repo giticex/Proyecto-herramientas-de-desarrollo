@@ -41,6 +41,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class HistorialVentasControllerTest {
 
     @Autowired
+    private com.example.proyec_herramientas.service.TokenService tokens;
+
+    @Autowired
     private EntityManager entityManager;
 
     @Autowired
@@ -212,6 +215,7 @@ class HistorialVentasControllerTest {
         Map<String, String> datos = Map.of("nombre", "Negocio B", "rubro", "Textil", "slug", "negocio-b",
                 "correo", "dueno.b@example.com", "contrasena", CuentasTest.CLAVE.repeat(2));
         String respuesta = mockMvc.perform(post("/auth/registro-tienda")
+                        .header("Authorization", "Bearer " + tokens.generar("maestro-pruebas", "SUPER_ADMIN", "", null))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(datos)))
                 .andExpect(status().isCreated())

@@ -33,6 +33,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AuthControllerTest {
 
     @Autowired
+    private com.example.proyec_herramientas.service.TokenService tokens;
+
+    @Autowired
     private MockMvc mockMvc;
 
     @Autowired
@@ -153,6 +156,7 @@ class AuthControllerTest {
     @Test
     void registroDeTiendaCreaLaCuentaAdminConTienda() throws Exception {
         mockMvc.perform(post("/auth/registro-tienda")
+                        .header("Authorization", "Bearer " + tokens.generar("maestro-pruebas", "SUPER_ADMIN", "", null))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "nombre", "Bodega Nueva",
@@ -170,6 +174,7 @@ class AuthControllerTest {
     @Test
     void registroDeTiendaConSlugRepetidoDevuelve409() throws Exception {
         mockMvc.perform(post("/auth/registro-tienda")
+                        .header("Authorization", "Bearer " + tokens.generar("maestro-pruebas", "SUPER_ADMIN", "", null))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "nombre", "Otra Tienda",

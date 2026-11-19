@@ -34,7 +34,9 @@ INSERT INTO parametro (id_parametro, valor, descripcion) VALUES
 -- comprobar que ADMIN entra al panel y CLIENTE no.
 INSERT INTO rol (id_rol, nombre, descripcion) VALUES
     ('ADMIN', 'Administrador', 'Gestiona productos, historial general, clientes y alertas de stock'),
-    ('CLIENTE', 'Cliente', 'Compra en la tienda, ve su carrito y sus compras');
+    ('CLIENTE', 'Cliente', 'Compra en la tienda, ve su carrito y sus compras'),
+('SOLICITANTE', 'Solicitante', 'Consulta el estado de su solicitud de tienda'),
+('SUPER_ADMIN', 'Administrador de plataforma', 'Revisa y activa solicitudes de negocio');
 
 INSERT INTO medio_pago VALUES
     ('MP001', 'Efectivo'),

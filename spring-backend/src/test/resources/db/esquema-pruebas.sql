@@ -3,6 +3,7 @@
 DROP VIEW IF EXISTS historial_compras;
 DROP TABLE IF EXISTS detalle_venta;
 DROP TABLE IF EXISTS venta;
+DROP TABLE IF EXISTS solicitud_tienda;
 DROP TABLE IF EXISTS usuario;
 DROP TABLE IF EXISTS producto;
 DROP TABLE IF EXISTS cliente;
@@ -52,6 +53,7 @@ CREATE TABLE tienda (
     color_primario   VARCHAR(7)   NOT NULL DEFAULT '#0071e3',
     color_secundario VARCHAR(7)   NOT NULL DEFAULT '#1d1d1f',
     logo_url         VARCHAR(255),
+    publicada        BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY (id_tienda),
     UNIQUE KEY uk_tienda_slug (slug)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -74,7 +76,7 @@ CREATE TABLE usuario (
     contrasena VARCHAR(255) NOT NULL,
     id_persona VARCHAR(25)  NOT NULL,
     id_rol     VARCHAR(15)  NOT NULL DEFAULT 'ADMIN',
-    id_tienda  INT          NOT NULL,
+    id_tienda  INT          NULL,
     PRIMARY KEY (id_usuario),
     UNIQUE KEY uk_usuario_usuario (usuario),
     KEY idx_usuario_id_persona (id_persona),
@@ -86,6 +88,29 @@ CREATE TABLE usuario (
         REFERENCES rol (id_rol),
     CONSTRAINT fk_usuario_tienda FOREIGN KEY (id_tienda)
         REFERENCES tienda (id_tienda)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS solicitud_tienda (
+    id_solicitud VARCHAR(36) NOT NULL,
+    id_usuario INT NOT NULL,
+    negocio VARCHAR(100) NOT NULL,
+    rubro VARCHAR(80) NOT NULL,
+    slug VARCHAR(80) NOT NULL,
+    dni_ultimos4 CHAR(4) NOT NULL,
+    telefono_alternativo VARCHAR(9) NOT NULL,
+    estado VARCHAR(20) NOT NULL,
+    referencia_demo VARCHAR(41) NOT NULL,
+    mensaje VARCHAR(500),
+    respuesta VARCHAR(500),
+    creada TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    revisada TIMESTAMP NULL,
+    revisor VARCHAR(50),
+    PRIMARY KEY (id_solicitud),
+    UNIQUE KEY uk_solicitud_cuenta (id_usuario),
+    UNIQUE KEY uk_solicitud_slug (slug),
+    KEY idx_solicitud_colas (estado, creada),
+    CONSTRAINT fk_solicitud_usuario FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario),
+    CONSTRAINT ck_solicitud_estado CHECK (estado IN ('PENDIENTE','REQUIERE_DATOS','APROBADA','RECHAZADA'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE cliente (

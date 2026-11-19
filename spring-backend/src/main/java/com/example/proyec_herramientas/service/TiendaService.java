@@ -11,4 +11,6 @@ public interface TiendaService {
 
     // Lanza RecursoNoEncontradoException si el slug no existe o no es de idTiendaAutenticado.
     TiendaDTO actualizar(String slug, TiendaDTO tienda, int idTiendaAutenticado);
+
+    TiendaDTO publicar(String slug, int idTiendaAutenticado);
 }

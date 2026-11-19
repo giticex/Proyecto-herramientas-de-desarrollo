@@ -9,6 +9,16 @@ public class TiendaDTO {
     private String colorSecundario;
     private String logoUrl;
 
+    private boolean publicada = true;
+
+    public boolean isPublicada() {
+        return publicada;
+    }
+
+    public void setPublicada(boolean publicada) {
+        this.publicada = publicada;
+    }
+
     public TiendaDTO() {
     }
 

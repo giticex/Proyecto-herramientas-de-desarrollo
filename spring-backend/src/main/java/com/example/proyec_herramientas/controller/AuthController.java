@@ -38,8 +38,7 @@ public class AuthController {
         return ResponseEntity.ok(respuesta);
     }
 
-    // POST /auth/registro-tienda -> crea la tienda y su cuenta ADMIN, y deja
-    // la sesion iniciada (devuelve token + tienda).
+    // Alta directa administrativa, restringida al maestro. El registro público usa solicitudes.
     @PostMapping("/registro-tienda")
     public ResponseEntity<LoginResponseDTO> registroTienda(@Valid @RequestBody RegistroTiendaRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.registroTienda(request));

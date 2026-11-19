@@ -40,6 +40,11 @@ public class TiendaController {
         return productoService.listar(idTienda);
     }
 
+    @PutMapping("/{slug}/publicacion")
+    public TiendaDTO publicar(@PathVariable String slug, @AuthenticationPrincipal SesionPrincipal admin) {
+        return tiendaService.publicar(slug, admin.idTienda());
+    }
+
     // Solo el ADMIN dueño de esa tienda.
     @PutMapping("/{slug}")
     public TiendaDTO actualizar(@PathVariable String slug, @RequestBody TiendaDTO tienda,

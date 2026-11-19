@@ -34,8 +34,8 @@ public class Usuario {
     @Column(name = "id_rol", length = 15, nullable = false)
     private String idRol;
 
-    // FK a la tienda que administra esta cuenta (multi-tienda).
-    @Column(name = "id_tienda", nullable = false)
+    // Solo se asigna a cuentas de un negocio aprobado.
+    @Column(name = "id_tienda")
     private Integer idTienda;
 
     public Usuario() {
