@@ -1,5 +1,6 @@
 package com.example.proyec_herramientas.controller;
 
+import com.example.proyec_herramientas.exception.ValidacionComprobanteException;
 import com.example.proyec_herramientas.facturacion.model.ComprobanteRequestDTO;
 import com.example.proyec_herramientas.facturacion.model.ComprobanteRespuestaDTO;
 import com.example.proyec_herramientas.facturacion.service.ComprobanteService;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,6 +25,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Endpoints de los comprobantes de pago electronicos: emision, consulta,
@@ -42,14 +46,20 @@ public class ComprobanteController {
 
     @PostMapping
     public ResponseEntity<ComprobanteRespuestaDTO> emitir(@RequestBody ComprobanteRequestDTO request,
-            @RequestParam(required = false) String tienda, @AuthenticationPrincipal SesionPrincipal sesion) {
+            @RequestParam(required = false) String tienda,
+            @RequestHeader(value = "Idempotency-Key", required = false) UUID clave,
+            @AuthenticationPrincipal SesionPrincipal sesion) {
         ItemComprobanteDTO primero = request.getItems() == null || request.getItems().isEmpty()
                 ? null : request.getItems().get(0);
         int idTienda = ambito.tiendaDeCompra(sesion, tienda, primero == null ? null : primero.getIdProducto());
         if (Rol.CLIENTE.equals(sesion.rol())) {
+            if (request.getItems() != null && request.getItems().stream()
+                    .filter(Objects::nonNull).anyMatch(item -> item.getDescuento() != null && item.getDescuento().signum() != 0)) {
+                throw new ValidacionComprobanteException("El comprador no puede modificar los descuentos.");
+            }
             request.setIdCliente(sesion.idCliente());
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(comprobanteService.emitir(request, idTienda));
+        return ResponseEntity.status(HttpStatus.CREATED).body(comprobanteService.emitir(request, idTienda, sesion.usuario(), clave));
     }
 
     @GetMapping("/{idVenta}")

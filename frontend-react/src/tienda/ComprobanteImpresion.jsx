@@ -29,9 +29,8 @@ function tieneArchivoBackend(idVenta) {
   return Boolean(idVenta) && /^[0-9a-f]{8}-[0-9a-f]{4}/i.test(String(idVenta));
 }
 
-function tipoDocumentoTexto(codigo) {
-  if (codigo === '1') return 'RUC';
-  if (codigo === '6') return 'DNI';
+function tipoDocumentoTexto(codigo, numero) {
+  if (codigo === '1' || codigo === '6') return String(numero ?? '').length === 11 ? 'RUC' : 'DNI';
   if (codigo === '4') return 'Carnet de extranjería';
   if (codigo === '7') return 'Pasaporte';
   if (codigo === 'A') return 'Cédula diplomática';
@@ -205,7 +204,7 @@ export default function ComprobanteImpresion({ comprobante, onClose, token }) {
               <strong>{receptor.razonSocial}</strong>
             </div>
             <div className="ci-dato">
-              <span>{tipoDocumentoTexto(receptor.tipoDocumento)}:</span>
+              <span>{tipoDocumentoTexto(receptor.tipoDocumento, receptor.numeroDocumento)}:</span>
               <strong>{receptor.numeroDocumento}</strong>
             </div>
             {domicilio.direccion && (

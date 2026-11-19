@@ -1,36 +1,51 @@
-import { useParams, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import PlantillaTienda from '../components/PlantillaTienda';
+import { obtenerComprobante } from '../api/comprobantesApi';
+import { useClienteStore } from './clienteStore';
+import ComprobanteImpresion from './ComprobanteImpresion';
 import './ConfirmacionCompra.css';
 
 export default function ConfirmacionCompra() {
   const { slug } = useParams();
-  
-  // Generamos un número de pedido aleatorio para simular la compra
-  const numeroPedido = Math.floor(100000 + Math.random() * 900000);
+  const [busqueda] = useSearchParams();
+  const idVenta = busqueda.get('venta');
+  const token = useClienteStore((estado) => estado.cliente?.token);
+  const [resultado, setResultado] = useState(null);
+  const [mostrando, setMostrando] = useState(false);
 
+  useEffect(() => {
+    if (!idVenta || !token) return undefined;
+    let vigente = true;
+    obtenerComprobante(idVenta, token)
+      .then((comprobante) => {
+        if (vigente) setResultado({ idVenta, token, comprobante });
+      })
+      .catch((problema) => {
+        if (vigente) setResultado({ idVenta, token, error: problema.message || 'No se pudo recuperar el comprobante.' });
+      });
+    return () => { vigente = false; };
+  }, [idVenta, token]);
+
+  const consulta = resultado?.idVenta === idVenta && resultado?.token === token ? resultado : null;
+  const comprobante = consulta?.comprobante;
   return (
     <PlantillaTienda>
       <div className="confirmacion-page">
         <div className="confirmacion-card">
-          <div className="icono-exito">🎉</div>
-          <h2>¡Compra exitosa!</h2>
-          <p>Tu pedido ha sido procesado correctamente.</p>
-          <p>Te hemos enviado un correo con los detalles de tu comprobante.</p>
-          
-          <div className="numero-pedido">
-            Pedido #{numeroPedido}
-          </div>
-
+          <h2>{comprobante ? 'Comprobante generado' : 'Confirmación de compra'}</h2>
+          {!idVenta && <p>No se indicó una compra. Puedes consultar tus pedidos anteriores.</p>}
+          {idVenta && token && !consulta && <p role="status">Consultando tu comprobante…</p>}
+          {consulta?.error && <p role="alert">{consulta.error}</p>}
+          {comprobante && <p className="numero-pedido">{comprobante.numeroDocumento}</p>}
           <div className="confirmacion-acciones">
-            <Link to={`/tienda/${slug}/mis-compras`} className="btn">
-              Ver mis compras
-            </Link>
-            <Link to={`/tienda/${slug}`} className="btn" style={{ background: '#e5e5ea', color: '#1d1d1f' }}>
-              Seguir comprando
-            </Link>
+            {comprobante && <button type="button" className="btn" onClick={() => setMostrando(true)}>Ver comprobante</button>}
+            <Link to={'/tienda/' + slug + '/mis-compras'} className="btn">Ver mis compras</Link>
+            <Link to={'/tienda/' + slug} className="btn">Seguir comprando</Link>
           </div>
         </div>
       </div>
+      {mostrando && comprobante && <ComprobanteImpresion comprobante={comprobante} token={token} onClose={() => setMostrando(false)} />}
     </PlantillaTienda>
   );
 }

@@ -133,7 +133,7 @@ export default function MisCompras() {
                     </span>
                     <span>
                       <strong>
-                        {comprobante.receptor?.tipoDocumento === '1' ? 'RUC' : 'DNI'}:
+                        {comprobante.receptor?.numeroDocumento?.length === 11 ? 'RUC' : 'Documento'}:
                       </strong>{' '}
                       {comprobante.receptor?.numeroDocumento}
                     </span>

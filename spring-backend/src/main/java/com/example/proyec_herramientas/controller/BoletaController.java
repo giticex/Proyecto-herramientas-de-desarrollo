@@ -1,5 +1,6 @@
 package com.example.proyec_herramientas.controller;
 
+import com.example.proyec_herramientas.facturacion.service.ComprobanteService;
 import com.example.proyec_herramientas.persistence.Venta;
 import com.example.proyec_herramientas.security.AmbitoVentas;
 import com.example.proyec_herramientas.security.SesionPrincipal;
@@ -24,11 +25,14 @@ public class BoletaController {
     private final VentaService ventaService;
     private final ReportePdfService reportePdfService;
     private final AmbitoVentas ambito;
+    private final ComprobanteService comprobantes;
 
-    public BoletaController(VentaService ventaService, ReportePdfService reportePdfService, AmbitoVentas ambito) {
+    public BoletaController(VentaService ventaService, ReportePdfService reportePdfService, AmbitoVentas ambito,
+            ComprobanteService comprobantes) {
         this.ventaService = ventaService;
         this.reportePdfService = reportePdfService;
         this.ambito = ambito;
+        this.comprobantes = comprobantes;
     }
 
     @GetMapping("/boletas")
@@ -45,13 +49,19 @@ public class BoletaController {
     @GetMapping("/boleta/{id}/pdf")
     public ResponseEntity<byte[]> boletaPdf(@PathVariable String id, @AuthenticationPrincipal SesionPrincipal sesion) {
         ambito.verificarVenta(sesion, id);
-        return pdf(id, "boleta", reportePdfService.generarBoletaPdf(id));
+        Venta venta = ventaService.obtenerVentaPorId(id);
+        byte[] archivo = venta.getEmisorSnapshot() == null
+                ? reportePdfService.generarBoletaPdf(id) : comprobantes.generarPdf(id);
+        return pdf(id, "boleta", archivo);
     }
 
     @GetMapping("/factura/{id}/pdf")
     public ResponseEntity<byte[]> facturaPdf(@PathVariable String id, @AuthenticationPrincipal SesionPrincipal sesion) {
         ambito.verificarVenta(sesion, id);
-        return pdf(id, "factura", reportePdfService.generarFacturaPdf(id));
+        Venta venta = ventaService.obtenerVentaPorId(id);
+        byte[] archivo = venta.getEmisorSnapshot() == null
+                ? reportePdfService.generarFacturaPdf(id) : comprobantes.generarPdf(id);
+        return pdf(id, "factura", archivo);
     }
 
     private ResponseEntity<byte[]> pdf(String id, String tipo, byte[] bytes) {

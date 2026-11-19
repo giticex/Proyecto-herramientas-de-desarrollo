@@ -116,10 +116,14 @@ public class VentaServiceImpl implements VentaService {
         venta.setEstado(ESTADO_LEGACY);
         venta.setObservacion("");
 
+        var ids = carrito.getItems().stream().map(CarritoRequestDTO.Item::getIdProducto).distinct().toList();
+        Map<Integer, Producto> catalogo = productoRepository.bloquearParaVenta(idTienda, ids).stream()
+                .collect(Collectors.toMap(Producto::getIdProducto, producto -> producto));
         for (CarritoRequestDTO.Item item : carrito.getItems()) {
-            Producto producto = productoRepository.findByIdProductoAndIdTienda(item.getIdProducto(), idTienda)
-                    .orElseThrow(() -> new RecursoNoEncontradoException(
-                            "Producto " + item.getIdProducto() + " no existe"));
+            Producto producto = catalogo.get(item.getIdProducto());
+            if (producto == null) {
+                throw new RecursoNoEncontradoException("Producto no encontrado en la tienda");
+            }
 
             if (producto.getStock() < item.getCantidad()) {
                 throw new StockInsuficienteException(

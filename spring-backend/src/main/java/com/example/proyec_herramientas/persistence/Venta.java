@@ -1,6 +1,8 @@
 package com.example.proyec_herramientas.persistence;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.example.proyec_herramientas.facturacion.model.EmisorDTO;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,6 +11,8 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -33,6 +37,22 @@ public class Venta {
 
     @Column(name = "id_tienda", nullable = false)
     private Integer idTienda;
+
+    @Column(name = "ruc_emisor", length = 11)
+    private String rucEmisor;
+
+    @JsonIgnore
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "emisor_snapshot", columnDefinition = "json")
+    private EmisorDTO emisorSnapshot;
+
+    @JsonIgnore
+    @Column(name = "xml_emitido", columnDefinition = "longtext")
+    private String xmlEmitido;
+
+    @JsonIgnore
+    @Column(name = "huella_operacion", length = 64)
+    private String huellaOperacion;
 
     @Column(name = "id_cliente", length = 20, nullable = false)
     private String idCliente;
@@ -186,6 +206,28 @@ public class Venta {
 
     public void setIdTienda(Integer idTienda) {
         this.idTienda = idTienda;
+    }
+
+    public EmisorDTO getEmisorSnapshot() {
+        return emisorSnapshot;
+    }
+
+    public String getXmlEmitido() {
+        return xmlEmitido;
+    }
+
+    public void fijarEmision(EmisorDTO emisor, String xml) {
+        rucEmisor = emisor.getRuc();
+        emisorSnapshot = emisor;
+        xmlEmitido = xml;
+    }
+
+    public void fijarHuellaOperacion(String huella) {
+        huellaOperacion = huella;
+    }
+
+    public String huellaOperacion() {
+        return huellaOperacion;
     }
 
     public String getIdCliente() {

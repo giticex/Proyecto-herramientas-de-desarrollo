@@ -3,12 +3,12 @@ package com.example.proyec_herramientas.facturacion.model;
 /**
  * Receptor del comprobante (cliente al que se le emite).
  *
- * <p>Tipos de documento del catalogo 01 de SUNAT relevantes:</p>
+ * <p>Tipos de documento del catálogo de documentos de identidad de SUNAT relevantes:</p>
  * <ul>
  *   <li>0 = Sin documento</li>
- *   <li>1 = RUC</li>
+ *   <li>1 = DNI</li>
  *   <li>4 = Carnet de Extranjeria</li>
- *   <li>6 = DNI</li>
+ *   <li>6 = RUC</li>
  *   <li>7 = Pasaporte</li>
  *   <li>A = CedulaDiplomatica de Identidad</li>
  * </ul>
@@ -16,9 +16,9 @@ package com.example.proyec_herramientas.facturacion.model;
 public class ReceptorDTO {
 
     /** RUC. */
-    public static final String TIPO_RUC = "1";
+    public static final String TIPO_RUC = "6";
     /** DNI. */
-    public static final String TIPO_DNI = "6";
+    public static final String TIPO_DNI = "1";
 
     private String tipoDocumento;
     private String numeroDocumento;

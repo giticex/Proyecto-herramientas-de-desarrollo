@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import PlantillaTienda from '../components/PlantillaTienda';
 import { useClienteStore } from './clienteStore';
@@ -69,6 +69,7 @@ export default function CheckoutTienda() {
   const [direccionEntrega, setDireccionEntrega] = useState('');
   const [metodoPago, setMetodoPago] = useState('tarjeta');
   const [procesando, setProcesando] = useState(false);
+  const solicitudEnCurso = useRef(null);
 
   // Proteger la ruta: si no hay carrito o cliente, regresar
   useEffect(() => {
@@ -158,14 +159,18 @@ export default function CheckoutTienda() {
         })),
       });
 
-      const comprobante = await emitirComprobante(payload, slug, cliente.token);
+      const contenido = JSON.stringify([slug, cliente.idCliente, payload]);
+      if (solicitudEnCurso.current?.contenido !== contenido) {
+        solicitudEnCurso.current = { contenido, clave: crypto.randomUUID() };
+      }
+      const comprobante = await emitirComprobante(payload, slug, cliente.token, solicitudEnCurso.current.clave);
       vaciarCarrito();
       // El backend descuenta el stock al emitir: se refresca el catalogo.
       listProductos(slug);
       showToast(
         `¡${tipoComprobante === 'boleta' ? 'Boleta' : 'Factura'} ${comprobante.numeroDocumento} emitida!`
       );
-      navigate(`/tienda/${slug}/confirmacion`);
+      navigate('/tienda/' + slug + '/confirmacion?venta=' + encodeURIComponent(comprobante.idVenta));
     } catch (error) {
       setProcesando(false);
       if (error?.status === 401 || error?.status === 403) {
@@ -286,6 +291,7 @@ export default function CheckoutTienda() {
 
                 <div className="field">
                   <label>Método de Pago</label>
+                  <p className="small">Selecciona el medio de pago del pedido. La confirmación del pedido no acredita el cobro.</p>
                   <div className="pago-opciones">
                     <label className={`pago-chip ${metodoPago === 'tarjeta' ? 'activo' : ''}`}>
                       <input
@@ -363,7 +369,7 @@ export default function CheckoutTienda() {
               </div>
 
               <button type="submit" className="btn-confirmar-pago" disabled={procesando}>
-                {procesando ? 'Emitiendo comprobante...' : `Confirmar y Pagar S/ ${centavos(resumen.total)}`}
+                {procesando ? 'Emitiendo comprobante...' : `Confirmar pedido · S/ ${centavos(resumen.total)}`}
               </button>
             </div>
           </form>

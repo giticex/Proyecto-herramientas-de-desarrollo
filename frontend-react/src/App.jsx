@@ -5,6 +5,7 @@ import DashboardAdmin from './admin/DashboardAdmin';
 import MarcaPanel from './admin/MarcaPanel';
 import ProductosPanel from './admin/ProductosPanel';
 import HistorialVentas from './admin/HistorialVentas';
+import FacturacionPanel from './admin/FacturacionPanel';
 import RutaProtegida from './auth/RutaProtegida';
 import Toast from './components/Toast';
 import LandingPlataforma from './tienda/LandingPlataforma';
@@ -54,6 +55,7 @@ export default function App() {
           <Route path="/admin/marca" element={<MarcaPanel />} />
           <Route path="/admin/productos" element={<ProductosPanel />} />
           <Route path="/admin/ventas" element={<HistorialVentas />} />
+          <Route path="/admin/facturacion" element={<FacturacionPanel />} />
         </Route>
       </Routes>
       <Toast />

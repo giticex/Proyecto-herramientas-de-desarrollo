@@ -1,6 +1,7 @@
 package com.example.proyec_herramientas.facturacion.service;
 
 import com.example.proyec_herramientas.exception.RecursoNoEncontradoException;
+import com.example.proyec_herramientas.exception.RecursoDuplicadoException;
 import com.example.proyec_herramientas.exception.StockInsuficienteException;
 import com.example.proyec_herramientas.exception.ValidacionComprobanteException;
 import com.example.proyec_herramientas.facturacion.model.ComprobanteRequestDTO;
@@ -14,6 +15,7 @@ import com.example.proyec_herramientas.facturacion.model.MedioPagoDTO;
 import com.example.proyec_herramientas.facturacion.model.ReceptorDTO;
 import com.example.proyec_herramientas.facturacion.model.TotalesDTO;
 import com.example.proyec_herramientas.persistence.Correlativo;
+import com.example.proyec_herramientas.facturacion.model.ConfiguracionEmisor;
 import com.example.proyec_herramientas.persistence.DetalleVenta;
 import com.example.proyec_herramientas.persistence.Producto;
 import com.example.proyec_herramientas.persistence.Venta;
@@ -38,6 +40,10 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.nio.charset.StandardCharsets;
+import java.util.stream.Collectors;
 
 /**
  * Emision de comprobantes de pago electronicos.
@@ -59,9 +65,9 @@ import java.util.Map;
 public class ComprobanteServiceImpl implements ComprobanteService {
 
     /** Tipo de documento del adquirente: RUC (catalogo 01). */
-    private static final String TIPO_DOCUMENTO_RUC = "1";
+    private static final String TIPO_DOCUMENTO_RUC = ReceptorDTO.TIPO_RUC;
     /** Tipo de documento del adquirente: DNI (catalogo 01). */
-    private static final String TIPO_DOCUMENTO_DNI = "6";
+    private static final String TIPO_DOCUMENTO_DNI = ReceptorDTO.TIPO_DNI;
 
     private static final String REGEX_RUC = "\\d{11}";
     private static final String REGEX_DNI = "\\d{8}";
@@ -114,6 +120,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
     private final ClienteRepository clienteRepository;
     private final PersonaRepository personaRepository;
     private final EmisorService emisorService;
+    private final EmisorTiendaService emisorTiendaService;
     private final TotalesCalculator totalesCalculator;
     private final UblXmlGenerator ublXmlGenerator;
     private final HashService hashService;
@@ -126,6 +133,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
                                   ClienteRepository clienteRepository,
                                   PersonaRepository personaRepository,
                                   EmisorService emisorService,
+                                  EmisorTiendaService emisorTiendaService,
                                   TotalesCalculator totalesCalculator,
                                   UblXmlGenerator ublXmlGenerator,
                                   HashService hashService,
@@ -137,6 +145,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         this.clienteRepository = clienteRepository;
         this.personaRepository = personaRepository;
         this.emisorService = emisorService;
+        this.emisorTiendaService = emisorTiendaService;
         this.totalesCalculator = totalesCalculator;
         this.ublXmlGenerator = ublXmlGenerator;
         this.hashService = hashService;
@@ -146,7 +155,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
 
     @Override
     @Transactional
-    public ComprobanteRespuestaDTO emitir(ComprobanteRequestDTO request, int idTienda) {
+    public ComprobanteRespuestaDTO emitir(ComprobanteRequestDTO request, int idTienda, String actor, UUID clave) {
         if (request == null) {
             throw new ValidacionComprobanteException("No se recibió la solicitud de emisión.");
         }
@@ -154,13 +163,30 @@ public class ComprobanteServiceImpl implements ComprobanteService {
             throw new ValidacionComprobanteException("El comprobante debe tener al menos un item.");
         }
 
+        String idVenta = clave == null ? UUID.randomUUID().toString()
+                : UUID.nameUUIDFromBytes((idTienda + "|" + actor + "|" + clave).getBytes(StandardCharsets.UTF_8)).toString();
+        String huella = clave == null ? null : huellaSolicitud(request);
+        // La fila de configuración serializa los reintentos de la misma tienda.
+        ConfiguracionEmisor configuracion = emisorTiendaService.bloquearParaEmitir(idTienda);
+        if (clave != null) {
+            Venta previa = ventaRepository.findById(idVenta).orElse(null);
+            if (previa != null) {
+                if (!huella.equals(previa.huellaOperacion())) {
+                    throw new RecursoDuplicadoException("La clave de operación ya se usó con otros datos.");
+                }
+                return mapear(previa);
+            }
+        }
         ReceptorDTO receptor = validarReceptor(request.getReceptor());
-
-        EmisorDTO emisor = emisorService.obtenerEmisor();
+        EmisorDTO emisor = configuracion.emisor();
         BigDecimal igvPorcentaje = emisorService.obtenerIgvPorcentaje();
         String moneda = emisorService.obtenerMoneda();
         String tipoComprobante = normalizarTipoComprobante(request.getTipoComprobante());
-        String serie = resolverSerie(request.getSerie(), tipoComprobante);
+        String serie = configuracion.serie(tipoComprobante);
+        if (request.getSerie() != null && !request.getSerie().isBlank()
+                && !serie.equalsIgnoreCase(request.getSerie().trim())) {
+            throw new ValidacionComprobanteException("La serie no pertenece a la configuración de la tienda.");
+        }
 
         List<DetalleComprobanteDTO> detalles = construirDetalles(request, idTienda);
         TotalesDTO totales = totalesCalculator.calcular(detalles, igvPorcentaje);
@@ -170,15 +196,20 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         List<MedioPagoDTO> mediosPago = construirMediosPago(request, totales);
         List<LeyendaDTO> leyendas = construirLeyendas(emisor, totales, tipoComprobante);
 
-        // Correlativo correlativo y sin saltos: se bloquea la fila de la serie.
-        Correlativo correlativo = correlativoRepository.findBySerieForUpdate(serie)
-                .orElseGet(() -> new Correlativo(serie, emisorService.obtenerIdTipoDocumento(tipoComprobante), 0));
-        int numero = correlativo.siguienteNumero();
-        correlativoRepository.save(correlativo);
+        String tipoDocumento = emisorService.obtenerIdTipoDocumento(tipoComprobante);
+        int numeroInicial = 1;
+        if (emisor.getRuc().equals(emisorService.obtenerRucLegado())) {
+            int reservado = correlativoRepository.findById(serie)
+                    .filter(c -> tipoDocumento.equals(c.getIdTipoDocumento()))
+                    .map(Correlativo::getUltimoNumero).orElse(0);
+            numeroInicial += Math.max(reservado, ventaRepository.ultimoCorrelativoLegado(tipoDocumento, serie));
+        }
+        correlativoRepository.reservar(emisor.getRuc(), tipoDocumento, serie, numeroInicial);
+        int numero = correlativoRepository.ultimoNumero(emisor.getRuc(), tipoDocumento, serie);
 
         LocalDateTime emision = LocalDateTime.now();
         ComprobanteRespuestaDTO comprobante = new ComprobanteRespuestaDTO();
-        comprobante.setIdVenta(java.util.UUID.randomUUID().toString());
+        comprobante.setIdVenta(idVenta);
         comprobante.setTipoComprobante(tipoComprobante);
         comprobante.setTipoComprobanteDescripcion(emisorService.obtenerDescripcionTipoComprobante(tipoComprobante));
         comprobante.setSerie(serie);
@@ -214,16 +245,14 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         comprobante.setEstado(ESTADO_EMITIDO);
         comprobante.setEstadoSunat(ESTADO_SUNAT_GENERADO);
 
-        persistir(comprobante, request, detalles, emision, idTienda);
+        persistir(comprobante, request, detalles, emision, idTienda, xml, huella);
         return comprobante;
     }
 
     @Override
     @Transactional(readOnly = true)
     public ComprobanteRespuestaDTO obtenerPorId(String idVenta) {
-        Venta venta = ventaRepository.findById(idVenta)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Comprobante " + idVenta + " no encontrado"));
-        return mapear(venta);
+        return mapear(buscarVenta(idVenta));
     }
 
     @Override
@@ -242,7 +271,8 @@ public class ComprobanteServiceImpl implements ComprobanteService {
     @Override
     @Transactional(readOnly = true)
     public String generarXml(String idVenta) {
-        return ublXmlGenerator.generar(obtenerPorId(idVenta));
+        Venta venta = buscarVenta(idVenta);
+        return venta.getXmlEmitido() != null ? venta.getXmlEmitido() : ublXmlGenerator.generarHistorico(mapear(venta));
     }
 
     @Override
@@ -254,6 +284,19 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         } catch (Exception e) {
             throw new IllegalStateException("No se pudo generar la representacion impresa del comprobante", e);
         }
+    }
+
+    private String huellaSolicitud(ComprobanteRequestDTO request) {
+        try {
+            return hashService.calcularHashXml(objectMapper.writeValueAsString(request));
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("No se pudo validar la solicitud de emisión", e);
+        }
+    }
+
+    private Venta buscarVenta(String idVenta) {
+        return ventaRepository.findById(idVenta)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Comprobante " + idVenta + " no encontrado"));
     }
 
     // ------------------------------------------------------------------
@@ -270,6 +313,12 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         String documento = receptor.getNumeroDocumento() == null ? "" : receptor.getNumeroDocumento().trim();
         if (documento.isEmpty()) {
             throw new ValidacionComprobanteException("El numero de documento del adquirente es obligatorio.");
+        }
+        // Durante la transición se admite el par invertido que enviaba el cliente anterior.
+        if (TIPO_DOCUMENTO_RUC.equals(receptor.getTipoDocumento()) && documento.matches(REGEX_DNI)) {
+            receptor.setTipoDocumento(TIPO_DOCUMENTO_DNI);
+        } else if (TIPO_DOCUMENTO_DNI.equals(receptor.getTipoDocumento()) && documento.matches(REGEX_RUC)) {
+            receptor.setTipoDocumento(TIPO_DOCUMENTO_RUC);
         }
         if (TIPO_DOCUMENTO_RUC.equals(receptor.getTipoDocumento())) {
             if (!documento.matches(REGEX_RUC)) {
@@ -316,15 +365,27 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         List<DetalleComprobanteDTO> detalles = new ArrayList<>();
         int numero = 0;
 
+        var ids = request.getItems().stream().filter(Objects::nonNull).map(ItemComprobanteDTO::getIdProducto)
+                .filter(Objects::nonNull).distinct().toList();
+        Map<Integer, Producto> catalogo = ids.isEmpty() ? Map.of()
+                : productoRepository.bloquearParaVenta(idTienda, ids).stream()
+                        .collect(Collectors.toMap(Producto::getIdProducto, producto -> producto));
+
         for (ItemComprobanteDTO item : request.getItems()) {
             if (item == null || item.getIdProducto() == null) {
                 throw new ValidacionComprobanteException("Cada item debe indicar el producto del catalogo.");
             }
-            Producto producto = productoRepository.findByIdProductoAndIdTienda(item.getIdProducto(), idTienda)
-                    .orElseThrow(() -> new ValidacionComprobanteException(
-                            "El producto " + item.getIdProducto() + " no existe en el catalogo."));
+            Producto producto = catalogo.get(item.getIdProducto());
+            if (producto == null) {
+                throw new RecursoNoEncontradoException("Producto no encontrado en la tienda");
+            }
 
-            int cantidad = item.getCantidad() == null ? 0 : item.getCantidad().intValue();
+            int cantidad;
+            try {
+                cantidad = item.getCantidad() == null ? 0 : item.getCantidad().intValueExact();
+            } catch (ArithmeticException e) {
+                throw new ValidacionComprobanteException("La cantidad debe ser un número entero válido.");
+            }
             if (cantidad <= 0) {
                 throw new ValidacionComprobanteException("La cantidad de cada item debe ser mayor que cero.");
             }
@@ -429,8 +490,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
                     "TRANSFERENCIA GRATUITA DE UN BIEN Y/O SERVICIO PRESTADO GRATUITAMENTE"));
         }
 
-        leyendas.add(new LeyendaDTO(null, "Representacion impresa de " + emisor.getRazonSocial()
-                + ", consulte en " + emisorService.obtenerUrlRepresentacionImpresa()));
+        leyendas.add(new LeyendaDTO(null, "Representación impresa de " + emisor.getRazonSocial()));
 
         leyendas.add(new LeyendaDTO(null, ComprobanteRequestDTO.TIPO_FACTURA.equals(tipoComprobante)
                 ? "Factura electronica" : "Boleta de venta electronica"));
@@ -443,10 +503,12 @@ public class ComprobanteServiceImpl implements ComprobanteService {
     // ------------------------------------------------------------------
 
     private void persistir(ComprobanteRespuestaDTO comprobante, ComprobanteRequestDTO request,
-                            List<DetalleComprobanteDTO> detalles, LocalDateTime emision, int idTienda) {
+                            List<DetalleComprobanteDTO> detalles, LocalDateTime emision, int idTienda, String xml, String huella) {
         Venta venta = new Venta();
         venta.setId(comprobante.getIdVenta());
         venta.setIdTienda(idTienda);
+        venta.fijarEmision(comprobante.getEmisor(), xml);
+        venta.fijarHuellaOperacion(huella);
         venta.setIdCliente(resolverIdCliente(request.getIdCliente()));
         venta.setIdPersona(resolverIdPersona(venta.getIdCliente()));
         venta.setIdTipoDocumento(emisorService.obtenerIdTipoDocumento(comprobante.getTipoComprobante()));
@@ -573,8 +635,9 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         comprobante.setMoneda(venta.getMoneda());
         comprobante.setCondicionOperacion(venta.getCondicionOperacion());
         comprobante.setFormaPago(venta.getFormaPago());
-        comprobante.setNombreComercio(emisorService.obtenerEmisor().getNombreComercial());
-        comprobante.setEmisor(emisorService.obtenerEmisor());
+        EmisorDTO emisor = venta.getEmisorSnapshot() == null ? emisorService.obtenerEmisor() : venta.getEmisorSnapshot();
+        comprobante.setNombreComercio(emisor.getNombreComercial());
+        comprobante.setEmisor(emisor);
         comprobante.setEstado(venta.getEstado());
         comprobante.setEstadoSunat(venta.getEstadoSunat());
         comprobante.setObservacion(venta.getObservacion());
@@ -683,15 +746,6 @@ public class ComprobanteServiceImpl implements ComprobanteService {
             return tipo;
         }
         throw new ValidacionComprobanteException("El tipo de comprobante debe ser 01 (factura) o 03 (boleta).");
-    }
-
-    private String resolverSerie(String serieSolicitada, String tipoComprobante) {
-        String serie = serieSolicitada == null || serieSolicitada.isBlank()
-                ? emisorService.obtenerSerie(tipoComprobante) : serieSolicitada.trim().toUpperCase();
-        if (!serie.matches("[A-Z0-9]{4}")) {
-            throw new ValidacionComprobanteException("La serie del comprobante debe tener 4 caracteres alfanumericos.");
-        }
-        return serie;
     }
 
     private String normalizarCondicion(String condicion) {

@@ -78,6 +78,14 @@ public class UblXmlGenerator {
      * @param comprobante datos ya calculados por el backend
      */
     public String generar(ComprobanteRespuestaDTO comprobante) {
+        return generar(comprobante, false);
+    }
+
+    public String generarHistorico(ComprobanteRespuestaDTO comprobante) {
+        return generar(comprobante, true);
+    }
+
+    private String generar(ComprobanteRespuestaDTO comprobante, boolean historico) {
         StringBuilder xml = new StringBuilder();
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.append("<Invoice xmlns=\"").append(NS_INVOICE).append("\"\n")
@@ -90,7 +98,7 @@ public class UblXmlGenerator {
         escribirExtensiones(xml, comprobante);
         escribirCabecera(xml, comprobante);
         escribirEmisor(xml, comprobante.getEmisor());
-        escribirReceptor(xml, comprobante.getReceptor());
+        escribirReceptor(xml, comprobante.getReceptor(), historico);
         escribirEntrega(xml, comprobante.getEntrega());
         escribirFormaPago(xml, comprobante);
         escribirDescuentos(xml, comprobante);
@@ -198,11 +206,12 @@ public class UblXmlGenerator {
                 .append("  </cac:AccountingSupplierParty>\n");
     }
 
-    private void escribirReceptor(StringBuilder xml, ReceptorDTO receptor) {
+    private void escribirReceptor(StringBuilder xml, ReceptorDTO receptor, boolean historico) {
+        String tipoDocumento = historico ? "6" : receptor.getTipoDocumento();
         xml.append("  <cac:AccountingCustomerParty>\n")
                 .append("    <cac:Party>\n")
                 .append("      <cac:PartyIdentification>\n")
-                .append("        <cbc:ID schemeID=\"6\">").append(escape(receptor.getNumeroDocumento())).append("</cbc:ID>\n")
+                .append("        <cbc:ID schemeID=\"").append(escape(tipoDocumento)).append("\">").append(escape(receptor.getNumeroDocumento())).append("</cbc:ID>\n")
                 .append("      </cac:PartyIdentification>\n");
         DomicilioDTO domicilio = receptor.getDomicilioFiscal();
         if (domicilio != null) {

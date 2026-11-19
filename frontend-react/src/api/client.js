@@ -29,9 +29,9 @@ async function mensajeDeError(respuesta) {
   }
 }
 
-async function request(path, { method = 'GET', body, token } = {}) {
+async function request(path, { method = 'GET', body, token, headers: adicionales = {} } = {}) {
   const cabecera = token ?? tokenActivo();
-  const headers = {};
+  const headers = { ...adicionales };
   if (body) headers['Content-Type'] = 'application/json';
   if (cabecera) headers.Authorization = `Bearer ${cabecera}`;
 

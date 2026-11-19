@@ -1,21 +1,24 @@
 package com.example.proyec_herramientas.repository;
 
 import com.example.proyec_herramientas.persistence.Correlativo;
-import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.Optional;
-
 public interface CorrelativoRepository extends JpaRepository<Correlativo, String> {
+    @Modifying
+    @Query(value = """
+            INSERT INTO correlativo_emisor (ruc_emisor, id_tipo_documento, serie, ultimo_numero)
+            VALUES (:ruc, :tipo, :serie, :numeroInicial)
+            ON DUPLICATE KEY UPDATE ultimo_numero = ultimo_numero + 1
+            """, nativeQuery = true)
+    void reservar(@Param("ruc") String ruc, @Param("tipo") String tipo,
+            @Param("serie") String serie, @Param("numeroInicial") int numeroInicial);
 
-    /**
-     * Bloquea la fila de la serie para que dos ventas simultaneas no obtengan
-     * el mismo correlativo. El bloqueo se mantiene hasta el commit.
-     */
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select c from Correlativo c where c.serie = :serie")
-    Optional<Correlativo> findBySerieForUpdate(@Param("serie") String serie);
+    @Query(value = """
+            SELECT ultimo_numero FROM correlativo_emisor
+            WHERE ruc_emisor = :ruc AND id_tipo_documento = :tipo AND serie = :serie
+            """, nativeQuery = true)
+    int ultimoNumero(@Param("ruc") String ruc, @Param("tipo") String tipo, @Param("serie") String serie);
 }

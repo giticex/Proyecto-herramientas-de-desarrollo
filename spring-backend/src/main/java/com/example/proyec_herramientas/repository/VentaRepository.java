@@ -24,6 +24,12 @@ public interface VentaRepository extends JpaRepository<Venta, String> {
     boolean existsByIdVentaAndIdCliente(String idVenta, String idCliente);
 
     @Query("""
+            SELECT COALESCE(MAX(v.correlativo), 0) FROM Venta v
+            WHERE v.rucEmisor IS NULL AND v.idTipoDocumento = :tipo AND v.serie = :serie
+            """)
+    int ultimoCorrelativoLegado(@Param("tipo") String tipo, @Param("serie") String serie);
+
+    @Query("""
             SELECT COALESCE(SUM(v.totalVenta), 0)
             FROM Venta v
             WHERE v.fechaEmision >= :inicio AND v.fechaEmision < :fin
