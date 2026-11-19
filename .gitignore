@@ -1,0 +1,19 @@
+# IDEs
+/.idea/
+*.iml
+.vscode/
+
+# Compilados y dependencias
+/build/
+node_modules/
+target/
+dist/
+
+# Variables de entorno y secretos
+.env
+.env.*
+!.env.example
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
