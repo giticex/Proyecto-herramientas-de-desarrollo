@@ -1,4 +1,4 @@
-name: Deploy frontend (Azure Static Web Apps)
+name: Deploy frontend (Azure Storage static website)
 
 on:
   push:
@@ -51,8 +51,8 @@ jobs:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
         run: npm run build
 
-      - name: Verificar fallback de SPA
-        run: test -f dist/staticwebapp.config.json
+      - name: Verificar build
+        run: test -f dist/index.html && test -d dist/assets
 
       - name: Subir dist verificado
         uses: actions/upload-artifact@v4
@@ -63,32 +63,30 @@ jobs:
           if-no-files-found: error
 
   deploy:
-    name: Desplegar en Static Web Apps
+    name: Desplegar en Azure Storage (static website)
     needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Verificar configuración de Azure
         env:
-          SWA_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          CONN: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
         run: |
-          [ -n "$SWA_TOKEN" ] || { echo "::error::Falta el secreto AZURE_STATIC_WEB_APPS_API_TOKEN (Settings > Secrets and variables > Actions > Secrets)"; exit 1; }
+          [ -n "$CONN" ] || { echo "::error::Falta el secreto AZURE_STORAGE_CONNECTION_STRING (Settings > Secrets and variables > Actions > Secrets)"; exit 1; }
 
       - uses: actions/download-artifact@v4
         with:
           name: frontend-dist
           path: dist
 
-      - name: Desplegar en Static Web Apps
-        uses: Azure/static-web-apps-deploy@v1
+      # Static Web Apps no esta disponible en esta suscripcion (politica de
+      # regiones); el frontend se sirve desde un Storage static website ($web).
+      - name: Desplegar en Azure Storage
+        uses: azure/CLI@v2
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: upload
-          app_location: dist
-          output_location: ''
-          config_file_location: dist
-          skip_app_build: true
-          # Sin esto, una rama release/* se publicaria como entorno de preview y
-          # el dominio principal quedaria congelado en la version anterior.
-          production_branch: ${{ github.ref_name }}
+          azcliversion: latest
+          inlineScript: |
+            az storage blob delete-batch -s '$web' \
+              --connection-string "$AZURE_STORAGE_CONNECTION_STRING" --only-show-errors
+            az storage blob upload-batch -d '$web' -s dist \
+              --connection-string "$AZURE_STORAGE_CONNECTION_STRING" --overwrite --only-show-errors
