@@ -2,7 +2,7 @@ name: Deploy backend (Azure App Service)
 
 on:
   push:
-    branches: [main]
+    branches: ['release/*', main]
     paths:
       - 'spring-backend/**'
       - '.github/workflows/deploy-backend.yml'
@@ -16,23 +16,34 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    name: Build y despliegue del jar
+  test:
+    name: Pruebas (Spring Boot + MySQL)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: spring-backend
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: proyecto_test
+        ports:
+          - '3306:3306'
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_TEST_NAME: proyecto_test
     steps:
       - uses: actions/checkout@v4
-
-      - name: Verificar configuración de Azure
-        env:
-          APP_NAME: ${{ vars.AZURE_WEBAPP_NAME }}
-          PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        run: |
-          [ -n "$APP_NAME" ] || { echo "::error::Falta la variable de repositorio AZURE_WEBAPP_NAME (Settings > Secrets and variables > Actions > Variables)"; exit 1; }
-          [ -n "$PUBLISH_PROFILE" ] || { echo "::error::Falta el secreto AZURE_WEBAPP_PUBLISH_PROFILE (Settings > Secrets and variables > Actions > Secrets)"; exit 1; }
 
       - uses: actions/setup-java@v5
         with:
@@ -41,15 +52,50 @@ jobs:
           cache: maven
           cache-dependency-path: spring-backend/pom.xml
 
-      - name: Compilar
-        run: chmod +x mvnw && ./mvnw -B package -DskipTests
+      - name: Ejecutar pruebas
+        run: chmod +x mvnw && ./mvnw -B verify
 
       - name: Preparar jar con nombre fijo
         run: cp target/proyec_herramientas-0.0.1-SNAPSHOT.jar target/app.jar
+
+      - name: Subir jar verificado
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: spring-backend/target/app.jar
+          retention-days: 3
+          if-no-files-found: error
+
+      - name: Subir reportes de pruebas
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: spring-backend/target/surefire-reports/
+          if-no-files-found: ignore
+
+  deploy:
+    name: Desplegar en App Service
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verificar configuración de Azure
+        env:
+          APP_NAME: ${{ vars.AZURE_WEBAPP_NAME }}
+          PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        run: |
+          [ -n "$APP_NAME" ] || { echo "::error::Falta la variable de repositorio AZURE_WEBAPP_NAME (Settings > Secrets and variables > Actions > Variables)"; exit 1; }
+          [ -n "$PUBLISH_PROFILE" ] || { echo "::error::Falta el secreto AZURE_WEBAPP_PUBLISH_PROFILE (Settings > Secrets and variables > Actions > Secrets)"; exit 1; }
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: backend-jar
+          path: deploy
 
       - name: Desplegar en App Service
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ vars.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: spring-backend/target/app.jar
+          package: deploy/app.jar

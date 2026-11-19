@@ -2,7 +2,7 @@ name: Deploy frontend (Azure Static Web Apps)
 
 on:
   push:
-    branches: [main]
+    branches: ['release/*', main]
     paths:
       - 'frontend-react/**'
       - '.github/workflows/deploy-frontend.yml'
@@ -16,8 +16,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    name: Build y despliegue del dist
+  test:
+    name: Pruebas y build (React + Vite)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -29,10 +29,8 @@ jobs:
       - name: Verificar configuración de Azure
         env:
           API_URL: ${{ vars.VITE_API_URL }}
-          SWA_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
         run: |
           [ -n "$API_URL" ] || { echo "::error::Falta la variable de repositorio VITE_API_URL (Settings > Secrets and variables > Actions > Variables)"; exit 1; }
-          [ -n "$SWA_TOKEN" ] || { echo "::error::Falta el secreto AZURE_STATIC_WEB_APPS_API_TOKEN (Settings > Secrets and variables > Actions > Secrets)"; exit 1; }
           case "$API_URL" in https://*) ;; *) echo "::error::VITE_API_URL debe empezar por https://"; exit 1 ;; esac
           case "$API_URL" in */) echo "::error::VITE_API_URL no debe terminar en barra"; exit 1 ;; esac
 
@@ -45,6 +43,9 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
       - name: Build
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
@@ -53,13 +54,41 @@ jobs:
       - name: Verificar fallback de SPA
         run: test -f dist/staticwebapp.config.json
 
+      - name: Subir dist verificado
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend-react/dist
+          retention-days: 3
+          if-no-files-found: error
+
+  deploy:
+    name: Desplegar en Static Web Apps
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verificar configuración de Azure
+        env:
+          SWA_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+        run: |
+          [ -n "$SWA_TOKEN" ] || { echo "::error::Falta el secreto AZURE_STATIC_WEB_APPS_API_TOKEN (Settings > Secrets and variables > Actions > Secrets)"; exit 1; }
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+
       - name: Desplegar en Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
-          app_location: frontend-react/dist
+          app_location: dist
           output_location: ''
-          config_file_location: frontend-react/dist
+          config_file_location: dist
           skip_app_build: true
+          # Sin esto, una rama release/* se publicaria como entorno de preview y
+          # el dominio principal quedaria congelado en la version anterior.
+          production_branch: ${{ github.ref_name }}
