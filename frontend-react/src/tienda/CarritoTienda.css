@@ -1,8 +1,7 @@
 /* ===== FONDO Y ESTRUCTURA GENERAL ===== */
 .carrito-page-bg {
-  background-color: #f5f5f7; /* Gris sutil tipo Apple */
-  min-height: calc(100vh - 60px);
-  padding: 80px 20px 60px;
+  background: var(--bg-soft);
+  padding: var(--portal-space) var(--portal-gutter) 64px;
 }
 
 .carrito-page {
@@ -10,8 +9,8 @@
   margin: 0 auto;
 }
 
-.carrito-header h2 {
-  font-size: 32px;
+.carrito-header h1 {
+  font-size: var(--fs-titulo);
   font-weight: 800;
   color: #1d1d1f;
   margin-bottom: 24px;
@@ -20,7 +19,7 @@
 /* ===== ESTADO VACÍO ===== */
 .carrito-vacio-card {
   background: #ffffff;
-  border-radius: 24px;
+  border-radius: var(--radius);
   padding: 60px 20px;
   text-align: center;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
@@ -101,7 +100,7 @@
 /* ===== TARJETA DE RESUMEN ===== */
 .carrito-resumen-card {
   background: #ffffff;
-  border-radius: 24px;
+  border-radius: var(--radius);
   padding: 32px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
   position: sticky;
@@ -127,42 +126,6 @@
   width: 100%;
 }
 
-/* ===== BOTONES PREMIUM ===== */
-.btn-premium {
-  background: #0071e3;
-  color: #ffffff;
-  border: none;
-  border-radius: 12px;
-  padding: 14px 24px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: inline-block;
-  text-decoration: none;
-}
-
-.btn-premium:hover {
-  background: #0077ed;
-  transform: scale(1.02);
-}
-
-.btn-secundario {
-  background: #f5f5f7;
-  color: #1d1d1f;
-  border: none;
-  border-radius: 12px;
-  padding: 14px 24px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-secundario:hover {
-  background: #e5e5ea;
-}
-
 /* ===== MODAL ANIMADO (GLASSMORPHISM) ===== */
 .modal-backdrop {
   position: fixed;
@@ -181,7 +144,7 @@
 .modal-card {
   background: #ffffff;
   padding: 40px;
-  border-radius: 24px;
+  border-radius: var(--radius);
   width: 90%;
   max-width: 400px;
   text-align: center;
@@ -233,35 +196,9 @@
 /* Responsivo */
 @media (max-width: 768px) {
   .carrito-contenedor-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
-}
-
-/* ===== NAVEGACIÓN DIDÁCTICA ===== */
-.nav-volver {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: #1d1d1f;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 16px;
-  transition: color 0.3s ease;
-}
-
-.nav-volver:hover {
-  color: #0071e3; /* Cambia al azul premium al pasar el cursor */
-}
-
-.icono-flecha {
-  width: 18px;
-  height: 18px;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* La flecha hace un rebote hacia la izquierda */
-.nav-volver:hover .icono-flecha {
-  transform: translateX(-6px);
+  .modal-acciones { flex-wrap: wrap; }
 }
 
 /* ===== CONTROLES DE CANTIDAD ===== */

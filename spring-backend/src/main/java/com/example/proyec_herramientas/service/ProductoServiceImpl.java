@@ -1,8 +1,11 @@
 package com.example.proyec_herramientas.service;
 
+import com.example.proyec_herramientas.exception.RecursoDuplicadoException;
 import com.example.proyec_herramientas.model.ProductoDTO;
 import com.example.proyec_herramientas.persistence.Producto;
 import com.example.proyec_herramientas.repository.ProductoRepository;
+import jakarta.persistence.EntityManager;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,9 +18,11 @@ import java.util.List;
 public class ProductoServiceImpl implements ProductoService {
 
     private final ProductoRepository repository;
+    private final EntityManager entityManager;
 
-    public ProductoServiceImpl(ProductoRepository repository) {
+    public ProductoServiceImpl(ProductoRepository repository, EntityManager entityManager) {
         this.repository = repository;
+        this.entityManager = entityManager;
     }
 
     @Override
@@ -54,7 +59,14 @@ public class ProductoServiceImpl implements ProductoService {
         entity.setUnidadMedida(producto.getUnidadMedida());
         entity.setAfectacionIgv(producto.getAfectacionIgv());
         entity.setIdTienda(idTienda);
-        return toDTO(repository.save(entity));
+        if (producto.getSku() != null) {
+            entity.setSku(producto.getSku());
+        }
+        if (repository.existsById(id)) {
+            throw new RecursoDuplicadoException("Ya existe un producto con ese identificador.");
+        }
+        entityManager.persist(entity);
+        return guardarSku(entity);
     }
 
     @Override
@@ -69,10 +81,25 @@ public class ProductoServiceImpl implements ProductoService {
         entity.setPrecio(BigDecimal.valueOf(producto.getPrecio()));
         entity.setCategoria(producto.getCategoria());
         entity.setAtributos(producto.getAtributos());
+        if (producto.getSku() != null) {
+            entity.setSku(producto.getSku());
+        }
         entity.setCodigo(producto.getCodigo());
         entity.setUnidadMedida(producto.getUnidadMedida());
         entity.setAfectacionIgv(producto.getAfectacionIgv());
-        return toDTO(repository.save(entity));
+        return guardarSku(entity);
+    }
+
+    private ProductoDTO guardarSku(Producto producto) {
+        try {
+            repository.flush();
+            return toDTO(producto);
+        } catch (DataIntegrityViolationException error) {
+            if (String.valueOf(error.getMostSpecificCause().getMessage()).contains("uq_producto_tienda_sku")) {
+                throw new RecursoDuplicadoException("Ya existe un producto con ese SKU en esta tienda.");
+            }
+            throw error;
+        }
     }
 
     @Override
@@ -117,6 +144,7 @@ public class ProductoServiceImpl implements ProductoService {
         dto.setStock(producto.getStock());
         dto.setPrecio(producto.getPrecio().doubleValue());
         dto.setCategoria(producto.getCategoria());
+        dto.setSku(producto.getSku());
         dto.setCodigo(producto.getCodigo());
         dto.setUnidadMedida(producto.getUnidadMedida());
         dto.setAfectacionIgv(producto.getAfectacionIgv());

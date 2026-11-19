@@ -151,19 +151,91 @@ class HistorialVentasControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void dosTiendasNoCompartenClientesVentasNiComprobantes() throws Exception {
+        String ventaA = registrarVenta(1);
+        String tokenB = tokenDeOtraTienda();
+        Tienda tiendaB = tiendaRepository.findBySlug("negocio-b").orElseThrow();
+        Producto productoB = new Producto(2, "Producto B", 8, new BigDecimal("25.00"), "Accesorios");
+        productoB.setIdTienda(tiendaB.getIdTienda());
+        productoRepository.save(productoB);
+        clienteRepository.save(new Cliente("CLI-0002", "Marta", "Torres", "999999999", "marta@example.com"));
+        personaRepository.save(persona("PER002", "Marta", "Torres", "marta@example.com"));
+        String ventaB = registrarVenta(1, tokenB, "CLI-0002", 2);
+
+        mockMvc.perform(get("/clientes").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].idCliente", is("CLI-0001")));
+        mockMvc.perform(get("/clientes").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenB))
+                .andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].idCliente", is("CLI-0002")));
+        mockMvc.perform(get("/ventas").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElementos", is(1)))
+                .andExpect(jsonPath("$.contenido[0].idVenta", is(ventaA)));
+        mockMvc.perform(get("/historial").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenB))
+                .andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].id", is(ventaB)));
+
+        for (String sufijo : List.of("", "/pdf", "/xml", "/qr")) {
+            mockMvc.perform(get("/comprobantes/{venta}" + sufijo, ventaB)
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                    .andExpect(status().isNotFound());
+            mockMvc.perform(get("/comprobantes/{venta}" + sufijo, ventaA)
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenB))
+                    .andExpect(status().isNotFound());
+        }
+        mockMvc.perform(get("/boleta/{venta}/pdf", ventaB).header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/comprobantes/cliente/CLI-0002").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(0)));
+        mockMvc.perform(get("/comprobantes/{venta}", ventaA))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/comprobantes/{venta}", ventaA).header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.idVenta", is(ventaA)));
+
+        CuentasTest.crearCliente(usuarioRepository, personaRepository, tiendaRepository);
+        CuentasTest.crearFichaCliente(clienteRepository);
+        String tokenComprador = CuentasTest.token(mockMvc, objectMapper, CuentasTest.CORREO_CLIENTE, CuentasTest.CLAVE);
+        mockMvc.perform(get("/clientes").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenComprador))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/comprobantes/cliente/CLI-0002").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenComprador))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(post("/ventas")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(datosVenta(1, "CLI-0001", 2))))
+                .andExpect(status().isNotFound());
+    }
+
+    private String tokenDeOtraTienda() throws Exception {
+        Map<String, String> datos = Map.of("nombre", "Negocio B", "rubro", "Textil", "slug", "negocio-b",
+                "correo", "dueno.b@example.com", "contrasena", CuentasTest.CLAVE.repeat(2));
+        String respuesta = mockMvc.perform(post("/auth/registro-tienda")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(datos)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        return objectMapper.readTree(respuesta).get("token").asText();
+    }
+
     private String registrarVenta(int cantidad) throws Exception {
-        Map<String, Object> body = Map.of(
-                "idCliente", "CLI-0001",
-                "tipoDocumento", "Boleta",
-                "medioPago", "Yape",
-                "items", List.of(Map.of("idProducto", 1, "cantidad", cantidad)));
+        return registrarVenta(cantidad, token, "CLI-0001", 1);
+    }
+
+    private String registrarVenta(int cantidad, String token, String cliente, int producto) throws Exception {
         String respuesta = mockMvc.perform(post("/ventas")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(body)))
+                        .content(objectMapper.writeValueAsString(datosVenta(cantidad, cliente, producto))))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         return objectMapper.readTree(respuesta).get("id").asText();
+    }
+
+    private Map<String, Object> datosVenta(int cantidad, String cliente, int producto) {
+        return Map.of("idCliente", cliente, "tipoDocumento", "Boleta", "medioPago", "Yape",
+                "items", List.of(Map.of("idProducto", producto, "cantidad", cantidad)));
     }
 
     private Persona persona(String idPersona, String nombre, String apellido, String correo) {

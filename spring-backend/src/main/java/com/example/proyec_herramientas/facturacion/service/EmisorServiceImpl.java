@@ -25,10 +25,7 @@ public class EmisorServiceImpl implements EmisorService {
     private static final String TELEFONO_EMISOR = "TELEFONO_EMISOR";
     private static final String IGV_PORCENTAJE = "IGV_PORCENTAJE";
     private static final String MONEDA = "MONEDA";
-    private static final String SERIE_BOLETA = "SERIE_BOLETA";
-    private static final String SERIE_FACTURA = "SERIE_FACTURA";
     private static final String LIMITE_BOLETA_SIN_RUC = "LIMITE_BOLETA_SIN_RUC";
-    private static final String URL_REPRESENTACION_IMPRESA = "URL_REPRESENTACION_IMPRESA";
     private static final String CLIENTE_MOSTRADOR = "CLIENTE_MOSTRADOR";
     private static final String PERSONA_MOSTRADOR = "PERSONA_MOSTRADOR";
 
@@ -42,7 +39,7 @@ public class EmisorServiceImpl implements EmisorService {
     @Transactional(readOnly = true)
     public EmisorDTO obtenerEmisor() {
         EmisorDTO emisor = new EmisorDTO();
-        emisor.setRuc(valor(RUC_EMISOR, "20604567891"));
+        emisor.setRuc(obtenerRucLegado());
         emisor.setRazonSocial(valor(RAZON_SOCIAL_EMISOR, "INNOVATION STORE S.A.C."));
         emisor.setNombreComercial(valor(NOMBRE_COMERCIAL, "TechZone"));
         emisor.setDomicilioFiscal(valor(DOMICILIO_FISCAL_EMISOR, "Av. Javier Prado Este 4200, Of. 802"));
@@ -54,6 +51,12 @@ public class EmisorServiceImpl implements EmisorService {
         emisor.setEmail(valor(EMAIL_EMISOR, "facturacion@techzone.pe"));
         emisor.setTelefono(valor(TELEFONO_EMISOR, "5115551234"));
         return emisor;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String obtenerRucLegado() {
+        return valor(RUC_EMISOR, "20604567891");
     }
 
     @Override
@@ -74,15 +77,6 @@ public class EmisorServiceImpl implements EmisorService {
 
     @Override
     @Transactional(readOnly = true)
-    public String obtenerSerie(String tipoComprobante) {
-        if (ComprobanteRequestDTO.TIPO_FACTURA.equals(tipoComprobante)) {
-            return valor(SERIE_FACTURA, "F001");
-        }
-        return valor(SERIE_BOLETA, "B001");
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public String obtenerIdTipoDocumento(String tipoComprobante) {
         return ComprobanteRequestDTO.TIPO_FACTURA.equals(tipoComprobante) ? "TD002" : "TD001";
     }
@@ -95,12 +89,6 @@ public class EmisorServiceImpl implements EmisorService {
         } catch (NumberFormatException e) {
             return new BigDecimal("700.00");
         }
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public String obtenerUrlRepresentacionImpresa() {
-        return valor(URL_REPRESENTACION_IMPRESA, "https://www.techzone.pe/comprobantes");
     }
 
     @Override

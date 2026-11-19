@@ -1,151 +1,75 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import PlantillaTienda from '../components/PlantillaTienda';
+import { useParams, Link } from 'react-router-dom';
 import { useClienteStore } from './clienteStore';
+import { rutaTienda } from './rutasTienda';
 import ComprobanteImpresion from './ComprobanteImpresion';
-import { listarComprobantesDeCliente, urlComprobantePdf, urlComprobanteXml } from '../api/comprobantesApi';
+import { listarComprobantesDeCliente } from '../api/comprobantesApi';
 import { showToast } from '../components/toastBus';
+import { descargarArchivoSeguro } from '../utils/descargas';
 import './MisCompras.css';
 
-const IGV_PORCENTAJE = 0.18;
 
 /** Normaliza las compras guardadas en el navegador (mock) al formato del backend. */
-function aComprobante(compra) {
-  if (compra?.comprobante) return compra.comprobante;
-
-  const items = compra?.items || [];
-  const esFactura = compra?.tipoComprobante === 'factura';
-
-  // El desglose se recalcula con la misma regla del backend: el precio del
-  // catalogo incluye IGV, asi que la base es precio / (1 + IGV).
-  const detalles = items.map((item, indice) => {
-    const cantidad = Number(item.cantidad || 0);
-    const precio = Number(item.precio || 0);
-    const afectacion = item.afectacionIgv || '01';
-    const gravada = afectacion === '01';
-    const valorUnitario = gravada ? precio / (1 + IGV_PORCENTAJE) : precio;
-    const base = valorUnitario * cantidad;
-    const igv = gravada ? base * IGV_PORCENTAJE : 0;
-
-    return {
-      numero: indice + 1,
-      descripcion: item.nombre,
-      cantidad,
-      unidadMedida: item.unidadMedida || 'NIU',
-      valorUnitario,
-      precioUnitario: precio,
-      afectacionIgv: afectacion,
-      base,
-      igv,
-      totalItem: base + igv,
-    };
-  });
-
-  const suma = (predicado) =>
-    detalles.filter(predicado).reduce((acc, detalle) => acc + detalle.base, 0);
-  const opGravada = suma((detalle) => detalle.afectacionIgv === '01');
-  const opInafecta = suma((detalle) => detalle.afectacionIgv === '02');
-  const igv = detalles.reduce((acc, detalle) => acc + detalle.igv, 0);
-  const total = opGravada + opInafecta + igv;
-
-  return {
-    idVenta: compra?.idOrden,
-    tipoComprobante: esFactura ? '01' : '03',
-    tipoComprobanteDescripcion: esFactura ? 'Factura' : 'Boleta',
-    numeroDocumento: compra?.numeroComprobante,
-    fechaEmision: (compra?.fecha || '').slice(0, 10),
-    horaEmision: (compra?.fecha || '').slice(11, 19),
-    moneda: 'PEN',
-    estado: 'EMITIDO',
-    receptor: {
-      tipoDocumento: esFactura ? '1' : '6',
-      numeroDocumento: compra?.documento,
-      razonSocial: compra?.razonSocial,
-      domicilioFiscal: { direccion: compra?.direccion, pais: 'PE' },
-    },
-    entrega: { direccion: compra?.direccion },
-    detalles,
-    totales: {
-      opGravada,
-      opInafecta,
-      opExonerada: 0,
-      opGratuita: 0,
-      igv,
-      totalDescuentos: 0,
-      totalVenta: total,
-      montoTotalPagar: total,
-    },
-    leyendas: [],
-    mediosPago: [{ codigo: '', descripcion: compra?.metodoPago, monto: total }],
-    hashComprobante: '',
-  };
-}
-
 export default function MisCompras() {
   const { slug } = useParams();
-  const navigate = useNavigate();
-  const { cliente, misCompras } = useClienteStore();
+  const { cliente } = useClienteStore();
 
-  const [comprobantes, setComprobantes] = useState([]);
-  const [seleccionado, setSeleccionado] = useState(null);
+  const [comprobantes, setComprobantes] = useState(null);
+  const [seleccion, setSeleccion] = useState(null);
 
-  // Protegemos la ruta
+  const idCliente = cliente?.idCliente;
+  const token = cliente?.token;
+  const clave = idCliente && token ? JSON.stringify([slug, idCliente, token]) : null;
+
   useEffect(() => {
-    if (!cliente) {
-      showToast('Debes iniciar sesión para ver tus compras.');
-      navigate(`/tienda/${slug}/login`);
-    }
-  }, [cliente, navigate, slug]);
-
-  // El backend es la fuente de verdad: se listan sus comprobantes del cliente.
-  useEffect(() => {
-    if (!cliente?.idCliente) return undefined;
+    if (!clave) return undefined;
     let vigente = true;
-
-    listarComprobantesDeCliente(String(cliente.idCliente))
+    listarComprobantesDeCliente(String(idCliente), slug, token)
       .then((lista) => {
-        if (vigente && Array.isArray(lista) && lista.length > 0) {
-          setComprobantes(lista);
-        }
+        if (vigente) setComprobantes({ clave, lista: Array.isArray(lista) ? lista : [], error: '' });
       })
-      .catch(() => {
-        // Sin backend disponible se muestran las compras guardadas en el navegador.
+      .catch((error) => {
+        if (vigente) setComprobantes({ clave, lista: [], error: error?.message || 'No se pudieron cargar tus compras.' });
       });
+    return () => { vigente = false; };
+  }, [clave, idCliente, slug, token]);
 
-    return () => {
-      vigente = false;
-    };
-  }, [cliente]);
-
-  const navLinks = (
-    <Link to={`/tienda/${slug}`} className="nav-volver">
-      <svg className="icono-flecha" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="19" y1="12" x2="5" y2="12"></line>
-        <polyline points="12 19 5 12 12 5"></polyline>
-      </svg>
-      Volver a la Tienda
-    </Link>
-  );
+  async function descargar(comprobante, tipo) {
+    try {
+      const ruta = '/comprobantes/' + encodeURIComponent(comprobante.idVenta) + '/' + tipo.toLowerCase();
+      await descargarArchivoSeguro(ruta, tipo, comprobante.numeroDocumento, { token });
+    } catch (error) {
+      showToast(error?.message || 'No se pudo descargar el comprobante.');
+    }
+  }
 
   if (!cliente) return null;
 
-  const lista = comprobantes.length > 0 ? comprobantes : misCompras.map(aComprobante);
+  const resultado = comprobantes?.clave === clave ? comprobantes : null;
+  const lista = resultado?.lista ?? [];
+  const seleccionado = seleccion?.clave === clave ? seleccion?.comprobante : null;
 
   return (
-    <PlantillaTienda navLinks={navLinks}>
-      <div className="mis-compras-page">
+    <>
+      <main className="mis-compras-page">
         <div className="compras-header">
-          <h2>Mis Compras y Comprobantes</h2>
+          <h1>Mis compras y comprobantes</h1>
           <p>
             Hola, <strong>{cliente.nombre}</strong>. Este es tu historial de boletas y facturas electrónicas.
           </p>
         </div>
 
-        {lista.length === 0 ? (
+        {!clave ? (
+          <p role="alert">Vuelve a iniciar sesión para ver tus compras.</p>
+        ) : !resultado ? (
+          <p role="status">Cargando tus compras…</p>
+        ) : resultado.error ? (
+          <p role="alert">{resultado.error}</p>
+        ) : lista.length === 0 ? (
           <div className="compras-vacio">
             <h3>Aún no tienes compras registradas</h3>
             <p>Explora el catálogo y realiza tu primer pedido para ver tus comprobantes aquí.</p>
-            <Link to={`/tienda/${slug}`} className="btn">
+            <Link to={rutaTienda(slug)} className="btn">
               Ir al Catálogo
             </Link>
           </div>
@@ -180,7 +104,7 @@ export default function MisCompras() {
                       </div>
                     </div>
                     <span className="estado-badge emitido">
-                      {comprobante.estado === 'EMITIDO' ? 'Emitido / Pagado' : comprobante.estado || 'Emitido'}
+                      {comprobante.estado === 'EMITIDO' ? 'Emitido' : comprobante.estado || 'Emitido'}
                     </span>
                   </div>
 
@@ -190,7 +114,7 @@ export default function MisCompras() {
                     </span>
                     <span>
                       <strong>
-                        {comprobante.receptor?.tipoDocumento === '1' ? 'RUC' : 'DNI'}:
+                        {comprobante.receptor?.numeroDocumento?.length === 11 ? 'RUC' : 'Documento'}:
                       </strong>{' '}
                       {comprobante.receptor?.numeroDocumento}
                     </span>
@@ -232,18 +156,18 @@ export default function MisCompras() {
                     <button
                       type="button"
                       className="btn-compra"
-                      onClick={() => setSeleccionado(comprobante)}
+                      onClick={() => setSeleccion({ clave, comprobante })}
                     >
                       Ver representación impresa
                     </button>
                     {tieneArchivo && (
                       <>
-                        <a className="btn-link" href={urlComprobantePdf(comprobante.idVenta)} target="_blank" rel="noreferrer">
+                        <button type="button" className="btn-link" onClick={() => descargar(comprobante, 'PDF')}>
                           PDF
-                        </a>
-                        <a className="btn-link" href={urlComprobanteXml(comprobante.idVenta)} target="_blank" rel="noreferrer">
+                        </button>
+                        <button type="button" className="btn-link" onClick={() => descargar(comprobante, 'XML')}>
                           XML
-                        </a>
+                        </button>
                       </>
                     )}
                   </div>
@@ -252,11 +176,11 @@ export default function MisCompras() {
             })}
           </div>
         )}
-      </div>
+      </main>
 
       {seleccionado && (
-        <ComprobanteImpresion comprobante={seleccionado} onClose={() => setSeleccionado(null)} />
+        <ComprobanteImpresion comprobante={seleccionado} token={token} onClose={() => setSeleccion(null)} />
       )}
-    </PlantillaTienda>
+    </>
   );
 }

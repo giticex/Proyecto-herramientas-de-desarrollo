@@ -3,7 +3,6 @@ import { showToast } from '../components/toastBus';
 
 const CART_KEY = 'clienteCarrito';
 const CLIENTE_SESION_KEY = 'clienteSesion';
-const COMPRAS_KEY = 'clienteMisCompras';
 
 function leerJson(key, fallback) {
   try {
@@ -14,10 +13,14 @@ function leerJson(key, fallback) {
   }
 }
 
+export function carritoDeTienda(items, slug, productos) {
+  const ids = new Set(productos.map((producto) => producto.idProducto));
+  return items.filter((item) => item.tiendaSlug === slug || (!item.tiendaSlug && ids.has(item.idProducto)));
+}
+
 export const useClienteStore = create((set, get) => ({
   carrito: leerJson(CART_KEY, []),
   cliente: leerJson(CLIENTE_SESION_KEY, null),
-  misCompras: leerJson(COMPRAS_KEY, []),
 
   // --- SESIÓN DEL CLIENTE ---
   // La sesión guarda token y rol: el rol (CLIENTE) lo devuelve el backend y
@@ -32,8 +35,19 @@ export const useClienteStore = create((set, get) => ({
     set({ cliente: null });
   },
 
+  adoptarCarrito(slug, productos) {
+    const actual = get().carrito;
+    const ids = new Set(productos.map((producto) => producto.idProducto));
+    if (!actual.some((item) => !item.tiendaSlug && ids.has(item.idProducto))) return;
+    const carrito = actual.map((item) => !item.tiendaSlug && ids.has(item.idProducto)
+      ? { ...item, tiendaSlug: slug }
+      : item);
+    localStorage.setItem(CART_KEY, JSON.stringify(carrito));
+    set({ carrito });
+  },
+
   // --- CARRITO CON VALIDACIÓN ESTRICTA DE STOCK CONTRA EL STORE ---
-  agregarAlCarrito(producto, cantidad = 1) {
+  agregarAlCarrito(slug, producto, cantidad = 1) {
     const stockReal = Number(producto.stock ?? 0);
     if (stockReal <= 0) {
       showToast(`"${producto.nombre}" está agotado actualmente.`);
@@ -41,7 +55,8 @@ export const useClienteStore = create((set, get) => ({
     }
 
     const actual = get().carrito;
-    const existente = actual.find((item) => item.idProducto === producto.idProducto);
+    const coincide = (item) => item.tiendaSlug === slug && item.idProducto === producto.idProducto;
+    const existente = actual.find(coincide);
     const cantidadEnCarrito = existente ? existente.cantidad : 0;
 
     if (cantidadEnCarrito + cantidad > stockReal) {
@@ -52,7 +67,7 @@ export const useClienteStore = create((set, get) => ({
     let nuevoCarrito;
     if (existente) {
       nuevoCarrito = actual.map((item) =>
-        item.idProducto === producto.idProducto
+        coincide(item)
           ? { ...item, cantidad: item.cantidad + cantidad }
           : item
       );
@@ -61,6 +76,7 @@ export const useClienteStore = create((set, get) => ({
         ...actual,
         {
           idProducto: producto.idProducto,
+          tiendaSlug: slug,
           nombre: producto.nombre,
           precio: Number(producto.precio),
           categoria: producto.categoria,
@@ -80,9 +96,9 @@ export const useClienteStore = create((set, get) => ({
     return true;
   },
 
-  cambiarCantidad(idProducto, nuevaCantidad, stockDisponible) {
+  cambiarCantidad(slug, idProducto, nuevaCantidad, stockDisponible) {
     if (nuevaCantidad <= 0) {
-      get().quitarDelCarrito(idProducto);
+      get().quitarDelCarrito(slug, idProducto);
       return;
     }
     if (nuevaCantidad > stockDisponible) {
@@ -90,27 +106,21 @@ export const useClienteStore = create((set, get) => ({
       return;
     }
     const nuevoCarrito = get().carrito.map((item) =>
-      item.idProducto === idProducto ? { ...item, cantidad: nuevaCantidad } : item
+      item.tiendaSlug === slug && item.idProducto === idProducto ? { ...item, cantidad: nuevaCantidad } : item
     );
     localStorage.setItem(CART_KEY, JSON.stringify(nuevoCarrito));
     set({ carrito: nuevoCarrito });
   },
 
-  quitarDelCarrito(idProducto) {
-    const nuevoCarrito = get().carrito.filter((item) => item.idProducto !== idProducto);
+  quitarDelCarrito(slug, idProducto) {
+    const nuevoCarrito = get().carrito.filter((item) => item.tiendaSlug !== slug || item.idProducto !== idProducto);
     localStorage.setItem(CART_KEY, JSON.stringify(nuevoCarrito));
     set({ carrito: nuevoCarrito });
   },
 
-  vaciarCarrito() {
-    localStorage.removeItem(CART_KEY);
-    set({ carrito: [] });
-  },
-
-  registrarCompra(orden) {
-    const nuevasCompras = [orden, ...get().misCompras];
-    localStorage.setItem(COMPRAS_KEY, JSON.stringify(nuevasCompras));
-    localStorage.removeItem(CART_KEY);
-    set({ misCompras: nuevasCompras, carrito: [] });
+  vaciarCarrito(slug) {
+    const carrito = get().carrito.filter((item) => item.tiendaSlug !== slug);
+    localStorage.setItem(CART_KEY, JSON.stringify(carrito));
+    set({ carrito });
   },
 }));

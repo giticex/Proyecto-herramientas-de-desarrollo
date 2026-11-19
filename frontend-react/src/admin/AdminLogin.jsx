@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from '../auth/sesionStore';
 import { loginApi } from '../auth/authApi';
 import './AdminLogin.css';
@@ -15,6 +15,7 @@ export default function AdminLogin() {
   const [enviando, setEnviando] = useState(false);
   const login = useSesion((estado) => estado.login);
   const navigate = useNavigate();
+  const { state } = useLocation();
 
   function limpiarError(campo) {
     setErrores((prev) => ({ ...prev, [campo]: '' }));
@@ -37,8 +38,10 @@ export default function AdminLogin() {
         setError('Tu cuenta no tiene el rol ADMIN para entrar al panel.');
         return;
       }
-      login(respuesta.usuario ?? u, respuesta.token, respuesta.rol);
-      navigate('/admin');
+      login(respuesta.usuario ?? u, respuesta.token, respuesta.rol, respuesta.tienda);
+      const ruta = typeof state?.from === 'string' ? state.from.split(/[?#]/, 1)[0].replace(/\/+$/, '') : '';
+      const modulos = ['/admin', '/admin/marca', '/admin/productos', '/admin/ventas', '/admin/facturacion'];
+      navigate(modulos.includes(ruta) ? state.from : '/admin', { replace: true });
     } catch (problema) {
       setError(problema.message || 'No se pudo iniciar sesión.');
     } finally {
@@ -47,13 +50,7 @@ export default function AdminLogin() {
   }
 
   return (
-    <>
-      <nav className="nav">
-        <Link className="nav-brand" to="/">NovaCommerce</Link>
-        <div className="nav-links"><Link to="/registro-tienda">Crear tienda</Link></div>
-      </nav>
-
-      <main className="page narrow">
+      <main className="page narrow acceso-page">
         <header className="head">
           <h1>Bienvenido.</h1>
           <p>Inicia sesión para administrar tu tienda.</p>
@@ -88,6 +85,5 @@ export default function AdminLogin() {
           <p className="small muted">¿Sin tienda todavía? <Link to="/registro-tienda">Crea una</Link></p>
         </form>
       </main>
-    </>
   );
 }

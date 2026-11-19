@@ -118,7 +118,10 @@ public class ComprobantePdfGenerator {
             datos.addCell(PdfUtil.celdaSinBorde("Señor(es):", FONT_BOLD));
             datos.addCell(PdfUtil.celdaSinBorde(valor(receptor.getRazonSocial()), FONT_NORMAL));
 
-            String tipoDocumento = "1".equals(receptor.getTipoDocumento()) ? "RUC" : "DNI";
+            String numeroDocumento = valor(receptor.getNumeroDocumento());
+            String codigo = receptor.getTipoDocumento();
+            String tipoDocumento = ("1".equals(codigo) || "6".equals(codigo))
+                    ? (numeroDocumento.length() == 11 ? "RUC" : "DNI") : "Documento";
             datos.addCell(PdfUtil.celdaSinBorde(tipoDocumento + ":", FONT_BOLD));
             datos.addCell(PdfUtil.celdaSinBorde(valor(receptor.getNumeroDocumento()), FONT_NORMAL));
 

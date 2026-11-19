@@ -1,22 +1,34 @@
 package com.example.proyec_herramientas.facturacion.model;
 
-/**
- * Emisor del comprobante. Sus datos salen de la tabla `parametro`, para que
- * se puedan corregir sin recompilar (SUNAT exige que el emisor de la factura
- * tenga su domicilio fiscal declarado).
- */
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+
+/** Datos fiscales del emisor que se conservan con el comprobante. */
 public class EmisorDTO {
 
+    @NotBlank @Pattern(regexp = "[0-9]{11}")
     private String ruc;
+    @NotBlank @Size(max = 200)
     private String razonSocial;
+    @NotBlank @Size(max = 120)
     private String nombreComercial;
+    @NotBlank @Size(max = 200)
     private String domicilioFiscal;
+    @NotBlank @Pattern(regexp = "[0-9]{6}")
     private String ubigeo;
+    @NotBlank @Size(max = 80)
     private String distrito;
+    @NotBlank @Size(max = 80)
     private String provincia;
+    @NotBlank @Size(max = 80)
     private String departamento;
+    @NotBlank @Pattern(regexp = "PE")
     private String pais = "PE";
+    @Email @Size(max = 120)
     private String email;
+    @Size(max = 30)
     private String telefono;
 
     public String getRuc() {

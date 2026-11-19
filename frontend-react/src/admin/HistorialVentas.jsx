@@ -11,7 +11,6 @@ import {
 import { listarVentas, rutaComprobantePdf, rutaComprobanteXml } from '../api/ventasApi';
 import { descargarArchivoSeguro } from '../utils/descargas';
 import { showToast } from '../components/toastBus';
-import PanelLayout from './PanelLayout';
 import './HistorialVentas.css';
 
 const TAMANIO_PAGINA = 10;
@@ -108,7 +107,6 @@ export default function HistorialVentas() {
   const ultimaFila = Math.min((pagina + 1) * TAMANIO_PAGINA, totalElementos);
 
   return (
-    <PanelLayout>
       <main className="page historial-page">
         <header className="hist-cabecera">
           <div>
@@ -262,6 +260,5 @@ export default function HistorialVentas() {
           </nav>
         )}
       </main>
-    </PanelLayout>
   );
 }

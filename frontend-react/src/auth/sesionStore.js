@@ -1,6 +1,3 @@
-// Sesión del administrador. Igual que Store.login/isLogged/logout de
-// frontend/js/store.js, pero guardando el token real y el rol que devolvió el
-// backend (ADMIN o CLIENTE). El rol no se deduce acá: viene de la base.
 import { create } from 'zustand';
 
 const KEY = 'adminSesion';
@@ -16,23 +13,29 @@ function leerSesion() {
 
 const sesionGuardada = leerSesion();
 
-export const useSesion = create((set) => ({
+export const useSesion = create((set, get) => ({
   usuario: sesionGuardada?.usuario ?? null,
   token: sesionGuardada?.token ?? null,
   rol: sesionGuardada?.rol ?? null,
+  tienda: sesionGuardada?.tienda ?? null,
 
-  login(usuario, token, rol) {
-    localStorage.setItem(KEY, JSON.stringify({ usuario, token, rol }));
-    set({ usuario, token, rol });
+  login(usuario, token, rol, tienda = null) {
+    const sesion = { usuario, token, rol, tienda };
+    localStorage.setItem(KEY, JSON.stringify(sesion));
+    set(sesion);
+  },
+
+  actualizarTienda(tienda) {
+    const { usuario, token, rol, login } = get();
+    if (token) login(usuario, token, rol, tienda);
   },
 
   logout() {
     localStorage.removeItem(KEY);
-    set({ usuario: null, token: null, rol: null });
+    set({ usuario: null, token: null, rol: null, tienda: null });
   },
 }));
 
-// Solo el ADMIN entra al panel de administración.
 export function esAdmin(sesion) {
   return sesion?.rol === 'ADMIN';
 }

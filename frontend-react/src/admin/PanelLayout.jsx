@@ -1,37 +1,42 @@
-import { useEffect } from 'react';
-import { useStore } from '../store/store';
+import { useState } from 'react';
+import { Link, Outlet } from 'react-router-dom';
+import { Menu } from 'lucide-react';
+import { useSesion } from '../auth/sesionStore';
 import PlantillaTienda from '../components/PlantillaTienda';
 import PanelNavLinks from './PanelNavLinks';
 import './PanelLayout.css';
 
-// Envoltorio común de los paneles protegidos: carga la tienda al montar
-// (equivalente al evento tienda-lista de nav.js), aplica PlantillaTienda sin
-// la cabecera superior y coloca la navegación en una barra lateral derecha.
-export default function PanelLayout({ children }) {
-  const getTienda = useStore((estado) => estado.getTienda);
-  const tienda = useStore((estado) => estado.tienda);
-
-  useEffect(() => {
-    getTienda();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const inicial = (tienda.nombre || '?').charAt(0).toUpperCase();
+export default function PanelLayout() {
+  const tienda = useSesion((estado) => estado.tienda);
+  const usuario = useSesion((estado) => estado.usuario);
+  const [abierto, setAbierto] = useState(false);
+  const nombre = tienda?.nombre || 'Panel de negocio';
 
   return (
-    <PlantillaTienda sinNav>
+    <PlantillaTienda tienda={tienda ?? undefined}>
       <div className="panel-shell">
-        <aside className="panel-sidebar" aria-label="Navegación del panel">
-          <div className="panel-sidebar-marca">
-            {tienda.logoUrl
-              ? <img className="panel-sidebar-logo" src={tienda.logoUrl} alt="" />
-              : <span className="panel-sidebar-logo inicial" aria-hidden="true">{inicial}</span>}
-            <span className="panel-sidebar-nombre">{tienda.nombre}</span>
+        <aside className="panel-sidebar" aria-label="Panel de negocio">
+          <div className="panel-sidebar-cabecera">
+            <Link className="panel-sidebar-marca" to="/admin" onClick={() => setAbierto(false)}>
+              {tienda?.logoUrl
+                ? <img className="panel-sidebar-logo" src={tienda.logoUrl} alt="" />
+                : <span className="panel-sidebar-logo inicial" aria-hidden="true">{nombre.charAt(0).toUpperCase()}</span>}
+              <span className="panel-sidebar-nombre">{nombre}</span>
+            </Link>
+            <button type="button" className="panel-menu-toggle"
+              aria-expanded={abierto} aria-controls="panel-menu" onClick={() => setAbierto(!abierto)}>
+              <Menu size={18} aria-hidden="true" /> Menú
+            </button>
           </div>
-          <PanelNavLinks />
+          <PanelNavLinks abierto={abierto} cerrar={() => setAbierto(false)} />
         </aside>
-
-        <div className="panel-contenido">{children}</div>
+        <div className="panel-contenido">
+          <div className="panel-topbar">
+            <span>{usuario}</span>
+            {tienda?.slug && <Link className="btn ghost small" to={'/tienda/' + encodeURIComponent(tienda.slug)}>Ver mi tienda</Link>}
+          </div>
+          <Outlet />
+        </div>
       </div>
     </PlantillaTienda>
   );

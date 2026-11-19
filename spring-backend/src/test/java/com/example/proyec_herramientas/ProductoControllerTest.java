@@ -16,6 +16,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import java.math.BigDecimal;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -90,8 +92,71 @@ class ProductoControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.idProducto", is(10)))
                 .andExpect(jsonPath("$.nombre", is("Webcam HD")))
+                .andExpect(jsonPath("$.sku", matchesPattern("SKU-[A-F0-9]{32}")))
                 .andExpect(jsonPath("$.stock", is(3)))
                 .andExpect(jsonPath("$.idTienda", is(tienda.getIdTienda())));
+    }
+
+    @Test
+    void skuSeNormalizaYSePublicaEnElCatalogoDeLaTienda() throws Exception {
+        guardarSku(10, "  abc-001  ").andExpect(status().isCreated())
+                .andExpect(jsonPath("$.sku", is("ABC-001")));
+
+        mockMvc.perform(get("/tiendas/{slug}/productos", tienda.getSlug()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].sku", is("ABC-001")));
+    }
+
+    @Test
+    void skuInvalidoDevuelve400YDuplicadoEnLaMismaTiendaDevuelve409() throws Exception {
+        guardarSku(10, "abc 001").andExpect(status().isBadRequest());
+        guardarSku(10, "abc-001").andExpect(status().isCreated());
+        guardarSku(11, " ABC-001 ").andExpect(status().isConflict());
+    }
+
+    @Test
+    void actualizarSkuAUnDuplicadoDevuelve409() throws Exception {
+        guardarSku(10, "abc-001").andExpect(status().isCreated());
+        guardarSku(11, "otro").andExpect(status().isCreated());
+        Map<String, Object> actualizacion = new HashMap<>(crearProducto(11, "Mouse", 5, 30.0, "Accesorios"));
+        actualizacion.put("sku", "abc-001");
+        mockMvc.perform(put("/productos/11")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(actualizacion)))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void skuPuedeRepetirseEnOtraTiendaYSeConservaSiLaEdicionLoOmite() throws Exception {
+        Tienda otra = tiendaRepository.findBySlug("otra-tienda-sku").orElseGet(() -> {
+            Tienda nueva = new Tienda();
+            nueva.setNombre("Otra tienda SKU");
+            nueva.setRubro("Otros");
+            nueva.setSlug("otra-tienda-sku");
+            return tiendaRepository.save(nueva);
+        });
+        Producto ajeno = new Producto(500, "Producto ajeno", 5, new BigDecimal("10.00"), "Otros");
+        ajeno.setIdTienda(otra.getIdTienda());
+        ajeno.setSku("ABC-001");
+        productoRepository.saveAndFlush(ajeno);
+
+        guardarSku(10, "abc-001").andExpect(status().isCreated());
+        mockMvc.perform(put("/productos/10")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(crearProducto(10, "Mouse", 5, 30.0, "Accesorios"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sku", is("ABC-001")));
+    }
+
+    private ResultActions guardarSku(int id, String sku) throws Exception {
+        Map<String, Object> producto = new HashMap<>(crearProducto(id, "Mouse", 5, 30.0, "Accesorios"));
+        producto.put("sku", sku);
+        return mockMvc.perform(post("/productos")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(producto)));
     }
 
     @Test

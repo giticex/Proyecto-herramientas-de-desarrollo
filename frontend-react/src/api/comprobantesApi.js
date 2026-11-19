@@ -14,8 +14,8 @@ export const TIPO_COMPROBANTE = {
 
 /** Tipo de documento del adquirente (catalogo 01 de SUNAT). */
 export const TIPO_DOCUMENTO = {
-  RUC: '1',
-  DNI: '6',
+  RUC: '6',
+  DNI: '1',
 };
 
 /** Condicion de la operacion (catalogo 51 de SUNAT). */
@@ -205,18 +205,21 @@ export function construirPayloadComprobante({
 }
 
 /** Emite el comprobante y devuelve la respuesta completa del backend. */
-export async function emitirComprobante(payload) {
-  return apiClient.post('/comprobantes', payload);
+export async function emitirComprobante(payload, slug, token, clave) {
+  return apiClient.post('/comprobantes?tienda=' + encodeURIComponent(slug), payload, {
+    token, headers: { 'Idempotency-Key': clave },
+  });
 }
 
 /** Consulta un comprobante por el id de la venta. */
-export async function obtenerComprobante(idVenta) {
-  return apiClient.get(`/comprobantes/${idVenta}`);
+export async function obtenerComprobante(idVenta, token) {
+  return apiClient.get('/comprobantes/' + encodeURIComponent(idVenta), { token });
 }
 
 /** Lista los comprobantes emitidos a un cliente. */
-export async function listarComprobantesDeCliente(idCliente) {
-  return apiClient.get(`/comprobantes/cliente/${idCliente}`);
+export async function listarComprobantesDeCliente(idCliente, slug, token) {
+  const ruta = '/comprobantes/cliente/' + encodeURIComponent(idCliente);
+  return apiClient.get(ruta + '?tienda=' + encodeURIComponent(slug), { token });
 }
 
 /** Representacion impresa en PDF (A5 con QR y valor resumen). */

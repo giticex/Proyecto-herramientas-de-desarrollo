@@ -1,67 +1,55 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import PlantillaTienda from '../components/PlantillaTienda';
+import { useMemo, useState } from 'react';
+import { useOutletContext, useParams } from 'react-router-dom';
+import { coincidenciaMarcaYPrecio, errorRangoPrecio, esAtributoMarca, opcionesDeMarca } from './filtrosCatalogo';
 import { useStore } from '../store/store';
 import { useClienteStore } from './clienteStore';
+import { coincidenciaBusquedaCatalogo } from './busquedaCatalogo';
 import './CatalogoTienda.css';
 
 export default function CatalogoTienda() {
   const { slug } = useParams();
-  const { tienda, productos, umbral, getTienda, listProductos } = useStore();
-  const { carrito, cliente, agregarAlCarrito } = useClienteStore();
+  const { tienda, productos, carrito, catalogoListo, errorCatalogo } = useOutletContext();
+  const umbral = useStore((estado) => estado.umbral);
+  const agregarAlCarrito = useClienteStore((estado) => estado.agregarAlCarrito);
 
   const [busqueda, setBusqueda] = useState('');
-  const [categoriaActiva, setCategoriaActiva] = useState('Todas');
+  const [categoriaActiva, setCategoriaActiva] = useState('');
   const [atributosActivos, setAtributosActivos] = useState({});
-  const { logoutCliente } = useClienteStore();
-  
-
-  useEffect(() => {
-    getTienda(slug);
-    listProductos(slug);
-  }, [slug, getTienda, listProductos]);
+  const [marcaActiva, setMarcaActiva] = useState('');
+  const [desde, setDesde] = useState('');
+  const [hasta, setHasta] = useState('');
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+  const errorPrecio = errorRangoPrecio(desde, hasta);
 
   // 1. Extraer categorías únicas desde los productos del store
   const categorias = useMemo(() => {
     const unicas = new Set(productos.map((p) => p.categoria).filter(Boolean));
-    return ['Todas', ...Array.from(unicas)];
+    return ['', ...unicas];
   }, [productos]);
 
-  // 2. Extraer atributos dinámicos según el rubro y la categoría seleccionada
-  const mapaAtributos = useMemo(() => {
-    const base =
-      categoriaActiva === 'Todas'
-        ? productos
-        : productos.filter((p) => p.categoria === categoriaActiva);
-
-    const acumulador = {};
-    base.forEach((p) => {
-      if (p.atributos && typeof p.atributos === 'object') {
-        Object.entries(p.atributos).forEach(([clave, valor]) => {
-          if (valor !== undefined && valor !== null && String(valor).trim() !== '') {
-            if (!acumulador[clave]) acumulador[clave] = new Set();
-            acumulador[clave].add(String(valor));
-          }
-        });
+  const { marcas, mapaAtributos } = useMemo(() => {
+    const base = categoriaActiva
+      ? productos.filter((p) => p.categoria === categoriaActiva)
+      : productos;
+    const atributos = new Map();
+    for (const producto of base) {
+      for (const [clave, valor] of Object.entries(producto.atributos ?? {})) {
+        if (esAtributoMarca(clave) || !String(valor ?? '').trim()) continue;
+        if (!atributos.has(clave)) atributos.set(clave, new Set());
+        atributos.get(clave).add(String(valor));
       }
-    });
-
-    const resultado = {};
-    Object.keys(acumulador).forEach((clave) => {
-      resultado[clave] = Array.from(acumulador[clave]);
-    });
-    return resultado;
+    }
+    return { marcas: opcionesDeMarca(base), mapaAtributos: Array.from(atributos) };
   }, [productos, categoriaActiva]);
 
   // 3. Filtrar productos por búsqueda + categoría + atributos dinámicos
   const productosFiltrados = useMemo(() => {
+    const coincideBusqueda = coincidenciaBusquedaCatalogo(productos, busqueda);
     return productos.filter((p) => {
-      const coincideTexto =
-        p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-        (p.categoria && p.categoria.toLowerCase().includes(busqueda.toLowerCase()));
+      const coincideTexto = coincideBusqueda(p);
 
       const coincideCategoria =
-        categoriaActiva === 'Todas' || p.categoria === categoriaActiva;
+        !categoriaActiva || p.categoria === categoriaActiva;
 
       const coincideAtributos = Object.entries(atributosActivos).every(
         ([clave, valorSeleccionado]) => {
@@ -74,6 +62,11 @@ export default function CatalogoTienda() {
     });
   }, [productos, busqueda, categoriaActiva, atributosActivos]);
 
+  const resultados = useMemo(() => {
+    const coincide = coincidenciaMarcaYPrecio({ marca: marcaActiva, desde, hasta });
+    return productosFiltrados.filter(coincide);
+  }, [productosFiltrados, marcaActiva, desde, hasta]);
+
   const toggleAtributo = (clave, valor) => {
     setAtributosActivos((prev) => ({
       ...prev,
@@ -83,63 +76,15 @@ export default function CatalogoTienda() {
 
   const limpiarFiltros = () => {
     setBusqueda('');
-    setCategoriaActiva('Todas');
+    setCategoriaActiva('');
     setAtributosActivos({});
+    setMarcaActiva('');
+    setDesde('');
+    setHasta('');
   };
 
-  const totalItemsCarrito = carrito.reduce((acc, item) => acc + item.cantidad, 0);
-  const slugActual = slug || tienda.slug || 'mi-tienda';
-
-  const navLinks = (
-    <>
-      <Link to="/" style={{ color: '#4a4a4a' }}>Inicio Plataforma</Link>
-      <Link to={`/tienda/${slugActual}`} aria-current="page" style={{ color: '#4a4a4a', fontWeight: 700 }}>
-        Catálogo
-      </Link>
-      {cliente && (
-        <>
-          <Link to={`/tienda/${slugActual}/mis-compras`} style={{ color: '#4a4a4a' }}>
-            Mis Compras
-          </Link>
-          <button
-            type="button"
-            onClick={() => {
-              logoutCliente();
-              showToast('Sesión cerrada correctamente');
-            }}
-            style={{
-              background: 'transparent',
-              border: '1px solid rgba(255,255,255,0.4)',
-              color: '#4a4a4a',
-              padding: '6px 12px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 500,
-              fontSize: '14px'
-            }}
-          >
-            Cerrar Sesión
-          </button>
-        </>
-      )}
-      {!cliente && (
-        <Link to={`/tienda/${slugActual}/login`} style={{ color: '#4a4a4a' }}>
-          Ingresar
-        </Link>
-      )}
-      <Link
-        to={`/tienda/${slugActual}/carrito`}
-        className="btn small"
-        style={{ background: '#4a4a4a', color: 'var(--color-primario, #0071e3)', fontWeight: 700 }}
-      >
-        🛒 Carrito
-        <span className="nav-badge-carrito">{totalItemsCarrito}</span>
-      </Link>
-    </>
-  );
-
   return (
-    <PlantillaTienda navLinks={navLinks}>
+    <>
       {/* Hero de la Tienda con los colores dinámicos del Store */}
       <header className="catalogo-hero">
         <div className="catalogo-hero-inner">
@@ -158,7 +103,8 @@ export default function CatalogoTienda() {
             <span>🔍</span>
             <input
               type="search"
-              placeholder="Buscar producto o categoría..."
+              placeholder="Buscar por producto, categoría o SKU..."
+              aria-label="Buscar por producto, categoría o SKU"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
             />
@@ -169,64 +115,119 @@ export default function CatalogoTienda() {
       {/* Contenedor Principal */}
       <main className="catalogo-container">
         {/* Panel lateral de filtros */}
-        <aside className="filtros-panel">
-          <div className="filtros-header">
-            <h3>Filtros</h3>
-            <button type="button" className="btn-limpiar" onClick={limpiarFiltros}>
-              Limpiar todo
-            </button>
-          </div>
-
-          {/* Filtro por Categoría */}
-          <div className="filtro-grupo">
-            <div className="filtro-titulo">Categorías</div>
-            <div className="chips-lista">
-              {categorias.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  className={`chip-filtro ${categoriaActiva === cat ? 'activo' : ''}`}
-                  onClick={() => {
-                    setCategoriaActiva(cat);
-                    setAtributosActivos({});
-                  }}
-                >
-                  {cat}
-                </button>
-              ))}
+        <aside className="filtros-panel" aria-label="Filtros de productos">
+          <button
+            type="button"
+            className="filtros-toggle"
+            aria-expanded={filtrosAbiertos}
+            aria-controls="catalogo-filtros"
+            onClick={() => setFiltrosAbiertos((abiertos) => !abiertos)}
+          >
+            {filtrosAbiertos ? 'Ocultar filtros' : 'Mostrar filtros'}
+          </button>
+          <div id="catalogo-filtros" className={`filtros-contenido${filtrosAbiertos ? ' abierto' : ''}`}>
+            <div className="filtros-header">
+              <h2>Filtros</h2>
+              <button type="button" className="btn-limpiar" onClick={limpiarFiltros}>
+                Limpiar todo
+              </button>
             </div>
-          </div>
 
-          {/* Filtros Dinámicos por Atributos según el Rubro */}
-          {Object.entries(mapaAtributos).map(([clave, valores]) => (
-            <div key={clave} className="filtro-grupo">
-              <div className="filtro-titulo">{clave}</div>
+            <fieldset className="filtro-grupo">
+              <legend className="filtro-titulo">Categorías</legend>
               <div className="chips-lista">
-                {valores.map((valor) => (
+                {categorias.map((cat) => (
                   <button
-                    key={valor}
+                    key={cat}
                     type="button"
-                    className={`chip-filtro ${atributosActivos[clave] === valor ? 'activo' : ''
-                      }`}
-                    onClick={() => toggleAtributo(clave, valor)}
+                    className={`chip-filtro ${categoriaActiva === cat ? 'activo' : ''}`}
+                    aria-pressed={categoriaActiva === cat}
+                    onClick={() => {
+                      if (categoriaActiva === cat) return;
+                      setCategoriaActiva(cat);
+                      setAtributosActivos({});
+                      setMarcaActiva('');
+                    }}
                   >
-                    {valor}
+                    {cat || 'Todas'}
                   </button>
                 ))}
               </div>
-            </div>
-          ))}
+            </fieldset>
+
+            <fieldset className="filtro-grupo filtro-precio">
+              <legend className="filtro-titulo">Precio (S/)</legend>
+              <div className="filtro-precio-campos">
+                <label>
+                  Desde
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={desde}
+                    aria-invalid={Boolean(errorPrecio)}
+                    aria-describedby={errorPrecio ? 'catalogo-precio-error' : undefined}
+                    onChange={(e) => setDesde(e.target.value)}
+                  />
+                </label>
+                <label>
+                  Hasta
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={hasta}
+                    aria-invalid={Boolean(errorPrecio)}
+                    aria-describedby={errorPrecio ? 'catalogo-precio-error' : undefined}
+                    onChange={(e) => setHasta(e.target.value)}
+                  />
+                </label>
+              </div>
+              {errorPrecio && <p id="catalogo-precio-error" role="alert">{errorPrecio}</p>}
+            </fieldset>
+
+            <label className="filtro-grupo filtro-marca">
+              <span className="filtro-titulo">Marca</span>
+              <select value={marcaActiva} onChange={(e) => setMarcaActiva(e.target.value)} disabled={!marcas.length}>
+                <option value="">{marcas.length ? 'Todas las marcas' : 'No hay marcas disponibles'}</option>
+                {marcas.map(({ valor, etiqueta }) => <option key={valor} value={valor}>{etiqueta}</option>)}
+              </select>
+            </label>
+
+            {mapaAtributos.map(([clave, valores]) => (
+              <fieldset key={clave} className="filtro-grupo">
+                <legend className="filtro-titulo">{clave}</legend>
+                <div className="chips-lista">
+                  {Array.from(valores, (valor) => (
+                    <button
+                      key={valor}
+                      type="button"
+                      className={`chip-filtro ${atributosActivos[clave] === valor ? 'activo' : ''}`}
+                      aria-pressed={atributosActivos[clave] === valor}
+                      onClick={() => toggleAtributo(clave, valor)}
+                    >
+                      {valor}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            ))}
+          </div>
         </aside>
 
         {/* Listado de Productos */}
         <section>
           <div className="productos-toolbar">
-            <h2>
-              Mostrando {productosFiltrados.length} de {productos.length} productos
+            <h2 aria-live="polite">
+              Mostrando {resultados.length} de {productos.length} productos
             </h2>
           </div>
 
-          {productosFiltrados.length === 0 ? (
+          {errorCatalogo ? (
+            <p className="portal-status" role="alert">No se pudo cargar el catálogo. Recarga la página.</p>
+          ) : !catalogoListo ? (
+            <p className="portal-status" role="status">Cargando catálogo…</p>
+          ) : resultados.length === 0 ? (
             <div
               style={{
                 padding: 48,
@@ -245,7 +246,7 @@ export default function CatalogoTienda() {
             </div>
           ) : (
             <div className="productos-grid">
-              {productosFiltrados.map((producto) => {
+              {resultados.map((producto) => {
                 const enCarrito =
                   carrito.find((item) => item.idProducto === producto.idProducto)?.cantidad || 0;
                 const stockRestante = Math.max(0, Number(producto.stock) - enCarrito);
@@ -276,6 +277,7 @@ export default function CatalogoTienda() {
                       </div>
 
                       <h3 className="producto-nombre">{producto.nombre}</h3>
+                      {producto.sku && <p className="small muted">SKU: {producto.sku}</p>}
 
                       {producto.atributos && Object.keys(producto.atributos).length > 0 && (
                         <div className="atributos-tags">
@@ -301,7 +303,7 @@ export default function CatalogoTienda() {
                             ? { opacity: 0.5, cursor: 'not-allowed' }
                             : undefined
                         }
-                        onClick={() => agregarAlCarrito(producto, 1)}
+                        onClick={() => agregarAlCarrito(slug, producto, 1)}
                       >
                         {agotado ? 'Sin stock' : '+ Agregar'}
                       </button>
@@ -313,6 +315,6 @@ export default function CatalogoTienda() {
           )}
         </section>
       </main>
-    </PlantillaTienda>
+    </>
   );
 }

@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react';
-import { useStore } from '../store/store';
-import { TIENDA_DEFAULT } from '../api/tiendaApi';
+import { Link } from 'react-router-dom';
+import { useSesion } from '../auth/sesionStore';
+import { saveTienda, TIENDA_DEFAULT } from '../api/tiendaApi';
 import { textoSobre } from '../store/theme';
 import { showToast } from '../components/toastBus';
-import PanelLayout from './PanelLayout';
 import './MarcaPanel.css';
 
 const URL_HTTP = /^https?:\/\//i;
 
 // Porta frontend/marca.html + frontend/js/marca.js.
 export default function MarcaPanel() {
-  const tienda = useStore((estado) => estado.tienda);
-  const saveTienda = useStore((estado) => estado.saveTienda);
+  const tienda = useSesion((estado) => estado.tienda);
+  const actualizarTienda = useSesion((estado) => estado.actualizarTienda);
+  const token = useSesion((estado) => estado.token);
 
   const [logoUrl, setLogoUrl] = useState('');
   const [colorPrimario, setColorPrimario] = useState(TIENDA_DEFAULT.colorPrimario);
@@ -19,9 +20,10 @@ export default function MarcaPanel() {
 
   // Cuando la tienda llega del store (cargar()), carga el formulario.
   useEffect(() => {
+    if (!tienda) return;
     setLogoUrl(tienda.logoUrl || '');
-    setColorPrimario(tienda.colorPrimario);
-    setColorSecundario(tienda.colorSecundario);
+    setColorPrimario(tienda.colorPrimario || TIENDA_DEFAULT.colorPrimario);
+    setColorSecundario(tienda.colorSecundario || TIENDA_DEFAULT.colorSecundario);
   }, [tienda]);
 
   function restablecer() {
@@ -37,15 +39,29 @@ export default function MarcaPanel() {
       showToast('El logo debe empezar con http:// o https://');
       return;
     }
-    // TODO: cuando exista, saveTienda hará PUT /tiendas/{slug} con el objeto completo.
-    await saveTienda({ ...tienda, logoUrl: logo, colorPrimario, colorSecundario });
-    showToast('Marca guardada');
+    try {
+      const guardada = await saveTienda({ ...tienda, logoUrl: logo, colorPrimario, colorSecundario });
+      if (useSesion.getState().token === token) {
+        actualizarTienda(guardada);
+        showToast('Marca guardada');
+      }
+    } catch (error) {
+      showToast(error.message || 'No se pudo guardar la marca.');
+    }
+  }
+
+  if (!tienda?.slug) {
+    return (
+      <main className="page">
+        <header className="head"><h1>Marca</h1><p>Inicia sesión nuevamente para identificar tu tienda.</p></header>
+        <Link className="btn" to="/admin/login" state={{ from: '/admin/marca' }}>Iniciar sesión</Link>
+      </main>
+    );
   }
 
   const logoValido = URL_HTTP.test(logoUrl.trim());
 
   return (
-    <PanelLayout>
       <main className="page">
         <header className="head">
           <h1>Tu marca.</h1>
@@ -116,6 +132,5 @@ export default function MarcaPanel() {
           </div>
         </div>
       </main>
-    </PanelLayout>
   );
 }

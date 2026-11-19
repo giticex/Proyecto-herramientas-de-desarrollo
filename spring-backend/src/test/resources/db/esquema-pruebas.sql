@@ -8,6 +8,8 @@ DROP TABLE IF EXISTS producto;
 DROP TABLE IF EXISTS cliente;
 DROP TABLE IF EXISTS usuario;
 DROP TABLE IF EXISTS persona;
+DROP TABLE IF EXISTS emisor_tienda;
+DROP TABLE IF EXISTS correlativo_emisor;
 DROP TABLE IF EXISTS tienda;
 DROP TABLE IF EXISTS medio_pago;
 DROP TABLE IF EXISTS tipo_documento;
@@ -107,6 +109,7 @@ CREATE TABLE producto (
     stock          INT           NOT NULL,
     precio         DECIMAL(10, 2) NOT NULL,
     categoria      VARCHAR(80)   NOT NULL,
+    sku            VARCHAR(40)   NOT NULL,
     codigo         VARCHAR(50)   NOT NULL DEFAULT '',
     unidad_medida  VARCHAR(5)    NOT NULL DEFAULT 'NIU',
     afectacion_igv VARCHAR(2)    NOT NULL DEFAULT '01',
@@ -114,13 +117,34 @@ CREATE TABLE producto (
     id_tienda      INT           NOT NULL,
     PRIMARY KEY (id_producto),
     KEY idx_producto_id_tienda (id_tienda),
+    UNIQUE KEY uq_producto_tienda_sku (id_tienda, sku),
     CONSTRAINT fk_producto_tienda FOREIGN KEY (id_tienda)
         REFERENCES tienda (id_tienda)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Cabecera del comprobante de pago electronico.
+CREATE TABLE IF NOT EXISTS emisor_tienda (
+    id_tienda   INT        NOT NULL,
+    datos       JSON       NOT NULL,
+    serie_boleta VARCHAR(4) NOT NULL,
+    serie_factura VARCHAR(4) NOT NULL,
+    PRIMARY KEY (id_tienda),
+    CONSTRAINT fk_emisor_tienda FOREIGN KEY (id_tienda) REFERENCES tienda (id_tienda)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS correlativo_emisor (
+    ruc_emisor VARCHAR(11) NOT NULL,
+    id_tipo_documento VARCHAR(25) NOT NULL,
+    serie VARCHAR(4) NOT NULL,
+    ultimo_numero INT NOT NULL,
+    PRIMARY KEY (ruc_emisor, id_tipo_documento, serie),
+    CONSTRAINT fk_correlativo_emisor_tipo FOREIGN KEY (id_tipo_documento)
+        REFERENCES tipo_documento (id_documento)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE venta (
     id_venta          VARCHAR(36) NOT NULL,
+    id_tienda         INT          NOT NULL,
     id_cliente        VARCHAR(20) NOT NULL,
     id_persona        VARCHAR(25) NOT NULL,
     id_tipo_documento VARCHAR(25) NOT NULL,
@@ -160,13 +184,23 @@ CREATE TABLE venta (
     cdR_summary             VARCHAR(500) NULL,
     leyendas                TEXT         NULL,
     observacion             VARCHAR(500) NOT NULL DEFAULT '',
+    ruc_emisor        VARCHAR(11) NULL,
+    emisor_snapshot   JSON NULL,
+    xml_emitido       LONGTEXT NULL,
+    huella_operacion  VARCHAR(64) NULL,
+    serie_legacy      VARCHAR(4) GENERATED ALWAYS AS
+        (CASE WHEN ruc_emisor IS NULL THEN serie ELSE NULL END) VIRTUAL,
     PRIMARY KEY (id_venta),
-    UNIQUE KEY uk_venta_serie_correlativo (serie, correlativo),
+    KEY idx_venta_tienda_fecha (id_tienda, fecha_emision),
+    UNIQUE KEY uk_venta_legacy (serie_legacy, correlativo),
+    UNIQUE KEY uk_venta_emisor_documento (ruc_emisor, id_tipo_documento, serie, correlativo),
     KEY idx_venta_id_cliente (id_cliente),
     KEY idx_venta_id_persona (id_persona),
     KEY idx_venta_id_tipo_documento (id_tipo_documento),
     KEY idx_venta_id_medio_pago (id_medio_pago),
     KEY idx_venta_fecha_emision (fecha_emision),
+    CONSTRAINT fk_venta_tienda FOREIGN KEY (id_tienda)
+        REFERENCES tienda (id_tienda),
     CONSTRAINT fk_venta_cliente FOREIGN KEY (id_cliente)
         REFERENCES cliente (id_cliente),
     CONSTRAINT fk_venta_persona FOREIGN KEY (id_persona)

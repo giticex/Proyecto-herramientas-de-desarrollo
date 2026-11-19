@@ -37,6 +37,8 @@ DROP TABLE IF EXISTS persona;
 DROP TABLE IF EXISTS cliente;
 DROP TABLE IF EXISTS rol;
 DROP TABLE IF EXISTS producto;
+DROP TABLE IF EXISTS emisor_tienda;
+DROP TABLE IF EXISTS correlativo_emisor;
 DROP TABLE IF EXISTS tienda;
 DROP TABLE IF EXISTS medio_pago;
 DROP TABLE IF EXISTS tipo_documento;
@@ -162,6 +164,7 @@ CREATE TABLE producto (
     stock          INT           NOT NULL,
     precio         DECIMAL(10, 2) NOT NULL,
     categoria      VARCHAR(80)   NOT NULL,
+    sku            VARCHAR(40)   NOT NULL,
     codigo         VARCHAR(50)   NOT NULL DEFAULT '',
     unidad_medida  VARCHAR(5)    NOT NULL DEFAULT 'NIU',
     afectacion_igv VARCHAR(2)    NOT NULL DEFAULT '01',
@@ -169,6 +172,7 @@ CREATE TABLE producto (
     id_tienda      INT           NOT NULL,
     PRIMARY KEY (id_producto),
     KEY idx_producto_id_tienda (id_tienda),
+    UNIQUE KEY uq_producto_tienda_sku (id_tienda, sku),
     CONSTRAINT fk_producto_tienda FOREIGN KEY (id_tienda)
         REFERENCES tienda (id_tienda)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -177,8 +181,28 @@ CREATE TABLE producto (
 -- Cabecera del comprobante de pago electronico. Los datos del receptor y los
 -- totales se guardan "congelados": el comprobante emitido debe seguir
 -- mostrando lo que facturo aunque el cliente o el catalogo cambien.
+CREATE TABLE IF NOT EXISTS emisor_tienda (
+    id_tienda   INT        NOT NULL,
+    datos       JSON       NOT NULL,
+    serie_boleta VARCHAR(4) NOT NULL,
+    serie_factura VARCHAR(4) NOT NULL,
+    PRIMARY KEY (id_tienda),
+    CONSTRAINT fk_emisor_tienda FOREIGN KEY (id_tienda) REFERENCES tienda (id_tienda)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS correlativo_emisor (
+    ruc_emisor VARCHAR(11) NOT NULL,
+    id_tipo_documento VARCHAR(25) NOT NULL,
+    serie VARCHAR(4) NOT NULL,
+    ultimo_numero INT NOT NULL,
+    PRIMARY KEY (ruc_emisor, id_tipo_documento, serie),
+    CONSTRAINT fk_correlativo_emisor_tipo FOREIGN KEY (id_tipo_documento)
+        REFERENCES tipo_documento (id_documento)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE venta (
     id_venta          VARCHAR(36) NOT NULL,
+    id_tienda         INT          NOT NULL,
     id_cliente        VARCHAR(20) NOT NULL,
     id_persona        VARCHAR(25) NOT NULL,
     id_tipo_documento VARCHAR(25) NOT NULL,
@@ -218,13 +242,23 @@ CREATE TABLE venta (
     cdR_summary             VARCHAR(500) NULL,
     leyendas                TEXT         NULL,
     observacion             VARCHAR(500) NOT NULL DEFAULT '',
+    ruc_emisor        VARCHAR(11) NULL,
+    emisor_snapshot   JSON NULL,
+    xml_emitido       LONGTEXT NULL,
+    huella_operacion  VARCHAR(64) NULL,
+    serie_legacy      VARCHAR(4) GENERATED ALWAYS AS
+        (CASE WHEN ruc_emisor IS NULL THEN serie ELSE NULL END) VIRTUAL,
     PRIMARY KEY (id_venta),
-    UNIQUE KEY uk_venta_serie_correlativo (serie, correlativo),
+    KEY idx_venta_tienda_fecha (id_tienda, fecha_emision),
+    UNIQUE KEY uk_venta_legacy (serie_legacy, correlativo),
+    UNIQUE KEY uk_venta_emisor_documento (ruc_emisor, id_tipo_documento, serie, correlativo),
     KEY idx_venta_id_cliente (id_cliente),
     KEY idx_venta_id_persona (id_persona),
     KEY idx_venta_id_tipo_documento (id_tipo_documento),
     KEY idx_venta_id_medio_pago (id_medio_pago),
     KEY idx_venta_fecha_emision (fecha_emision),
+    CONSTRAINT fk_venta_tienda FOREIGN KEY (id_tienda)
+        REFERENCES tienda (id_tienda),
     CONSTRAINT fk_venta_cliente FOREIGN KEY (id_cliente)
         REFERENCES cliente (id_cliente),
     CONSTRAINT fk_venta_persona FOREIGN KEY (id_persona)
@@ -403,30 +437,30 @@ INSERT INTO usuario (usuario, contrasena, id_persona, id_rol, id_tienda) VALUES
 -- gestion de productos lo pide explicitamente al agregar. Todos de la tienda
 -- demo (id_tienda=1). El precio SIEMPRE incluye IGV; la afectacion dice si el
 -- item lo paga.
-INSERT INTO producto (id_producto, nombre, stock, precio, categoria, codigo, unidad_medida, afectacion_igv, id_tienda) VALUES
-(1, 'Laptop Lenovo', 20, 2500.00, 'Laptops', 'P001', 'NIU', '01', 1),
-(2, 'Mouse Logitech', 50, 45.00, 'Periféricos', 'P002', 'NIU', '01', 1),
-(3, 'Teclado Mecánico', 35, 150.00, 'Periféricos', 'P003', 'NIU', '01', 1),
-(4, 'Monitor Samsung', 18, 780.00, 'Monitores', 'P004', 'NIU', '01', 1),
-(5, 'Impresora Epson', 12, 650.00, 'Impresión', 'P005', 'NIU', '01', 1),
-(6, 'USB 32GB', 100, 25.00, 'Almacenamiento', 'P006', 'NIU', '01', 1),
-(7, 'Disco SSD 480GB', 40, 230.00, 'Almacenamiento', 'P007', 'NIU', '01', 1),
-(8, 'Audífonos Sony', 30, 120.00, 'Audio', 'P008', 'NIU', '01', 1),
-(9, 'Parlante JBL', 25, 180.00, 'Audio', 'P009', 'NIU', '01', 1),
-(10, 'Tablet Samsung', 15, 950.00, 'Tablets', 'P010', 'NIU', '01', 1),
-(11, 'Cámara Web', 22, 90.00, 'Accesorios', 'P011', 'NIU', '01', 1),
-(12, 'Router TP-Link', 28, 160.00, 'Redes', 'P012', 'NIU', '01', 1),
+INSERT INTO producto (id_producto, nombre, stock, precio, categoria, codigo, unidad_medida, afectacion_igv, id_tienda, sku) VALUES
+(1, 'Laptop Lenovo', 20, 2500.00, 'Laptops', 'P001', 'NIU', '01', 1, 'SKU-1'),
+(2, 'Mouse Logitech', 50, 45.00, 'Periféricos', 'P002', 'NIU', '01', 1, 'SKU-2'),
+(3, 'Teclado Mecánico', 35, 150.00, 'Periféricos', 'P003', 'NIU', '01', 1, 'SKU-3'),
+(4, 'Monitor Samsung', 18, 780.00, 'Monitores', 'P004', 'NIU', '01', 1, 'SKU-4'),
+(5, 'Impresora Epson', 12, 650.00, 'Impresión', 'P005', 'NIU', '01', 1, 'SKU-5'),
+(6, 'USB 32GB', 100, 25.00, 'Almacenamiento', 'P006', 'NIU', '01', 1, 'SKU-6'),
+(7, 'Disco SSD 480GB', 40, 230.00, 'Almacenamiento', 'P007', 'NIU', '01', 1, 'SKU-7'),
+(8, 'Audífonos Sony', 30, 120.00, 'Audio', 'P008', 'NIU', '01', 1, 'SKU-8'),
+(9, 'Parlante JBL', 25, 180.00, 'Audio', 'P009', 'NIU', '01', 1, 'SKU-9'),
+(10, 'Tablet Samsung', 15, 950.00, 'Tablets', 'P010', 'NIU', '01', 1, 'SKU-10'),
+(11, 'Cámara Web', 22, 90.00, 'Accesorios', 'P011', 'NIU', '01', 1, 'SKU-11'),
+(12, 'Router TP-Link', 28, 160.00, 'Redes', 'P012', 'NIU', '01', 1, 'SKU-12'),
 -- Item de demostracion INAFECTO: se factura sin IGV (catalogo 07, codigo 02).
-(13, 'Cable HDMI', 60, 30.00, 'Cables', 'P013', 'NIU', '02', 1),
-(14, 'Silla Gamer', 10, 520.00, 'Gaming', 'P014', 'NIU', '01', 1),
-(15, 'Micrófono USB', 17, 210.00, 'Audio', 'P015', 'NIU', '01', 1);
+(13, 'Cable HDMI', 60, 30.00, 'Cables', 'P013', 'NIU', '02', 1, 'SKU-13'),
+(14, 'Silla Gamer', 10, 520.00, 'Gaming', 'P014', 'NIU', '01', 1, 'SKU-14'),
+(15, 'Micrófono USB', 17, 210.00, 'Audio', 'P015', 'NIU', '01', 1, 'SKU-15');
 
 -- Comprador en id_cliente (CLI001..CLI015). Persona en id_persona (PERADM,
 -- la cuenta que proceso la carga inicial).
 -- Los totales de la venta se guardan "congelados" (base imponible, IGV y
 -- total) junto con los datos del receptor: el comprobante emitido no cambia
 -- aunque el cliente o el catalogo cambien despues.
-INSERT INTO venta (id_venta, id_cliente, id_persona, id_tipo_documento, numero_documento, id_medio_pago,
+INSERT INTO venta (id_venta, id_tienda, id_cliente, id_persona, id_tipo_documento, numero_documento, id_medio_pago,
                     fecha_emision, serie, correlativo, moneda, condicion_operacion, forma_pago,
                     total_venta, total_gravada, total_inafecta, total_exonerada, total_gratuita,
                     total_igv, total_descuentos, monto_total_credito,
@@ -434,49 +468,49 @@ INSERT INTO venta (id_venta, id_cliente, id_persona, id_tipo_documento, numero_d
                     receptor_direccion, receptor_ubigeo, receptor_distrito, receptor_provincia,
                     receptor_departamento, receptor_pais, entrega_direccion, entrega_ubigeo,
                     email_contacto, estado, estado_sunat, observacion) VALUES
-('VEN001', 'CLI001', 'PERADM', 'TD001', 'B001-000001', 'MP004', CURRENT_TIMESTAMP, 'B001', 1, 'PEN', '01', '01',
+('VEN001', 1, 'CLI001', 'PERADM', 'TD001', 'B001-000001', 'MP004', CURRENT_TIMESTAMP, 'B001', 1, 'PEN', '01', '01',
  2590.00, 2194.91, 0.00, 0.00, 0.00, 395.09, 0.00, 0.00,
  '6', '', 'Luis García', '', '', '', '', '', 'PE', '', '', 'luis@gmail.com', 'MIGRADO', NULL, 'Venta historica migrada'),
-('VEN002', 'CLI002', 'PERADM', 'TD002', 'F001-000002', 'MP002', CURRENT_TIMESTAMP, 'F001', 2, 'PEN', '01', '01',
+('VEN002', 1, 'CLI002', 'PERADM', 'TD002', 'F001-000002', 'MP002', CURRENT_TIMESTAMP, 'F001', 2, 'PEN', '01', '01',
  930.00, 788.14, 0.00, 0.00, 0.00, 141.86, 0.00, 0.00,
  '6', '', 'Ana Torres', '', '', '', '', '', 'PE', '', '', 'ana@gmail.com', 'MIGRADO', NULL, 'Venta historica migrada'),
-('VEN003', 'CLI003', 'PERADM', 'TD001', 'B001-000003', 'MP001', CURRENT_TIMESTAMP, 'B001', 3, 'PEN', '01', '01',
+('VEN003', 1, 'CLI003', 'PERADM', 'TD001', 'B001-000003', 'MP001', CURRENT_TIMESTAMP, 'B001', 3, 'PEN', '01', '01',
  75.00, 63.56, 0.00, 0.00, 0.00, 11.44, 0.00, 0.00,
  '6', '', 'Carlos Ramos', '', '', '', '', '', 'PE', '', '', 'carlos@gmail.com', 'MIGRADO', NULL, 'Venta historica migrada'),
-('VEN004', 'CLI004', 'PERADM', 'TD002', 'F001-000004', 'MP006', CURRENT_TIMESTAMP, 'F001', 4, 'PEN', '01', '01',
+('VEN004', 1, 'CLI004', 'PERADM', 'TD002', 'F001-000004', 'MP006', CURRENT_TIMESTAMP, 'F001', 4, 'PEN', '01', '01',
  650.00, 550.85, 0.00, 0.00, 0.00, 99.15, 0.00, 0.00,
  '6', '', 'María Flores', '', '', '', '', '', 'PE', '', '', 'maria@gmail.com', 'MIGRADO', NULL, 'Venta historica migrada'),
-('VEN005', 'CLI005', 'PERADM', 'TD001', 'B001-000005', 'MP005', CURRENT_TIMESTAMP, 'B001', 5, 'PEN', '01', '01',
+('VEN005', 1, 'CLI005', 'PERADM', 'TD001', 'B001-000005', 'MP005', CURRENT_TIMESTAMP, 'B001', 5, 'PEN', '01', '01',
  230.00, 194.92, 0.00, 0.00, 0.00, 35.08, 0.00, 0.00,
  '6', '', 'Pedro Castro', '', '', '', '', '', 'PE', '', '', 'pedro@gmail.com', 'MIGRADO', NULL, 'Venta historica migrada'),
-('VEN006', 'CLI006', 'PERADM', 'TD002', 'F001-000006', 'MP009', CURRENT_TIMESTAMP, 'F001', 6, 'PEN', '01', '01',
+('VEN006', 1, 'CLI006', 'PERADM', 'TD002', 'F001-000006', 'MP009', CURRENT_TIMESTAMP, 'F001', 6, 'PEN', '01', '01',
  240.00, 203.39, 0.00, 0.00, 0.00, 36.61, 0.00, 0.00,
  '6', '', 'Lucía Mendoza', '', '', '', '', '', 'PE', '', '', 'lucia@gmail.com', 'MIGRADO', NULL, 'Venta historica migrada'),
-('VEN007', 'CLI007', 'PERADM', 'TD001', 'B001-000007', 'MP003', CURRENT_TIMESTAMP, 'B001', 7, 'PEN', '01', '01',
+('VEN007', 1, 'CLI007', 'PERADM', 'TD001', 'B001-000007', 'MP003', CURRENT_TIMESTAMP, 'B001', 7, 'PEN', '01', '01',
  180.00, 152.54, 0.00, 0.00, 0.00, 27.46, 0.00, 0.00,
  '6', '', 'Jorge Paredes', '', '', '', '', '', 'PE', '', '', 'jorge@gmail.com', 'MIGRADO', NULL, 'Venta historica migrada'),
-('VEN008', 'CLI008', 'PERADM', 'TD002', 'F001-000008', 'MP010', CURRENT_TIMESTAMP, 'F001', 8, 'PEN', '01', '01',
+('VEN008', 1, 'CLI008', 'PERADM', 'TD002', 'F001-000008', 'MP010', CURRENT_TIMESTAMP, 'F001', 8, 'PEN', '01', '01',
  950.00, 805.08, 0.00, 0.00, 0.00, 144.92, 0.00, 0.00,
  '6', '', 'Rosa Vargas', '', '', '', '', '', 'PE', '', '', 'rosa@gmail.com', 'MIGRADO', NULL, 'Venta historica migrada'),
-('VEN009', 'CLI009', 'PERADM', 'TD001', 'B001-000009', 'MP001', CURRENT_TIMESTAMP, 'B001', 9, 'PEN', '01', '01',
+('VEN009', 1, 'CLI009', 'PERADM', 'TD001', 'B001-000009', 'MP001', CURRENT_TIMESTAMP, 'B001', 9, 'PEN', '01', '01',
  180.00, 152.54, 0.00, 0.00, 0.00, 27.46, 0.00, 0.00,
  '6', '', 'Miguel Salas', '', '', '', '', '', 'PE', '', '', 'miguel@gmail.com', 'MIGRADO', NULL, 'Venta historica migrada'),
-('VEN010', 'CLI010', 'PERADM', 'TD001', 'B001-000010', 'MP004', CURRENT_TIMESTAMP, 'B001', 10, 'PEN', '01', '01',
+('VEN010', 1, 'CLI010', 'PERADM', 'TD001', 'B001-000010', 'MP004', CURRENT_TIMESTAMP, 'B001', 10, 'PEN', '01', '01',
  160.00, 135.59, 0.00, 0.00, 0.00, 24.41, 0.00, 0.00,
  '6', '', 'Diana Quispe', '', '', '', '', '', 'PE', '', '', 'diana@gmail.com', 'MIGRADO', NULL, 'Venta historica migrada'),
-('VEN011', 'CLI011', 'PERADM', 'TD001', 'B001-000011', 'MP005', CURRENT_TIMESTAMP, 'B001', 11, 'PEN', '01', '01',
+('VEN011', 1, 'CLI011', 'PERADM', 'TD001', 'B001-000011', 'MP005', CURRENT_TIMESTAMP, 'B001', 11, 'PEN', '01', '01',
  120.00, 101.69, 0.00, 0.00, 0.00, 18.31, 0.00, 0.00,
  '6', '', 'José Reyes', '', '', '', '', '', 'PE', '', '', 'jose@gmail.com', 'MIGRADO', NULL, 'Venta historica migrada'),
-('VEN012', 'CLI012', 'PERADM', 'TD001', 'B001-000012', 'MP006', CURRENT_TIMESTAMP, 'B001', 12, 'PEN', '01', '01',
+('VEN012', 1, 'CLI012', 'PERADM', 'TD001', 'B001-000012', 'MP006', CURRENT_TIMESTAMP, 'B001', 12, 'PEN', '01', '01',
  520.00, 440.68, 0.00, 0.00, 0.00, 79.32, 0.00, 0.00,
  '6', '', 'Elena Campos', '', '', '', '', '', 'PE', '', '', 'elena@gmail.com', 'MIGRADO', NULL, 'Venta historica migrada'),
-('VEN013', 'CLI013', 'PERADM', 'TD001', 'B001-000013', 'MP007', CURRENT_TIMESTAMP, 'B001', 13, 'PEN', '01', '01',
+('VEN013', 1, 'CLI013', 'PERADM', 'TD001', 'B001-000013', 'MP007', CURRENT_TIMESTAMP, 'B001', 13, 'PEN', '01', '01',
  210.00, 177.97, 0.00, 0.00, 0.00, 32.03, 0.00, 0.00,
  '6', '', 'Raúl Navarro', '', '', '', '', '', 'PE', '', '', 'raul@gmail.com', 'MIGRADO', NULL, 'Venta historica migrada'),
-('VEN014', 'CLI014', 'PERADM', 'TD001', 'B001-000014', 'MP013', CURRENT_TIMESTAMP, 'B001', 14, 'PEN', '01', '01',
+('VEN014', 1, 'CLI014', 'PERADM', 'TD001', 'B001-000014', 'MP013', CURRENT_TIMESTAMP, 'B001', 14, 'PEN', '01', '01',
  2500.00, 2118.64, 0.00, 0.00, 0.00, 381.36, 0.00, 0.00,
  '6', '', 'Sofía Herrera', '', '', '', '', '', 'PE', '', '', 'sofia@gmail.com', 'MIGRADO', NULL, 'Venta historica migrada'),
-('VEN015', 'CLI015', 'PERADM', 'TD001', 'B001-000015', 'MP015', CURRENT_TIMESTAMP, 'B001', 15, 'PEN', '01', '01',
+('VEN015', 1, 'CLI015', 'PERADM', 'TD001', 'B001-000015', 'MP015', CURRENT_TIMESTAMP, 'B001', 15, 'PEN', '01', '01',
  45.00, 38.14, 0.00, 0.00, 0.00, 6.86, 0.00, 0.00,
  '6', '', 'Fernando Lozano', '', '', '', '', '', 'PE', '', '', 'fernando@gmail.com', 'MIGRADO', NULL, 'Venta historica migrada');
 

@@ -29,9 +29,8 @@ function tieneArchivoBackend(idVenta) {
   return Boolean(idVenta) && /^[0-9a-f]{8}-[0-9a-f]{4}/i.test(String(idVenta));
 }
 
-function tipoDocumentoTexto(codigo) {
-  if (codigo === '1') return 'RUC';
-  if (codigo === '6') return 'DNI';
+function tipoDocumentoTexto(codigo, numero) {
+  if (codigo === '1' || codigo === '6') return String(numero ?? '').length === 11 ? 'RUC' : 'DNI';
   if (codigo === '4') return 'Carnet de extranjería';
   if (codigo === '7') return 'Pasaporte';
   if (codigo === 'A') return 'Cédula diplomática';
@@ -101,7 +100,7 @@ function QrPlaceholder({ semilla }) {
  * totales, leyendas y, en la parte inferior, el codigo QR (con su zona de
  * silencio) junto al Valor Resumen.</p>
  */
-export default function ComprobanteImpresion({ comprobante, onClose }) {
+export default function ComprobanteImpresion({ comprobante, onClose, token }) {
   const [verQr, setVerQr] = useState(false);
   const [descargando, setDescargando] = useState(null);
 
@@ -132,7 +131,7 @@ export default function ComprobanteImpresion({ comprobante, onClose }) {
   const abrirArchivoSeguro = async (ruta, tipo) => {
     setDescargando(tipo);
     try {
-      await descargarArchivoSeguro(ruta, tipo, comprobante.numeroDocumento, { abrir: true });
+      await descargarArchivoSeguro(ruta, tipo, comprobante.numeroDocumento, { abrir: true, token });
     } catch (error) {
       showToast(error?.message || `No se pudo abrir el ${tipo}.`);
     } finally {
@@ -205,7 +204,7 @@ export default function ComprobanteImpresion({ comprobante, onClose }) {
               <strong>{receptor.razonSocial}</strong>
             </div>
             <div className="ci-dato">
-              <span>{tipoDocumentoTexto(receptor.tipoDocumento)}:</span>
+              <span>{tipoDocumentoTexto(receptor.tipoDocumento, receptor.numeroDocumento)}:</span>
               <strong>{receptor.numeroDocumento}</strong>
             </div>
             {domicilio.direccion && (

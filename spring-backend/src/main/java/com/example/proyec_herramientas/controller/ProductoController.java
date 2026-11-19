@@ -1,5 +1,7 @@
 package com.example.proyec_herramientas.controller;
 
+import jakarta.validation.Valid;
+
 import com.example.proyec_herramientas.exception.RecursoNoEncontradoException;
 import com.example.proyec_herramientas.model.ProductoDTO;
 import com.example.proyec_herramientas.security.SesionPrincipal;
@@ -47,13 +49,13 @@ public class ProductoController {
     }
 
     @PostMapping
-    public ResponseEntity<ProductoDTO> crear(@RequestBody ProductoDTO producto, Authentication authentication) {
+    public ResponseEntity<ProductoDTO> crear(@Valid @RequestBody ProductoDTO producto, Authentication authentication) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(productoService.crear(producto, idTienda(authentication)));
     }
 
     @PutMapping("/{id}")
-    public ProductoDTO actualizar(@PathVariable int id, @RequestBody ProductoDTO producto,
+    public ProductoDTO actualizar(@PathVariable int id, @Valid @RequestBody ProductoDTO producto,
             Authentication authentication) {
         ProductoDTO actualizado = productoService.actualizar(id, producto, idTienda(authentication));
         if (actualizado == null) {

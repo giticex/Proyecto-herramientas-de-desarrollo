@@ -1,6 +1,9 @@
 package com.example.proyec_herramientas.model;
 
+import jakarta.validation.constraints.Pattern;
+
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class ProductoDTO {
@@ -10,6 +13,9 @@ public class ProductoDTO {
     private int stock;
     private double precio;
     private String categoria;
+
+    @Pattern(regexp = "[A-Z0-9][A-Z0-9_-]{0,39}", message = "debe tener hasta 40 letras, números, guiones o guiones bajos y empezar con una letra o número")
+    private String sku;
 
     /** Codigo del item en el catalogo del emisor (se envia al CDR de SUNAT). */
     private String codigo = "";
@@ -32,6 +38,14 @@ public class ProductoDTO {
 
     public void setCategoria(String categoria) {
         this.categoria = categoria;
+    }
+
+    public String getSku() {
+        return sku;
+    }
+
+    public void setSku(String sku) {
+        this.sku = sku == null || sku.isBlank() ? null : sku.strip().toUpperCase(Locale.ROOT);
     }
 
     public String getCodigo() {

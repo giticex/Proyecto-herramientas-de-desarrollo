@@ -1,5 +1,6 @@
-import { Navigate, Outlet, useParams, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useParams, useLocation, useOutletContext } from 'react-router-dom';
 import { useClienteStore } from './clienteStore';
+import { rutaTienda } from './rutasTienda';
 
 // Si un comprador intenta entrar por URL al checkout o mis-compras sin sesión,
 // lo enviamos al login de esa tienda específica. Con sesión, el rol debe ser
@@ -9,22 +10,23 @@ import { useClienteStore } from './clienteStore';
 export default function RutaProtegidaCliente() {
   const { slug } = useParams();
   const location = useLocation();
+  const contexto = useOutletContext();
   const cliente = useClienteStore((estado) => estado.cliente);
 
-  if (!cliente) {
+  if (!cliente?.token) {
     // Guarda la ruta pedida para volver a ella después de iniciar sesión.
     return (
       <Navigate
-        to={`/tienda/${slug || 'mi-tienda'}/login`}
+        to={rutaTienda(slug) + '/login'}
         replace
-        state={{ from: location.pathname }}
+        state={{ from: location.pathname + location.search + location.hash }}
       />
     );
   }
 
   if (cliente.rol && cliente.rol !== 'CLIENTE') {
-    return <Navigate to={`/tienda/${slug || 'mi-tienda'}`} replace />;
+    return <Navigate to={rutaTienda(slug)} replace />;
   }
 
-  return <Outlet />;
+  return <Outlet context={contexto} />;
 }

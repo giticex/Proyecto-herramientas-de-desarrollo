@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useStore } from '../store/store';
+import { useNavigate } from 'react-router-dom';
 import { slugify } from '../store/slugify';
 import { useSesion } from '../auth/sesionStore';
 import { registrarTienda } from '../auth/authApi';
@@ -30,7 +29,6 @@ export default function RegistroTienda() {
   const [errores, setErrores] = useState({ nombre: '', rubro: '', slug: '', correo: '', contrasena: '' });
   const [error, setError] = useState('');
   const [enviando, setEnviando] = useState(false);
-  const setTienda = useStore((estado) => estado.setTienda);
   const login = useSesion((estado) => estado.login);
   const navigate = useNavigate();
 
@@ -71,10 +69,9 @@ export default function RegistroTienda() {
         correo: correo.trim(),
         contrasena,
       });
-      setTienda(respuesta.tienda);
       localStorage.removeItem('productos'); // tienda nueva = catálogo nuevo (mock)
-      login(respuesta.usuario ?? correo.trim(), respuesta.token, respuesta.rol);
-      navigate('/admin/marca');
+      login(respuesta.usuario ?? correo.trim(), respuesta.token, respuesta.rol, respuesta.tienda);
+      navigate('/admin/marca', { replace: true });
     } catch (problema) {
       setError(problema.message || 'No se pudo crear la tienda.');
     } finally {
@@ -83,13 +80,7 @@ export default function RegistroTienda() {
   }
 
   return (
-    <>
-      <nav className="nav">
-        <Link className="nav-brand" to="/">NovaCommerce</Link>
-        <div className="nav-links"><Link to="/admin/login">Iniciar sesión</Link></div>
-      </nav>
-
-      <main className="page narrow">
+      <main className="page narrow acceso-page">
         <header className="head">
           <h1>Abre tu tienda.</h1>
           <p>Tres datos y estás dentro. Podrás cambiarlos después.</p>
@@ -169,6 +160,5 @@ export default function RegistroTienda() {
           <button className="btn block" type="submit" disabled={enviando}>Crear tienda</button>
         </form>
       </main>
-    </>
   );
 }

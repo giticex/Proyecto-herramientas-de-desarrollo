@@ -84,7 +84,7 @@ public class VentaServiceImpl implements VentaService {
 
     @Override
     @Transactional
-    public Venta registrarVenta(String idCliente, CarritoRequestDTO carrito) {
+    public Venta registrarVenta(String idCliente, CarritoRequestDTO carrito, int idTienda) {
         String tipoDocumento = conValor(carrito.getTipoDocumento(), TIPO_BOLETA);
         String medioPago = conValor(carrito.getMedioPago(), MEDIO_PAGO_EFECTIVO);
 
@@ -102,6 +102,7 @@ public class VentaServiceImpl implements VentaService {
         String prefijo = prefijo(tipoDocumento);
         venta.setId(UUID.randomUUID().toString());
         venta.setIdCliente(idCliente);
+        venta.setIdTienda(idTienda);
         venta.setIdPersona(idPersona);
         venta.setIdTipoDocumento(resolverTipoDocumento(tipoDocumento));
         venta.setNumeroDocumento(prefijo + "-" + String.format("%06d", correlativo));
@@ -115,10 +116,14 @@ public class VentaServiceImpl implements VentaService {
         venta.setEstado(ESTADO_LEGACY);
         venta.setObservacion("");
 
+        var ids = carrito.getItems().stream().map(CarritoRequestDTO.Item::getIdProducto).distinct().toList();
+        Map<Integer, Producto> catalogo = productoRepository.bloquearParaVenta(idTienda, ids).stream()
+                .collect(Collectors.toMap(Producto::getIdProducto, producto -> producto));
         for (CarritoRequestDTO.Item item : carrito.getItems()) {
-            Producto producto = productoRepository.findById(item.getIdProducto())
-                    .orElseThrow(() -> new RecursoNoEncontradoException(
-                            "Producto " + item.getIdProducto() + " no existe"));
+            Producto producto = catalogo.get(item.getIdProducto());
+            if (producto == null) {
+                throw new RecursoNoEncontradoException("Producto no encontrado en la tienda");
+            }
 
             if (producto.getStock() < item.getCantidad()) {
                 throw new StockInsuficienteException(
@@ -147,20 +152,24 @@ public class VentaServiceImpl implements VentaService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Venta> obtenerBoletas() {
+    public List<Venta> obtenerBoletas(int idTienda) {
         String idTipoDocumento = tipoDocumentoRepository.findByNombreIgnoreCase(TIPO_BOLETA)
                 .map(TipoDocumento::getIdDocumento)
                 .orElse(TIPO_BOLETA_ID);
-        return enriquecer(ventaRepository.findByIdTipoDocumentoOrderByFechaEmisionDesc(idTipoDocumento));
+        return enriquecer(ventaRepository.findByIdTipoDocumentoAndIdTiendaOrderByFechaEmisionDesc(idTipoDocumento, idTienda));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Venta> obtenerHistorial(String idCliente) {
-        if (idCliente == null || idCliente.isBlank()) {
-            return enriquecer(ventaRepository.findAllByOrderByFechaEmisionDesc());
+    public List<Venta> obtenerHistorial(String idCliente, Integer idTienda) {
+        if (idTienda == null) {
+            return idCliente == null || idCliente.isBlank() ? List.of()
+                    : enriquecer(ventaRepository.findByIdClienteOrderByFechaEmisionDesc(idCliente));
         }
-        return enriquecer(ventaRepository.findByIdClienteOrderByFechaEmisionDesc(idCliente));
+        if (idCliente == null || idCliente.isBlank()) {
+            return enriquecer(ventaRepository.findByIdTiendaOrderByFechaEmisionDesc(idTienda));
+        }
+        return enriquecer(ventaRepository.findByIdClienteAndIdTiendaOrderByFechaEmisionDesc(idCliente, idTienda));
     }
 
     @Override
@@ -316,7 +325,8 @@ public class VentaServiceImpl implements VentaService {
                 .collect(Collectors.toMap(TipoDocumento::getIdDocumento, TipoDocumento::getNombre));
         Map<String, String> descripcionesMedioPago = medioPagoRepository.findAll().stream()
                 .collect(Collectors.toMap(MedioPago::getIdMedioPago, MedioPago::getDescripcion));
-        Map<String, String> nombresCliente = clienteService.listar().stream()
+        Set<String> idsCliente = ventas.stream().map(Venta::getIdCliente).collect(Collectors.toSet());
+        Map<String, String> nombresCliente = clienteService.obtenerPorIds(idsCliente).stream()
                 .collect(Collectors.toMap(ClienteDTO::getIdCliente, c -> c.getNombre() + " " + c.getApellido()));
 
         Set<Integer> idsProducto = ventas.stream()
