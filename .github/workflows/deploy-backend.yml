@@ -1,0 +1,47 @@
+name: Deploy backend (Azure App Service)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'spring-backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build y despliegue del jar
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: spring-backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: spring-backend/pom.xml
+
+      - name: Compilar
+        run: chmod +x mvnw && ./mvnw -B package -DskipTests
+
+      - name: Preparar jar con nombre fijo
+        run: cp target/proyec_herramientas-0.0.1-SNAPSHOT.jar target/app.jar
+
+      - name: Desplegar en App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: spring-backend/target/app.jar
