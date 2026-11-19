@@ -4,15 +4,19 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 @Entity
-@Table(name = "producto")
+@Table(name = "producto", uniqueConstraints = @UniqueConstraint(
+        name = "uq_producto_tienda_sku", columnNames = {"id_tienda", "sku"}))
 public class Producto {
 
     /** Unidad de medida por defecto para bienes (catalogo 03 SUNAT). */
@@ -34,6 +38,9 @@ public class Producto {
 
     @Column(name = "categoria", length = 80, nullable = false)
     private String categoria;
+
+    @Column(name = "sku", length = 40, nullable = false)
+    private String sku;
 
     /** Codigo del item en el catalogo del emisor (se envia al CDR de SUNAT). */
     @Column(name = "codigo", length = 50, nullable = false)
@@ -66,6 +73,7 @@ public class Producto {
         this.stock = stock;
         this.precio = precio;
         this.categoria = categoria;
+        this.sku = "SKU-" + UUID.randomUUID().toString().replace("-", "").toUpperCase(Locale.ROOT);
     }
 
     public Integer getIdProducto() {
@@ -106,6 +114,14 @@ public class Producto {
 
     public void setCategoria(String categoria) {
         this.categoria = categoria;
+    }
+
+    public String getSku() {
+        return sku;
+    }
+
+    public void setSku(String sku) {
+        this.sku = sku;
     }
 
     public String getCodigo() {

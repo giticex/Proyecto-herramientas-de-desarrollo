@@ -107,6 +107,7 @@ CREATE TABLE producto (
     stock          INT           NOT NULL,
     precio         DECIMAL(10, 2) NOT NULL,
     categoria      VARCHAR(80)   NOT NULL,
+    sku            VARCHAR(40)   NOT NULL,
     codigo         VARCHAR(50)   NOT NULL DEFAULT '',
     unidad_medida  VARCHAR(5)    NOT NULL DEFAULT 'NIU',
     afectacion_igv VARCHAR(2)    NOT NULL DEFAULT '01',
@@ -114,6 +115,7 @@ CREATE TABLE producto (
     id_tienda      INT           NOT NULL,
     PRIMARY KEY (id_producto),
     KEY idx_producto_id_tienda (id_tienda),
+    UNIQUE KEY uq_producto_tienda_sku (id_tienda, sku),
     CONSTRAINT fk_producto_tienda FOREIGN KEY (id_tienda)
         REFERENCES tienda (id_tienda)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

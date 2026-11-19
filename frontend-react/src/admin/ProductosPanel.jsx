@@ -8,8 +8,8 @@ import './ProductosPanel.css';
 
 const fmt = new Intl.NumberFormat('es', { style: 'currency', currency: 'USD' });
 
-const FORM_VACIO = { nombre: '', categoria: '', precio: '', stock: '' };
-const ERRORES_VACIOS = { nombre: '', categoria: '', precio: '', stock: '' };
+const FORM_VACIO = { nombre: '', sku: '', categoria: '', precio: '', stock: '' };
+const ERRORES_VACIOS = { nombre: '', sku: '', categoria: '', precio: '', stock: '', guardado: '' };
 
 function IconoAlerta() {
   return (
@@ -60,7 +60,8 @@ export default function ProductosPanel() {
   );
   const textoBuscado = busqueda.trim().toLowerCase();
   const productosFiltrados = visibles.filter((p) => {
-    const coincideTexto = !textoBuscado || p.nombre.toLowerCase().includes(textoBuscado);
+    const coincideTexto = !textoBuscado || p.nombre.toLowerCase().includes(textoBuscado)
+      || p.sku?.toLowerCase() === textoBuscado;
     const coincideCategoria = !categoriaFiltro || p.categoria === categoriaFiltro;
     return coincideTexto && coincideCategoria;
   });
@@ -69,7 +70,7 @@ export default function ProductosPanel() {
   function abrir(producto) {
     setEditandoId(producto ? producto.idProducto : null);
     setForm(producto
-      ? { nombre: producto.nombre, categoria: producto.categoria, precio: String(producto.precio), stock: String(producto.stock) }
+      ? { nombre: producto.nombre, sku: producto.sku ?? '', categoria: producto.categoria, precio: String(producto.precio), stock: String(producto.stock) }
       : FORM_VACIO);
     setAtributosFilas(atributosAFilas(producto?.atributos));
     setErrores(ERRORES_VACIOS);
@@ -84,12 +85,15 @@ export default function ProductosPanel() {
     evento.preventDefault();
     const v = {
       nombre: form.nombre.trim(),
+      sku: form.sku.trim().toUpperCase(),
       categoria: form.categoria.trim(),
       precio: parseFloat(form.precio),
       stock: parseInt(form.stock, 10),
     };
     const reglas = {
       nombre: v.nombre ? '' : 'Requerido.',
+      sku: !v.sku || /^[A-Z0-9][A-Z0-9_-]{0,39}$/.test(v.sku)
+        ? '' : 'Usa hasta 40 letras, números, guiones o guiones bajos. Empieza con una letra o número.',
       categoria: v.categoria ? '' : 'Requerida.',
       precio: v.precio >= 0 ? '' : 'Precio inválido.',
       stock: Number.isInteger(v.stock) && v.stock >= 0 ? '' : 'Stock inválido.',
@@ -99,10 +103,15 @@ export default function ProductosPanel() {
 
     const payload = { ...v, atributos: filasAAtributos(atributosFilas) };
     // BACKEND: POST /productos o PUT /productos/{id}, ya existen ambos.
-    if (editandoId) {
-      await updateProducto(editandoId, payload);
-    } else {
-      await createProducto(payload);
+    try {
+      if (editandoId) {
+        await updateProducto(editandoId, payload);
+      } else {
+        await createProducto(payload);
+      }
+    } catch (error) {
+      setErrores({ ...reglas, guardado: error.message || 'No se pudo guardar el producto.' });
+      return;
     }
     cerrarModal();
     showToast(editandoId ? 'Producto actualizado' : 'Producto creado');
@@ -213,8 +222,8 @@ export default function ProductosPanel() {
               type="search"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar producto por nombre..."
-              aria-label="Buscar producto por nombre"
+              placeholder="Buscar por nombre o SKU..."
+              aria-label="Buscar por nombre o SKU"
             />
           </div>
           <label className="filtro-categoria">
@@ -245,7 +254,10 @@ export default function ProductosPanel() {
             const bajo = esBajo(p);
             return (
               <div className={`fila${bajo ? ' bajo' : ''}`} key={p.idProducto}>
-                <span className="nombre">{p.nombre}</span>
+                <span className="nombre">
+                  {p.nombre}
+                  {p.sku && <small className="muted" style={{ display: 'block', overflowWrap: 'anywhere' }}>{p.sku}</small>}
+                </span>
                 <span data-label="Categoría">{p.categoria}</span>
                 <span data-label="Precio">{fmt.format(p.precio)}</span>
                 <span data-label="Stock"><BadgeStock stock={p.stock} umbral={umbral} /></span>
@@ -285,6 +297,21 @@ export default function ProductosPanel() {
             <span className="error">{errores.nombre}</span>
           </div>
 
+          <div className={`field ${errores.sku ? 'invalid' : ''}`}>
+            <label htmlFor="f-sku">SKU</label>
+            <input
+              id="f-sku"
+              value={form.sku}
+              maxLength={40}
+              onChange={(e) => setForm({ ...form, sku: e.target.value })}
+              aria-invalid={Boolean(errores.sku)}
+              aria-describedby="f-sku-detalle"
+            />
+            <span id="f-sku-detalle" className={errores.sku ? 'error' : 'small muted'}>
+              {errores.sku || (editandoId ? 'Déjalo vacío para conservar el SKU actual.' : 'Déjalo vacío para generar un SKU automáticamente.')}
+            </span>
+          </div>
+
           <div className={`field ${errores.categoria ? 'invalid' : ''}`}>
             <label htmlFor="f-categoria">Categoría</label>
             <input
@@ -314,6 +341,8 @@ export default function ProductosPanel() {
           </div>
 
           <AtributosEditor filas={atributosFilas} onChange={setAtributosFilas} />
+
+          {errores.guardado && <p className="error" role="alert">{errores.guardado}</p>}
 
           <div className="actions">
             <button className="btn" type="submit">Guardar</button>
