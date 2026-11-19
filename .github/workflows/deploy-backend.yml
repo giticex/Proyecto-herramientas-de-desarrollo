@@ -26,6 +26,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verificar configuración de Azure
+        env:
+          APP_NAME: ${{ vars.AZURE_WEBAPP_NAME }}
+          PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        run: |
+          [ -n "$APP_NAME" ] || { echo "::error::Falta la variable de repositorio AZURE_WEBAPP_NAME (Settings > Secrets and variables > Actions > Variables)"; exit 1; }
+          [ -n "$PUBLISH_PROFILE" ] || { echo "::error::Falta el secreto AZURE_WEBAPP_PUBLISH_PROFILE (Settings > Secrets and variables > Actions > Secrets)"; exit 1; }
+
       - uses: actions/setup-java@v5
         with:
           distribution: temurin

@@ -26,6 +26,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verificar configuración de Azure
+        env:
+          API_URL: ${{ vars.VITE_API_URL }}
+          SWA_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+        run: |
+          [ -n "$API_URL" ] || { echo "::error::Falta la variable de repositorio VITE_API_URL (Settings > Secrets and variables > Actions > Variables)"; exit 1; }
+          [ -n "$SWA_TOKEN" ] || { echo "::error::Falta el secreto AZURE_STATIC_WEB_APPS_API_TOKEN (Settings > Secrets and variables > Actions > Secrets)"; exit 1; }
+          case "$API_URL" in https://*) ;; *) echo "::error::VITE_API_URL debe empezar por https://"; exit 1 ;; esac
+          case "$API_URL" in */) echo "::error::VITE_API_URL no debe terminar en barra"; exit 1 ;; esac
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
