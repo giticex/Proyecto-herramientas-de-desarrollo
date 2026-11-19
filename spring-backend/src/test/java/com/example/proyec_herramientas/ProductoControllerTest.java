@@ -16,6 +16,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Transactional
 class ProductoControllerTest {
 
     @Autowired
@@ -61,8 +63,7 @@ class ProductoControllerTest {
     private Tienda tienda;
 
     @BeforeEach
-    void limpiar() throws Exception {
-        productoRepository.deleteAll();
+    void prepararDatos() throws Exception {
         CuentasTest.crearAdmin(usuarioRepository, personaRepository, tiendaRepository);
         tienda = tiendaRepository.findBySlug(CuentasTest.SLUG_TIENDA).orElseThrow();
         token = CuentasTest.token(mockMvc, objectMapper, CuentasTest.USUARIO_ADMIN, CuentasTest.CLAVE);

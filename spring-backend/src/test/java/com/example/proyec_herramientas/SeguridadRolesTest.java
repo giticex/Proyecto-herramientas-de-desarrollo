@@ -2,7 +2,6 @@ package com.example.proyec_herramientas;
 
 import com.example.proyec_herramientas.repository.ClienteRepository;
 import com.example.proyec_herramientas.repository.PersonaRepository;
-import com.example.proyec_herramientas.repository.ProductoRepository;
 import com.example.proyec_herramientas.repository.TiendaRepository;
 import com.example.proyec_herramientas.repository.UsuarioRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,6 +14,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
@@ -29,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Transactional
 class SeguridadRolesTest {
 
     @Autowired
@@ -47,14 +48,10 @@ class SeguridadRolesTest {
     private ClienteRepository clienteRepository;
 
     @Autowired
-    private ProductoRepository productoRepository;
-
-    @Autowired
     private TiendaRepository tiendaRepository;
 
     @BeforeEach
     void prepararCuentas() {
-        productoRepository.deleteAll();
         CuentasTest.crearAdmin(usuarioRepository, personaRepository, tiendaRepository);
         CuentasTest.crearCliente(usuarioRepository, personaRepository, tiendaRepository);
         CuentasTest.crearFichaCliente(clienteRepository);
