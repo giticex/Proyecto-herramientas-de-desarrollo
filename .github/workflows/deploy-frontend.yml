@@ -1,0 +1,92 @@
+name: Deploy frontend (Azure Storage static website)
+
+on:
+  push:
+    branches: ['release/*', main]
+    paths:
+      - 'frontend-react/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Pruebas y build (React + Vite)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend-react
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verificar configuración de Azure
+        env:
+          API_URL: ${{ vars.VITE_API_URL }}
+        run: |
+          [ -n "$API_URL" ] || { echo "::error::Falta la variable de repositorio VITE_API_URL (Settings > Secrets and variables > Actions > Variables)"; exit 1; }
+          case "$API_URL" in https://*) ;; *) echo "::error::VITE_API_URL debe empezar por https://"; exit 1 ;; esac
+          case "$API_URL" in */) echo "::error::VITE_API_URL no debe terminar en barra"; exit 1 ;; esac
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend-react/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+        run: npm run build
+
+      - name: Verificar build
+        run: test -f dist/index.html && test -d dist/assets
+
+      - name: Subir dist verificado
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend-react/dist
+          retention-days: 3
+          if-no-files-found: error
+
+  deploy:
+    name: Desplegar en Azure Storage (static website)
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verificar configuración de Azure
+        env:
+          CONN: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+        run: |
+          [ -n "$CONN" ] || { echo "::error::Falta el secreto AZURE_STORAGE_CONNECTION_STRING (Settings > Secrets and variables > Actions > Secrets)"; exit 1; }
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+
+      # Static Web Apps no esta disponible en esta suscripcion (politica de
+      # regiones); el frontend se sirve desde un Storage static website ($web).
+      - name: Desplegar en Azure Storage
+        uses: azure/CLI@v2
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az storage blob delete-batch -s '$web' \
+              --connection-string "$AZURE_STORAGE_CONNECTION_STRING" --only-show-errors
+            az storage blob upload-batch -d '$web' -s dist \
+              --connection-string "$AZURE_STORAGE_CONNECTION_STRING" --overwrite --only-show-errors
