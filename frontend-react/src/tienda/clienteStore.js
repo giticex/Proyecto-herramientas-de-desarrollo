@@ -3,7 +3,6 @@ import { showToast } from '../components/toastBus';
 
 const CART_KEY = 'clienteCarrito';
 const CLIENTE_SESION_KEY = 'clienteSesion';
-const COMPRAS_KEY = 'clienteMisCompras';
 
 function leerJson(key, fallback) {
   try {
@@ -17,7 +16,6 @@ function leerJson(key, fallback) {
 export const useClienteStore = create((set, get) => ({
   carrito: leerJson(CART_KEY, []),
   cliente: leerJson(CLIENTE_SESION_KEY, null),
-  misCompras: leerJson(COMPRAS_KEY, []),
 
   // --- SESIÓN DEL CLIENTE ---
   // La sesión guarda token y rol: el rol (CLIENTE) lo devuelve el backend y
@@ -105,12 +103,5 @@ export const useClienteStore = create((set, get) => ({
   vaciarCarrito() {
     localStorage.removeItem(CART_KEY);
     set({ carrito: [] });
-  },
-
-  registrarCompra(orden) {
-    const nuevasCompras = [orden, ...get().misCompras];
-    localStorage.setItem(COMPRAS_KEY, JSON.stringify(nuevasCompras));
-    localStorage.removeItem(CART_KEY);
-    set({ misCompras: nuevasCompras, carrito: [] });
   },
 }));

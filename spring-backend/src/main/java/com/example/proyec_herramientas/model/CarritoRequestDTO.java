@@ -1,6 +1,7 @@
 package com.example.proyec_herramientas.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -24,7 +25,7 @@ public class CarritoRequestDTO {
 
     @NotNull
     @NotEmpty
-    private List<Item> items;
+    private List<@NotNull @Valid Item> items;
 
     public String getTipoDocumento() {
         return tipoDocumento;

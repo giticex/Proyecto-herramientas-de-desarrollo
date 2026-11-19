@@ -146,7 +146,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
 
     @Override
     @Transactional
-    public ComprobanteRespuestaDTO emitir(ComprobanteRequestDTO request) {
+    public ComprobanteRespuestaDTO emitir(ComprobanteRequestDTO request, int idTienda) {
         if (request == null) {
             throw new ValidacionComprobanteException("No se recibió la solicitud de emisión.");
         }
@@ -162,7 +162,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         String tipoComprobante = normalizarTipoComprobante(request.getTipoComprobante());
         String serie = resolverSerie(request.getSerie(), tipoComprobante);
 
-        List<DetalleComprobanteDTO> detalles = construirDetalles(request);
+        List<DetalleComprobanteDTO> detalles = construirDetalles(request, idTienda);
         TotalesDTO totales = totalesCalculator.calcular(detalles, igvPorcentaje);
         totales.setTotalEnLetras(NumerosALetras.convertir(totales.getMontoTotalPagar()));
         validarTipoComprobante(tipoComprobante, receptor, totales);
@@ -214,7 +214,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
         comprobante.setEstado(ESTADO_EMITIDO);
         comprobante.setEstadoSunat(ESTADO_SUNAT_GENERADO);
 
-        persistir(comprobante, request, detalles, emision);
+        persistir(comprobante, request, detalles, emision, idTienda);
         return comprobante;
     }
 
@@ -228,11 +228,13 @@ public class ComprobanteServiceImpl implements ComprobanteService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ComprobanteRespuestaDTO> listarPorCliente(String idCliente) {
+    public List<ComprobanteRespuestaDTO> listarPorCliente(String idCliente, Integer idTienda) {
         if (idCliente == null || idCliente.isBlank()) {
             return List.of();
         }
-        return ventaRepository.findByIdClienteOrderByFechaEmisionDesc(idCliente).stream()
+        List<Venta> ventas = idTienda == null ? ventaRepository.findByIdClienteOrderByFechaEmisionDesc(idCliente)
+                : ventaRepository.findByIdClienteAndIdTiendaOrderByFechaEmisionDesc(idCliente, idTienda);
+        return ventas.stream()
                 .map(this::mapear)
                 .toList();
     }
@@ -310,7 +312,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
     // Items
     // ------------------------------------------------------------------
 
-    private List<DetalleComprobanteDTO> construirDetalles(ComprobanteRequestDTO request) {
+    private List<DetalleComprobanteDTO> construirDetalles(ComprobanteRequestDTO request, int idTienda) {
         List<DetalleComprobanteDTO> detalles = new ArrayList<>();
         int numero = 0;
 
@@ -318,7 +320,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
             if (item == null || item.getIdProducto() == null) {
                 throw new ValidacionComprobanteException("Cada item debe indicar el producto del catalogo.");
             }
-            Producto producto = productoRepository.findById(item.getIdProducto())
+            Producto producto = productoRepository.findByIdProductoAndIdTienda(item.getIdProducto(), idTienda)
                     .orElseThrow(() -> new ValidacionComprobanteException(
                             "El producto " + item.getIdProducto() + " no existe en el catalogo."));
 
@@ -441,9 +443,10 @@ public class ComprobanteServiceImpl implements ComprobanteService {
     // ------------------------------------------------------------------
 
     private void persistir(ComprobanteRespuestaDTO comprobante, ComprobanteRequestDTO request,
-                            List<DetalleComprobanteDTO> detalles, LocalDateTime emision) {
+                            List<DetalleComprobanteDTO> detalles, LocalDateTime emision, int idTienda) {
         Venta venta = new Venta();
         venta.setId(comprobante.getIdVenta());
+        venta.setIdTienda(idTienda);
         venta.setIdCliente(resolverIdCliente(request.getIdCliente()));
         venta.setIdPersona(resolverIdPersona(venta.getIdCliente()));
         venta.setIdTipoDocumento(emisorService.obtenerIdTipoDocumento(comprobante.getTipoComprobante()));

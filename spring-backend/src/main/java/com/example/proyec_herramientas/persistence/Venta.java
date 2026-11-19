@@ -31,6 +31,9 @@ public class Venta {
     @Column(name = "id_venta", length = 36, nullable = false)
     private String idVenta;
 
+    @Column(name = "id_tienda", nullable = false)
+    private Integer idTienda;
+
     @Column(name = "id_cliente", length = 20, nullable = false)
     private String idCliente;
 
@@ -175,6 +178,14 @@ public class Venta {
 
     public void setId(String idVenta) {
         this.idVenta = idVenta;
+    }
+
+    public Integer getIdTienda() {
+        return idTienda;
+    }
+
+    public void setIdTienda(Integer idTienda) {
+        this.idTienda = idTienda;
     }
 
     public String getIdCliente() {

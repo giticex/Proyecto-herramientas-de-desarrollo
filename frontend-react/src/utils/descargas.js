@@ -20,10 +20,10 @@ function descargarEnlace(url, nombreArchivo) {
  * @param {string} ruta ruta relativa del endpoint (ej. /comprobantes/123/pdf)
  * @param {string} tipo extension del archivo (PDF, XML)
  * @param {string} nombre nombre del archivo sin extension
- * @param {{abrir?: boolean}} opciones abrir=true muestra el blob en otra pestana
+ * @param {{abrir?: boolean, token?: string}} opciones abrir=true muestra el blob en otra pestana
  */
-export async function descargarArchivoSeguro(ruta, tipo, nombre = 'comprobante', { abrir = false } = {}) {
-  const blob = await apiClient.getBlob(ruta);
+export async function descargarArchivoSeguro(ruta, tipo, nombre = 'comprobante', { abrir = false, token } = {}) {
+  const blob = await apiClient.getBlob(ruta, { token });
   const url = window.URL.createObjectURL(blob);
   const nombreArchivo = `${nombre || 'comprobante'}.${tipo.toLowerCase()}`;
 

@@ -205,8 +205,8 @@ export function construirPayloadComprobante({
 }
 
 /** Emite el comprobante y devuelve la respuesta completa del backend. */
-export async function emitirComprobante(payload) {
-  return apiClient.post('/comprobantes', payload);
+export async function emitirComprobante(payload, slug, token) {
+  return apiClient.post('/comprobantes?tienda=' + encodeURIComponent(slug), payload, { token });
 }
 
 /** Consulta un comprobante por el id de la venta. */
@@ -215,8 +215,9 @@ export async function obtenerComprobante(idVenta) {
 }
 
 /** Lista los comprobantes emitidos a un cliente. */
-export async function listarComprobantesDeCliente(idCliente) {
-  return apiClient.get(`/comprobantes/cliente/${idCliente}`);
+export async function listarComprobantesDeCliente(idCliente, slug, token) {
+  const ruta = '/comprobantes/cliente/' + encodeURIComponent(idCliente);
+  return apiClient.get(ruta + '?tienda=' + encodeURIComponent(slug), { token });
 }
 
 /** Representacion impresa en PDF (A5 con QR y valor resumen). */

@@ -16,13 +16,13 @@ public interface ComprobanteService {
      * catalogo, reserva el correlativo, genera el XML UBL 2.1, calcula el hash
      * y el codigo QR, y lo persiste.
      */
-    ComprobanteRespuestaDTO emitir(ComprobanteRequestDTO request);
+    ComprobanteRespuestaDTO emitir(ComprobanteRequestDTO request, int idTienda);
 
     /** Recupera un comprobante ya emitido por su identificador. */
     ComprobanteRespuestaDTO obtenerPorId(String idVenta);
 
     /** Lista los comprobantes emitidos a un cliente (historial de compras). */
-    List<ComprobanteRespuestaDTO> listarPorCliente(String idCliente);
+    List<ComprobanteRespuestaDTO> listarPorCliente(String idCliente, Integer idTienda);
 
     /** XML UBL 2.1 del comprobante (regenerado a partir de la informacion guardada). */
     String generarXml(String idVenta);

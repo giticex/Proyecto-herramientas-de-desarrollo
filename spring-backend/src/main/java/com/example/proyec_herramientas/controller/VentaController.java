@@ -4,6 +4,7 @@ import com.example.proyec_herramientas.model.CarritoRequestDTO;
 import com.example.proyec_herramientas.model.PaginaVentasDTO;
 import com.example.proyec_herramientas.persistence.Venta;
 import com.example.proyec_herramientas.persistence.Rol;
+import com.example.proyec_herramientas.security.AmbitoVentas;
 import com.example.proyec_herramientas.security.SesionPrincipal;
 import com.example.proyec_herramientas.service.VentaService;
 import jakarta.validation.Valid;
@@ -25,15 +26,18 @@ import java.util.List;
 public class VentaController {
 
     private final VentaService ventaService;
+    private final AmbitoVentas ambito;
 
-    public VentaController(VentaService ventaService) {
+    public VentaController(VentaService ventaService, AmbitoVentas ambito) {
         this.ventaService = ventaService;
+        this.ambito = ambito;
     }
 
     // El CLIENTE compra siempre a su propio nombre: el idCliente sale del token
     // y se ignora el que venga en el cuerpo. El ADMIN si puede indicarlo.
     @PostMapping
     public ResponseEntity<Venta> registrar(@Valid @RequestBody CarritoRequestDTO carrito,
+            @RequestParam(required = false) String tienda,
             Authentication authentication) {
         SesionPrincipal principal = principal(authentication);
         String idCliente = Rol.ADMIN.equals(principal.rol())
@@ -43,7 +47,8 @@ public class VentaController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "No se pudo determinar el cliente de la venta");
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(ventaService.registrarVenta(idCliente, carrito));
+        int idTienda = ambito.tiendaDeCompra(principal, tienda, carrito.getItems().get(0).getIdProducto());
+        return ResponseEntity.status(HttpStatus.CREATED).body(ventaService.registrarVenta(idCliente, carrito, idTienda));
     }
 
     // GET /ventas -> historial paginado de la tienda del ADMIN autenticado.
@@ -54,7 +59,7 @@ public class VentaController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "") String q,
             Authentication authentication) {
-        return ventaService.listarVentas(idTienda(authentication), q, page, size);
+        return ventaService.listarVentas(ambito.tiendaAdministrada(principal(authentication)), q, page, size);
     }
 
     // GET /ventas/mias -> historial de compras del CLIENTE que llamo.
@@ -65,16 +70,8 @@ public class VentaController {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "La cuenta no tiene un cliente asociado");
         }
-        return ventaService.obtenerHistorial(principal.idCliente());
-    }
-
-    private int idTienda(Authentication authentication) {
-        if (authentication != null && authentication.getPrincipal() instanceof SesionPrincipal principal
-                && principal.idTienda() != null) {
-            return principal.idTienda();
-        }
-        throw new ResponseStatusException(HttpStatus.CONFLICT,
-                "La cuenta no tiene una tienda asignada");
+        return ventaService.obtenerHistorial(principal.idCliente(),
+                ambito.tiendaDelHistorial(principal, principal.idCliente(), null));
     }
 
     private SesionPrincipal principal(Authentication authentication) {

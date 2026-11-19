@@ -123,6 +123,7 @@ CREATE TABLE producto (
 -- Cabecera del comprobante de pago electronico.
 CREATE TABLE venta (
     id_venta          VARCHAR(36) NOT NULL,
+    id_tienda         INT          NOT NULL,
     id_cliente        VARCHAR(20) NOT NULL,
     id_persona        VARCHAR(25) NOT NULL,
     id_tipo_documento VARCHAR(25) NOT NULL,
@@ -163,12 +164,15 @@ CREATE TABLE venta (
     leyendas                TEXT         NULL,
     observacion             VARCHAR(500) NOT NULL DEFAULT '',
     PRIMARY KEY (id_venta),
+    KEY idx_venta_tienda_fecha (id_tienda, fecha_emision),
     UNIQUE KEY uk_venta_serie_correlativo (serie, correlativo),
     KEY idx_venta_id_cliente (id_cliente),
     KEY idx_venta_id_persona (id_persona),
     KEY idx_venta_id_tipo_documento (id_tipo_documento),
     KEY idx_venta_id_medio_pago (id_medio_pago),
     KEY idx_venta_fecha_emision (fecha_emision),
+    CONSTRAINT fk_venta_tienda FOREIGN KEY (id_tienda)
+        REFERENCES tienda (id_tienda),
     CONSTRAINT fk_venta_cliente FOREIGN KEY (id_cliente)
         REFERENCES cliente (id_cliente),
     CONSTRAINT fk_venta_persona FOREIGN KEY (id_persona)

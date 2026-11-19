@@ -101,7 +101,7 @@ function QrPlaceholder({ semilla }) {
  * totales, leyendas y, en la parte inferior, el codigo QR (con su zona de
  * silencio) junto al Valor Resumen.</p>
  */
-export default function ComprobanteImpresion({ comprobante, onClose }) {
+export default function ComprobanteImpresion({ comprobante, onClose, token }) {
   const [verQr, setVerQr] = useState(false);
   const [descargando, setDescargando] = useState(null);
 
@@ -132,7 +132,7 @@ export default function ComprobanteImpresion({ comprobante, onClose }) {
   const abrirArchivoSeguro = async (ruta, tipo) => {
     setDescargando(tipo);
     try {
-      await descargarArchivoSeguro(ruta, tipo, comprobante.numeroDocumento, { abrir: true });
+      await descargarArchivoSeguro(ruta, tipo, comprobante.numeroDocumento, { abrir: true, token });
     } catch (error) {
       showToast(error?.message || `No se pudo abrir el ${tipo}.`);
     } finally {

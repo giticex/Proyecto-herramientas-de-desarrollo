@@ -59,8 +59,8 @@ export default function CheckoutTienda() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { carrito, cliente, registrarCompra } = useClienteStore();
-  const { tienda, productos, getTienda, listProductos } = useStore();
+  const { carrito, cliente, vaciarCarrito } = useClienteStore();
+  const { productos, getTienda, listProductos } = useStore();
 
   const [tipoComprobante, setTipoComprobante] = useState('boleta');
   const [documento, setDocumento] = useState('');
@@ -158,40 +158,12 @@ export default function CheckoutTienda() {
         })),
       });
 
-      const comprobante = await emitirComprobante(payload);
-      const totales = comprobante.totales || {};
-
-      const nuevaOrden = {
-        idOrden: comprobante.idVenta,
-        numeroComprobante: comprobante.numeroDocumento,
-        fecha: `${comprobante.fechaEmision}T${comprobante.horaEmision}`,
-        tiendaSlug: slug || tienda.slug,
-        tiendaNombre: tienda.nombre,
-        clienteNombre: comprobante.receptor?.razonSocial || nombreCliente,
-        clienteCorreo: correoCliente,
-        tipoComprobante,
-        documento: comprobante.receptor?.numeroDocumento || documento,
-        razonSocial: comprobante.receptor?.razonSocial || nombreCliente,
-        direccion: comprobante.entrega?.direccion || direccionEntrega.trim(),
-        metodoPago: comprobante.mediosPago?.[0]?.descripcion || medio.descripcion,
-        items: (comprobante.detalles || []).map((detalle) => ({
-          idProducto: detalle.idProducto,
-          nombre: detalle.descripcion,
-          cantidad: Number(detalle.cantidad),
-          precio: Number(detalle.precioUnitario),
-          afectacionIgv: detalle.afectacionIgv,
-        })),
-        opGravada: Number(totales.opGravada || 0),
-        igv: Number(totales.igv || 0),
-        total: Number(totales.montoTotalPagar || 0),
-        comprobante,
-      };
-
-      registrarCompra(nuevaOrden);
+      const comprobante = await emitirComprobante(payload, slug, cliente.token);
+      vaciarCarrito();
       // El backend descuenta el stock al emitir: se refresca el catalogo.
       listProductos(slug);
       showToast(
-        `¡${tipoComprobante === 'boleta' ? 'Boleta' : 'Factura'} ${nuevaOrden.numeroComprobante} emitida!`
+        `¡${tipoComprobante === 'boleta' ? 'Boleta' : 'Factura'} ${comprobante.numeroDocumento} emitida!`
       );
       navigate(`/tienda/${slug}/confirmacion`);
     } catch (error) {

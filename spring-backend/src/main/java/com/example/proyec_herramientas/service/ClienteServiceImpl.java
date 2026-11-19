@@ -6,6 +6,7 @@ import com.example.proyec_herramientas.repository.ClienteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
 
 @Service
@@ -19,10 +20,16 @@ public class ClienteServiceImpl implements ClienteService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ClienteDTO> listar() {
-        return repository.findAll().stream()
+    public List<ClienteDTO> listar(int idTienda) {
+        return repository.listarConVentasDeTienda(idTienda).stream()
                 .map(this::toDTO)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ClienteDTO> obtenerPorIds(Collection<String> ids) {
+        return repository.findAllById(ids).stream().map(this::toDTO).toList();
     }
 
     @Override
