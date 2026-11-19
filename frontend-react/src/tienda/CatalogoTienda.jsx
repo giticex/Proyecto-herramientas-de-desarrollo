@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import PlantillaTienda from '../components/PlantillaTienda';
 import { useStore } from '../store/store';
 import { useClienteStore } from './clienteStore';
+import { coincidenciaBusquedaCatalogo } from './busquedaCatalogo';
 import './CatalogoTienda.css';
 
 export default function CatalogoTienda() {
@@ -55,10 +56,9 @@ export default function CatalogoTienda() {
 
   // 3. Filtrar productos por búsqueda + categoría + atributos dinámicos
   const productosFiltrados = useMemo(() => {
+    const coincideBusqueda = coincidenciaBusquedaCatalogo(productos, busqueda);
     return productos.filter((p) => {
-      const coincideTexto =
-        p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-        (p.categoria && p.categoria.toLowerCase().includes(busqueda.toLowerCase()));
+      const coincideTexto = coincideBusqueda(p);
 
       const coincideCategoria =
         categoriaActiva === 'Todas' || p.categoria === categoriaActiva;
@@ -158,7 +158,8 @@ export default function CatalogoTienda() {
             <span>🔍</span>
             <input
               type="search"
-              placeholder="Buscar producto o categoría..."
+              placeholder="Buscar por producto, categoría o SKU..."
+              aria-label="Buscar por producto, categoría o SKU"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
             />
@@ -276,6 +277,7 @@ export default function CatalogoTienda() {
                       </div>
 
                       <h3 className="producto-nombre">{producto.nombre}</h3>
+                      {producto.sku && <p className="small muted">SKU: {producto.sku}</p>}
 
                       {producto.atributos && Object.keys(producto.atributos).length > 0 && (
                         <div className="atributos-tags">

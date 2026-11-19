@@ -162,6 +162,7 @@ CREATE TABLE producto (
     stock          INT           NOT NULL,
     precio         DECIMAL(10, 2) NOT NULL,
     categoria      VARCHAR(80)   NOT NULL,
+    sku            VARCHAR(40)   NOT NULL,
     codigo         VARCHAR(50)   NOT NULL DEFAULT '',
     unidad_medida  VARCHAR(5)    NOT NULL DEFAULT 'NIU',
     afectacion_igv VARCHAR(2)    NOT NULL DEFAULT '01',
@@ -169,6 +170,7 @@ CREATE TABLE producto (
     id_tienda      INT           NOT NULL,
     PRIMARY KEY (id_producto),
     KEY idx_producto_id_tienda (id_tienda),
+    UNIQUE KEY uq_producto_tienda_sku (id_tienda, sku),
     CONSTRAINT fk_producto_tienda FOREIGN KEY (id_tienda)
         REFERENCES tienda (id_tienda)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -403,23 +405,23 @@ INSERT INTO usuario (usuario, contrasena, id_persona, id_rol, id_tienda) VALUES
 -- gestion de productos lo pide explicitamente al agregar. Todos de la tienda
 -- demo (id_tienda=1). El precio SIEMPRE incluye IGV; la afectacion dice si el
 -- item lo paga.
-INSERT INTO producto (id_producto, nombre, stock, precio, categoria, codigo, unidad_medida, afectacion_igv, id_tienda) VALUES
-(1, 'Laptop Lenovo', 20, 2500.00, 'Laptops', 'P001', 'NIU', '01', 1),
-(2, 'Mouse Logitech', 50, 45.00, 'Periféricos', 'P002', 'NIU', '01', 1),
-(3, 'Teclado Mecánico', 35, 150.00, 'Periféricos', 'P003', 'NIU', '01', 1),
-(4, 'Monitor Samsung', 18, 780.00, 'Monitores', 'P004', 'NIU', '01', 1),
-(5, 'Impresora Epson', 12, 650.00, 'Impresión', 'P005', 'NIU', '01', 1),
-(6, 'USB 32GB', 100, 25.00, 'Almacenamiento', 'P006', 'NIU', '01', 1),
-(7, 'Disco SSD 480GB', 40, 230.00, 'Almacenamiento', 'P007', 'NIU', '01', 1),
-(8, 'Audífonos Sony', 30, 120.00, 'Audio', 'P008', 'NIU', '01', 1),
-(9, 'Parlante JBL', 25, 180.00, 'Audio', 'P009', 'NIU', '01', 1),
-(10, 'Tablet Samsung', 15, 950.00, 'Tablets', 'P010', 'NIU', '01', 1),
-(11, 'Cámara Web', 22, 90.00, 'Accesorios', 'P011', 'NIU', '01', 1),
-(12, 'Router TP-Link', 28, 160.00, 'Redes', 'P012', 'NIU', '01', 1),
+INSERT INTO producto (id_producto, nombre, stock, precio, categoria, codigo, unidad_medida, afectacion_igv, id_tienda, sku) VALUES
+(1, 'Laptop Lenovo', 20, 2500.00, 'Laptops', 'P001', 'NIU', '01', 1, 'SKU-1'),
+(2, 'Mouse Logitech', 50, 45.00, 'Periféricos', 'P002', 'NIU', '01', 1, 'SKU-2'),
+(3, 'Teclado Mecánico', 35, 150.00, 'Periféricos', 'P003', 'NIU', '01', 1, 'SKU-3'),
+(4, 'Monitor Samsung', 18, 780.00, 'Monitores', 'P004', 'NIU', '01', 1, 'SKU-4'),
+(5, 'Impresora Epson', 12, 650.00, 'Impresión', 'P005', 'NIU', '01', 1, 'SKU-5'),
+(6, 'USB 32GB', 100, 25.00, 'Almacenamiento', 'P006', 'NIU', '01', 1, 'SKU-6'),
+(7, 'Disco SSD 480GB', 40, 230.00, 'Almacenamiento', 'P007', 'NIU', '01', 1, 'SKU-7'),
+(8, 'Audífonos Sony', 30, 120.00, 'Audio', 'P008', 'NIU', '01', 1, 'SKU-8'),
+(9, 'Parlante JBL', 25, 180.00, 'Audio', 'P009', 'NIU', '01', 1, 'SKU-9'),
+(10, 'Tablet Samsung', 15, 950.00, 'Tablets', 'P010', 'NIU', '01', 1, 'SKU-10'),
+(11, 'Cámara Web', 22, 90.00, 'Accesorios', 'P011', 'NIU', '01', 1, 'SKU-11'),
+(12, 'Router TP-Link', 28, 160.00, 'Redes', 'P012', 'NIU', '01', 1, 'SKU-12'),
 -- Item de demostracion INAFECTO: se factura sin IGV (catalogo 07, codigo 02).
-(13, 'Cable HDMI', 60, 30.00, 'Cables', 'P013', 'NIU', '02', 1),
-(14, 'Silla Gamer', 10, 520.00, 'Gaming', 'P014', 'NIU', '01', 1),
-(15, 'Micrófono USB', 17, 210.00, 'Audio', 'P015', 'NIU', '01', 1);
+(13, 'Cable HDMI', 60, 30.00, 'Cables', 'P013', 'NIU', '02', 1, 'SKU-13'),
+(14, 'Silla Gamer', 10, 520.00, 'Gaming', 'P014', 'NIU', '01', 1, 'SKU-14'),
+(15, 'Micrófono USB', 17, 210.00, 'Audio', 'P015', 'NIU', '01', 1, 'SKU-15');
 
 -- Comprador en id_cliente (CLI001..CLI015). Persona en id_persona (PERADM,
 -- la cuenta que proceso la carga inicial).

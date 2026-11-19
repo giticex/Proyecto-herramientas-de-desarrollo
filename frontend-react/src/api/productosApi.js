@@ -34,6 +34,16 @@ function obtenerMock() {
   return productos;
 }
 
+function skuParaMock(productos, sku, idProducto) {
+  const actual = productos.find((producto) => producto.idProducto === idProducto);
+  const codigo = sku?.trim().toUpperCase() || actual?.sku
+    || `SKU-${globalThis.crypto.randomUUID().replaceAll('-', '').toUpperCase()}`;
+  if (productos.some((producto) => producto.idProducto !== idProducto && producto.sku === codigo)) {
+    throw new Error('Ya existe un producto con ese SKU.');
+  }
+  return codigo;
+}
+
 export async function listProductos() {
   try {
     return await apiClient.get('/productos');
@@ -53,10 +63,12 @@ export async function listProductosTienda(slug) {
 export async function createProducto(producto) {
   try {
     return await apiClient.post('/productos', producto);
-  } catch {
+  } catch (error) {
+    if (error.status) throw error;
     const productos = obtenerMock();
     const siguienteId = productos.reduce((max, p) => Math.max(max, p.idProducto), 0) + 1;
-    const nuevo = { ...producto, idProducto: producto.idProducto || siguienteId, atributos: producto.atributos || {} };
+    const sku = skuParaMock(productos, producto.sku);
+    const nuevo = { ...producto, idProducto: producto.idProducto || siguienteId, atributos: producto.atributos || {}, sku };
     escribirMock([...productos, nuevo]);
     return nuevo;
   }
@@ -65,8 +77,11 @@ export async function createProducto(producto) {
 export async function updateProducto(idProducto, producto) {
   try {
     return await apiClient.put(`/productos/${idProducto}`, producto);
-  } catch {
-    const productos = obtenerMock().map((p) => (p.idProducto === idProducto ? { ...p, ...producto, idProducto } : p));
+  } catch (error) {
+    if (error.status) throw error;
+    const guardados = obtenerMock();
+    const sku = skuParaMock(guardados, producto.sku, idProducto);
+    const productos = guardados.map((p) => (p.idProducto === idProducto ? { ...p, ...producto, idProducto, sku } : p));
     escribirMock(productos);
     return productos.find((p) => p.idProducto === idProducto);
   }
