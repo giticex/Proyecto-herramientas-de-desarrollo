@@ -17,16 +17,6 @@ import MisCompras from './tienda/MisCompras';
 import RutaProtegidaCliente from './tienda/RutaProtegidaCliente';
 
 
-// Componentes temporales o en desarrollo para las siguientes tareas de cliente
-function EnConstruccion({ titulo }) {
-  return (
-    <div style={{ padding: '100px 20px', textAlign: 'center' }}>
-      <h2>{titulo}</h2>
-      <p style={{ color: '#6e6e73', marginTop: 10 }}>Esta pantalla está en proceso de construcción dentro de tu sprint.</p>
-    </div>
-  );
-}
-
 export default function App() {
   return (
     <>
