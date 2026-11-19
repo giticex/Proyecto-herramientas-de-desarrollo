@@ -53,11 +53,7 @@ export async function listProductos() {
 }
 
 export async function listProductosTienda(slug) {
-  try {
-    return await apiClient.get(`/tiendas/${encodeURIComponent(slug)}/productos`);
-  } catch {
-    return obtenerMock();
-  }
+  return apiClient.get(`/tiendas/${encodeURIComponent(slug)}/productos`, { token: '' });
 }
 
 export async function createProducto(producto) {

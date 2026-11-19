@@ -5,12 +5,14 @@ import { coincidenciaMarcaYPrecio, errorRangoPrecio, esAtributoMarca, opcionesDe
 import PlantillaTienda from '../components/PlantillaTienda';
 import { useStore } from '../store/store';
 import { useClienteStore } from './clienteStore';
+import { useCatalogoTienda } from './useCatalogoTienda';
 import { coincidenciaBusquedaCatalogo } from './busquedaCatalogo';
 import './CatalogoTienda.css';
 
 export default function CatalogoTienda() {
   const { slug } = useParams();
-  const { tienda, productos, umbral, getTienda, listProductos } = useStore();
+  const { tienda, getTienda } = useStore();
+  const { productos, estado } = useCatalogoTienda(slug);
   const { carrito, cliente, agregarAlCarrito, logoutCliente } = useClienteStore();
 
   const [busqueda, setBusqueda] = useState('');
@@ -24,8 +26,7 @@ export default function CatalogoTienda() {
 
   useEffect(() => {
     getTienda(slug);
-    listProductos(slug);
-  }, [slug, getTienda, listProductos]);
+  }, [slug, getTienda]);
 
   // 1. Extraer categorías únicas desde los productos del store
   const categorias = useMemo(() => {
@@ -280,7 +281,11 @@ export default function CatalogoTienda() {
             </h2>
           </div>
 
-          {resultados.length === 0 ? (
+          {estado === 'cargando' ? (
+            <p role="status">Cargando productos…</p>
+          ) : estado === 'error' ? (
+            <p role="alert">No se pudo cargar el catálogo. Intenta recargar la página.</p>
+          ) : resultados.length === 0 ? (
             <div
               style={{
                 padding: 48,
@@ -300,11 +305,7 @@ export default function CatalogoTienda() {
           ) : (
             <div className="productos-grid">
               {resultados.map((producto) => {
-                const enCarrito =
-                  carrito.find((item) => item.idProducto === producto.idProducto)?.cantidad || 0;
-                const stockRestante = Math.max(0, Number(producto.stock) - enCarrito);
-                const agotado = stockRestante <= 0;
-                const stockBajo = !agotado && stockRestante <= umbral;
+                const agotado = !producto.disponible;
 
                 return (
                   <article key={producto.idProducto} className="producto-card">
@@ -313,15 +314,8 @@ export default function CatalogoTienda() {
                         <span className="producto-cat-badge">
                           {producto.categoria || 'General'}
                         </span>
-                        <span
-                          className={`stock-pill ${agotado ? 'agotado' : stockBajo ? 'bajo' : 'ok'
-                            }`}
-                        >
-                          {agotado
-                            ? 'Agotado'
-                            : stockBajo
-                              ? `¡Solo quedan ${stockRestante}!`
-                              : `Stock: ${stockRestante}`}
+                        <span className={`stock-pill ${agotado ? 'agotado' : 'ok'}`}>
+                          {agotado ? 'Agotado' : 'Disponible'}
                         </span>
                       </div>
 

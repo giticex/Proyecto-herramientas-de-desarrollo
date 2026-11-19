@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import PlantillaTienda from '../components/PlantillaTienda';
 import { useClienteStore } from './clienteStore';
+import { useCatalogoTienda } from './useCatalogoTienda';
 import { useStore } from '../store/store';
 import { showToast } from '../components/toastBus';
 import {
@@ -60,7 +61,8 @@ export default function CheckoutTienda() {
   const navigate = useNavigate();
   const location = useLocation();
   const { carrito, cliente, vaciarCarrito } = useClienteStore();
-  const { productos, getTienda, listProductos } = useStore();
+  const getTienda = useStore((state) => state.getTienda);
+  const { productos } = useCatalogoTienda(slug);
 
   const [tipoComprobante, setTipoComprobante] = useState('boleta');
   const [documento, setDocumento] = useState('');
@@ -74,8 +76,7 @@ export default function CheckoutTienda() {
   // Proteger la ruta: si no hay carrito o cliente, regresar
   useEffect(() => {
     getTienda(slug);
-    if (productos.length === 0) listProductos(slug);
-  }, [slug, getTienda, listProductos, productos.length]);
+  }, [slug, getTienda]);
 
   // Si el carrito está vacío y NO estamos procesando una compra, volver al catálogo
   useEffect(() => {
@@ -165,8 +166,6 @@ export default function CheckoutTienda() {
       }
       const comprobante = await emitirComprobante(payload, slug, cliente.token, solicitudEnCurso.current.clave);
       vaciarCarrito();
-      // El backend descuenta el stock al emitir: se refresca el catalogo.
-      listProductos(slug);
       showToast(
         `¡${tipoComprobante === 'boleta' ? 'Boleta' : 'Factura'} ${comprobante.numeroDocumento} emitida!`
       );

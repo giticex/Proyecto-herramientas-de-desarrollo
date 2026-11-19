@@ -138,6 +138,18 @@ class ComprobanteTiendasTest {
                 .andExpect(status().isConflict());
     }
 
+    @Test
+    void checkoutRechazaCantidadesExcesivasSinMostrarElInventario() throws Exception {
+        configurar(adminA, RUC_A, "Comercio A").andExpect(status().isOk());
+        emitir(CuentasTest.SLUG_TIENDA, "03", "1", "12345678", 101, 11, UUID.randomUUID(), null)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error", is("Stock insuficiente para Producto de prueba")));
+
+        entityManager.flush();
+        entityManager.clear();
+        assertEquals(10, productos.findById(101).orElseThrow().getStock());
+    }
+
     private JsonNode emitirBoleta(String tienda, int producto, int cantidad, UUID clave, String serie) throws Exception {
         String cuerpo = emitir(tienda, "03", "1", "12345678", producto, cantidad, clave, serie)
                 .andExpect(status().isCreated())

@@ -390,8 +390,7 @@ public class ComprobanteServiceImpl implements ComprobanteService {
                 throw new ValidacionComprobanteException("La cantidad de cada item debe ser mayor que cero.");
             }
             if (producto.getStock() < cantidad) {
-                throw new StockInsuficienteException("Stock insuficiente para " + producto.getNombre()
-                        + " (disponible: " + producto.getStock() + ")");
+                throw new StockInsuficienteException("Stock insuficiente para " + producto.getNombre());
             }
 
             // El precio y la afectacion del IGV salen del catalogo: el precio que

@@ -4,7 +4,6 @@ import { create } from 'zustand';
 import { getTienda as getTiendaApi, saveTienda as saveTiendaApi, TIENDA_DEFAULT } from '../api/tiendaApi';
 import {
   listProductos as listProductosApi,
-  listProductosTienda as listProductosTiendaApi,
   createProducto as createProductoApi,
   updateProducto as updateProductoApi,
   deleteProducto as deleteProductoApi,
@@ -42,10 +41,8 @@ export const useStore = create((set, get) => ({
     return guardada;
   },
 
-  async listProductos(slug) {
-    const productos = slug
-      ? await listProductosTiendaApi(slug)
-      : await listProductosApi();
+  async listProductos() {
+    const productos = await listProductosApi();
     set({ productos });
     return productos;
   },

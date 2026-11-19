@@ -127,8 +127,7 @@ public class VentaServiceImpl implements VentaService {
 
             if (producto.getStock() < item.getCantidad()) {
                 throw new StockInsuficienteException(
-                        "Stock insuficiente para " + producto.getNombre()
-                                + " (disponible: " + producto.getStock() + ")");
+                        "Stock insuficiente para " + producto.getNombre());
             }
 
             producto.setStock(producto.getStock() - item.getCantidad());
