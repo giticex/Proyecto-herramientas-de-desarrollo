@@ -1,5 +1,0 @@
-.slug-row { display: flex; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: var(--radius-s); padding-left: 16px; transition: border-color var(--ease), box-shadow var(--ease); }
-.slug-row:focus-within { border-color: var(--color-primario); box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primario) 15%, transparent); }
-.slug-row span { white-space: nowrap; }
-.slug-row input { border: 0; padding-left: 0; box-shadow: none !important; }
-.field.invalid .slug-row { border-color: var(--danger); }
