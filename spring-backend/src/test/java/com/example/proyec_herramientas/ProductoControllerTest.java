@@ -74,13 +74,19 @@ class ProductoControllerTest {
     @Test
     void listarProductosDevuelveSoloLosDeLaTienda() throws Exception {
         guardar(1, "Mouse Gamer", 8, "50.00", "Accesorios");
-        guardar(2, "Teclado Mecánico", 5, "120.00", "Accesorios");
+        guardar(2, "Teclado Mecánico", 0, "120.00", "Accesorios");
 
         mockMvc.perform(get("/productos").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].nombre", is("Mouse Gamer")))
-                .andExpect(jsonPath("$[1].precio", is(120.0)));
+                .andExpect(jsonPath("$[1].precio", is(120.0)))
+                .andExpect(jsonPath("$[0].stock", is(8)));
+
+        mockMvc.perform(get("/tiendas/{slug}/productos", tienda.getSlug()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[1].disponible", is(false)))
+                .andExpect(jsonPath("$[1].stock").doesNotExist());
     }
 
     @Test
@@ -104,7 +110,10 @@ class ProductoControllerTest {
 
         mockMvc.perform(get("/tiendas/{slug}/productos", tienda.getSlug()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].sku", is("ABC-001")));
+                .andExpect(jsonPath("$[0].sku", is("ABC-001")))
+                .andExpect(jsonPath("$[0].disponible", is(true)))
+                .andExpect(jsonPath("$[0].stock").doesNotExist())
+                .andExpect(jsonPath("$[0].idTienda").doesNotExist());
     }
 
     @Test

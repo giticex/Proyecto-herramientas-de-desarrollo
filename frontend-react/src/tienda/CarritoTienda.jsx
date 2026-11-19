@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import PlantillaTienda from '../components/PlantillaTienda';
 import { useClienteStore } from './clienteStore';
+import { useCatalogoTienda } from './useCatalogoTienda';
 import { useStore } from '../store/store';
 import './CarritoTienda.css';
 
@@ -9,15 +10,18 @@ export default function CarritoTienda() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { carrito, quitarDelCarrito, cambiarCantidad, cliente } = useClienteStore();
-  const { productos, getTienda, listProductos } = useStore();
+  const getTienda = useStore((state) => state.getTienda);
+  const { productos, estado } = useCatalogoTienda(slug);
 
   // Estado para controlar nuestro nuevo modal animado
   const [modalLogin, setModalLogin] = useState(false);
   useEffect(() => {
     getTienda(slug);
-    if (productos.length === 0) listProductos(slug);
-  }, [slug, getTienda, listProductos, productos.length]);
+  }, [slug, getTienda]);
 
+  const hayNoDisponibles = estado === 'listo' && carrito.some(
+    (item) => !productos.some((producto) => producto.idProducto === item.idProducto && producto.disponible)
+  );
   const total = carrito.reduce((sum, item) => sum + (Number(item.precio) * item.cantidad), 0);
 
   const irAlCheckout = () => {
@@ -60,20 +64,21 @@ export default function CarritoTienda() {
               <div className="carrito-lista">
                 {carrito.map((item) => {
                   const prodOriginal = productos.find((p) => p.idProducto === item.idProducto);
-                  const stockMax = prodOriginal ? Number(prodOriginal.stock) : item.cantidad;
+                  const disponible = Boolean(prodOriginal?.disponible);
 
                   return (
                     <div key={item.idProducto} className="carrito-item-card">
                       <div className="item-info">
                         <h4>{item.nombre}</h4>
                         <span className="item-precio">
-                          S/ {Number(item.precio).toFixed(2)} c/u · Stock máx: {stockMax}
+                          S/ {Number(item.precio).toFixed(2)} c/u
+                          {estado === 'listo' && !disponible && ' · No disponible'}
                         </span>
                         <div className="item-controles-cantidad">
                           <button
                             type="button"
                             className="btn-qty"
-                            onClick={() => cambiarCantidad(item.idProducto, item.cantidad - 1, stockMax)}
+                            onClick={() => cambiarCantidad(item.idProducto, item.cantidad - 1)}
                           >
                             −
                           </button>
@@ -81,7 +86,8 @@ export default function CarritoTienda() {
                           <button
                             type="button"
                             className="btn-qty"
-                            onClick={() => cambiarCantidad(item.idProducto, item.cantidad + 1, stockMax)}
+                            disabled={!disponible}
+                            onClick={() => cambiarCantidad(item.idProducto, item.cantidad + 1)}
                           >
                             +
                           </button>
@@ -110,7 +116,11 @@ export default function CarritoTienda() {
                   <span>Total estimado</span>
                   <span>S/ {total.toFixed(2)}</span>
                 </div>
-                <button type="button" className="btn-premium w-100" onClick={irAlCheckout}>
+                {estado === 'cargando' && <p role="status">Verificando disponibilidad…</p>}
+                {estado === 'error' && <p role="alert">No se pudo verificar el catálogo. Recarga la página.</p>}
+                {hayNoDisponibles && <p role="status">Quita los productos que no están disponibles para continuar.</p>}
+                <button type="button" className="btn-premium w-100"
+                  disabled={estado !== 'listo' || hayNoDisponibles} onClick={irAlCheckout}>
                   Proceder al Checkout
                 </button>
               </div>

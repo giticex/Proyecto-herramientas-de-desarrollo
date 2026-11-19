@@ -1,17 +1,19 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/store';
+import { useCatalogoTienda } from './useCatalogoTienda';
+import { TIENDA_DEFAULT } from '../api/tiendaApi';
 import './LandingPlataforma.css';
 
 export default function LandingPlataforma() {
-  const { tienda, productos, getTienda, listProductos } = useStore();
+  const { tienda, getTienda } = useStore();
 
   useEffect(() => {
-    getTienda();
-    listProductos(tienda.slug);
-  }, [getTienda, listProductos, tienda.slug]);
+    getTienda(TIENDA_DEFAULT.slug);
+  }, [getTienda]);
 
-  const slugTienda = tienda?.slug || 'mi-tienda';
+  const slugTienda = TIENDA_DEFAULT.slug;
+  const { productos, estado } = useCatalogoTienda(slugTienda);
   const muestraProductos = productos.slice(0, 4);
 
   return (
@@ -138,15 +140,15 @@ export default function LandingPlataforma() {
                     <div className="showcase-card-title">{prod.nombre}</div>
                     <div className="showcase-card-foot">
                       <strong>S/ {Number(prod.precio).toFixed(2)}</strong>
-                      <span style={{ color: prod.stock > 0 ? '#4ade80' : '#f87171', fontSize: 12 }}>
-                        {prod.stock > 0 ? `Stock: ${prod.stock}` : 'Agotado'}
+                      <span style={{ color: prod.disponible ? '#4ade80' : '#f87171', fontSize: 12 }}>
+                        {prod.disponible ? 'Disponible' : 'Agotado'}
                       </span>
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="showcase-card" style={{ gridColumn: 'span 2', textAlign: 'center' }}>
-                  Cargando productos desde el Store central...
+                  {estado === 'cargando' ? 'Cargando productos…' : 'Catálogo de demostración sin productos disponibles.'}
                 </div>
               )}
             </div>

@@ -30,23 +30,15 @@ export const useClienteStore = create((set, get) => ({
     set({ cliente: null });
   },
 
-  // --- CARRITO CON VALIDACIÓN ESTRICTA DE STOCK CONTRA EL STORE ---
+  // El catálogo indica disponibilidad. Spring valida cantidades al emitir.
   agregarAlCarrito(producto, cantidad = 1) {
-    const stockReal = Number(producto.stock ?? 0);
-    if (stockReal <= 0) {
+    if (!producto.disponible) {
       showToast(`"${producto.nombre}" está agotado actualmente.`);
       return false;
     }
 
     const actual = get().carrito;
     const existente = actual.find((item) => item.idProducto === producto.idProducto);
-    const cantidadEnCarrito = existente ? existente.cantidad : 0;
-
-    if (cantidadEnCarrito + cantidad > stockReal) {
-      showToast(`Stock máximo alcanzado (${stockReal} disponibles de ${producto.nombre}).`);
-      return false;
-    }
-
     let nuevoCarrito;
     if (existente) {
       nuevoCarrito = actual.map((item) =>
@@ -78,13 +70,9 @@ export const useClienteStore = create((set, get) => ({
     return true;
   },
 
-  cambiarCantidad(idProducto, nuevaCantidad, stockDisponible) {
+  cambiarCantidad(idProducto, nuevaCantidad) {
     if (nuevaCantidad <= 0) {
       get().quitarDelCarrito(idProducto);
-      return;
-    }
-    if (nuevaCantidad > stockDisponible) {
-      showToast(`Solo quedan ${stockDisponible} unidades en stock.`);
       return;
     }
     const nuevoCarrito = get().carrito.map((item) =>

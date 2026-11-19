@@ -1,6 +1,6 @@
 package com.example.proyec_herramientas.controller;
 
-import com.example.proyec_herramientas.model.ProductoDTO;
+import com.example.proyec_herramientas.model.ProductoCatalogoDTO;
 import com.example.proyec_herramientas.model.TiendaDTO;
 import com.example.proyec_herramientas.security.SesionPrincipal;
 import com.example.proyec_herramientas.service.ProductoService;
@@ -35,9 +35,11 @@ public class TiendaController {
 
     // Publico: catalogo de productos de esa tienda.
     @GetMapping("/{slug}/productos")
-    public List<ProductoDTO> productos(@PathVariable String slug) {
+    public List<ProductoCatalogoDTO> productos(@PathVariable String slug) {
         int idTienda = tiendaService.obtenerIdPorSlug(slug);
-        return productoService.listar(idTienda);
+        return productoService.listar(idTienda).stream()
+                .map(ProductoCatalogoDTO::desde)
+                .toList();
     }
 
     // Solo el ADMIN dueño de esa tienda.
