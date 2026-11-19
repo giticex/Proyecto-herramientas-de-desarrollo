@@ -2,7 +2,7 @@
 name: Funcionalidad
 about: Proponer una nueva funcionalidad o mejora
 title: "[FEATURE] "
-labels: feature
+labels: enhancement
 assignees: ''
 ---
 

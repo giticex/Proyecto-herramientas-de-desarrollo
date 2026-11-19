@@ -29,7 +29,7 @@ Ejemplo: `feat: agregar filtro por código SKU en el catálogo`.
 2. Ponle **etiqueta**, **responsable** y, si aplica, un **hito**.
 3. Menciona la tarea de Jira en el título o en el texto (por ejemplo, SCRUM-30).
 
-Etiquetas del proyecto: `bug`, `feature`, `docs`, `ci`, `frontend`, `backend`.
+Etiquetas del proyecto: `bug`, `enhancement`, `documentation`, `ci`, `frontend`, `backend`.
 
 ## Pull requests
 
